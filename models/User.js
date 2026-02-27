@@ -13,6 +13,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
+    immutable: true,
   },
   password: {
     type: String,
@@ -23,6 +24,26 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['admin', 'student'],
     default: 'student',
+  },
+  class: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  targetExam: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  mobile: {
+    type: String,
+    required: false,
+    trim: true,
+  },
+  address: {
+    type: String,
+    required: false,
+    trim: true,
   },
 }, { timestamps: true });
 

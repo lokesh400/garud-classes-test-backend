@@ -8,14 +8,23 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, class: studentClass, targetExam, mobile, address } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    const user = new User({ name, email, password, role: role || 'student' });
+    const user = new User({
+      name,
+      email,
+      password,
+      role: role || 'student',
+      class: studentClass,
+      targetExam,
+      mobile,
+      address,
+    });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -78,3 +87,20 @@ router.get('/me', auth, async (req, res) => {
 });
 
 module.exports = router;
+// Student profile update
+router.put('/student/profile', auth, async (req, res) => {
+  try {
+    const { name, class: studentClass, targetExam, mobile, address } = req.body;
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    user.name = name;
+    user.class = studentClass;
+    user.targetExam = targetExam;
+    user.mobile = mobile;
+    user.address = address;
+    await user.save();
+    res.json({ message: 'Profile updated' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});

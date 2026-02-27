@@ -18,6 +18,7 @@ router.get('/subject/:subjectId', auth, async (req, res) => {
 
 // Get all chapters
 router.get('/', auth, async (req, res) => {
+    console.log('Fetching all chapters');
   try {
     const chapters = await Chapter.find()
       .populate('subject', 'name')
