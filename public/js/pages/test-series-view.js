@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const [s, pRes] = await Promise.all([
         API.get(`/test-series/published/${seriesId}`),
-        API.get(`/purchase/series/${seriesId}`),
+        API.get(`/purchase/check?itemType=TestSeries&itemId=${seriesId}`),
       ]);
       series    = s;
       purchased = !!pRes.purchased;

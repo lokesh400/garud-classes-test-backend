@@ -5,11 +5,11 @@
 
 <!-- Desktop sidebar -->
 <aside id="sidebar"
-       class="fixed top-0 left-0 h-full w-60 bg-white border-r border-gray-200 z-40 flex flex-col
+       class="fixed top-0 left-0 md:top-14 h-full md:h-[calc(100vh-3.5rem)] w-60 bg-white border-r border-gray-200 z-40 flex flex-col
               transform -translate-x-full md:translate-x-0 transition-transform duration-200">
 
-  <!-- Brand -->
-  <div class="flex items-center justify-between px-5 py-5 border-b border-gray-200">
+  <!-- Brand (visible only on mobile drawer — desktop brand is in top navbar) -->
+  <div class="flex items-center justify-between px-5 py-5 border-b border-gray-200 md:hidden">
     <a href="/" class="flex items-center gap-2">
       <span class="text-2xl font-extrabold text-garud-highlight tracking-wide">GARUD</span>
       <span class="text-xs text-gray-400 mt-1">Classes</span>

@@ -1,8 +1,9 @@
 <%- include('../partials/head', { title: 'Test Creator' }) %>
 <body class="min-h-screen bg-gray-50 text-gray-900">
-  <%- include('../partials/sidebar') %>
+  <%- include('../partials/navbar') %>
+    <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen p-6 max-w-7xl mx-auto">
+  <div class="md:ml-60 pt-14 min-h-screen p-6 max-w-7xl mx-auto">
 
     <!-- Loading -->
     <div id="loading" class="flex items-center justify-center min-h-[60vh]"><div class="spinner"></div></div>
@@ -13,7 +14,7 @@
       <!-- Header -->
       <div class="flex items-center gap-4 mb-6">
         <button onclick="history.back()"
-                class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">←</button>
+                class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">â†</button>
         <div>
           <h1 id="test-title" class="text-2xl font-bold text-gray-800"></h1>
           <p id="test-meta"  class="text-sm text-gray-500"></p>
@@ -28,7 +29,7 @@
                  class="ml-2 w-16 px-2 py-1 border border-gray-300 rounded text-sm outline-none focus:ring-2 focus:ring-garud-accent"/>
         </label>
         <label class="text-sm font-medium text-gray-700">
-          −Marks per wrong:
+          âˆ’Marks per wrong:
           <input id="negative-marks" type="number" min="0" step="0.5" value="1"
                  class="ml-2 w-16 px-2 py-1 border border-gray-300 rounded text-sm outline-none focus:ring-2 focus:ring-garud-accent"/>
         </label>
@@ -55,7 +56,7 @@
         <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col">
           <div class="flex items-center justify-between px-6 py-4 border-b">
             <h3 class="font-bold text-gray-800">Add Questions to Section</h3>
-            <button onclick="closePicker()" class="text-gray-400 hover:text-gray-600 text-xl">✕</button>
+            <button onclick="closePicker()" class="text-gray-400 hover:text-gray-600 text-xl">âœ•</button>
           </div>
 
           <!-- Filters -->

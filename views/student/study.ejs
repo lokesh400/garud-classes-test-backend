@@ -1,9 +1,16 @@
 <%- include('../partials/head', { title: 'Study' }) %>
 <body class="min-h-screen bg-gray-50 text-gray-900">
-  <%- include('../partials/sidebar') %>
+  <%- include('../partials/navbar') %>
+    <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen p-6 max-w-4xl mx-auto">
-    <h2 class="text-2xl font-bold mb-4">My Purchased Test Series</h2>
+  <div class="md:ml-60 pt-14 min-h-screen p-6 max-w-3xl mx-auto">
+    <div class="mb-6 flex items-center justify-between">
+      <h2 class="text-2xl font-bold text-gray-800">My Purchased Series</h2>
+      <a href="/student/purchase-series"
+         class="text-sm px-4 py-2 border border-garud-highlight text-garud-highlight rounded-lg hover:bg-gray-100 transition">
+        + Browse More
+      </a>
+    </div>
     <div id="loading" class="py-8 text-center"><div class="spinner mx-auto"></div></div>
     <div id="main-content" class="hidden space-y-4"></div>
   </div>

@@ -1,8 +1,9 @@
 <%- include('../partials/head', { title: 'My Purchases' }) %>
 <body class="min-h-screen bg-gray-50 text-gray-900">
-  <%- include('../partials/sidebar') %>
+  <%- include('../partials/navbar') %>
+    <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen p-6 max-w-3xl mx-auto">
+  <div class="md:ml-60 pt-14 min-h-screen p-6 max-w-3xl mx-auto">
     <h2 class="text-2xl font-bold mb-4">My Purchases</h2>
     <div id="loading" class="py-8 text-center"><div class="spinner mx-auto"></div></div>
     <div id="main-content" class="hidden space-y-4"></div>

@@ -1,68 +1,61 @@
 const express = require('express');
 const Purchase = require('../models/Purchase');
-const TestSeries = require('../models/TestSeries');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
-// Check if user has purchased a specific test series
-router.get('/series/:seriesId', auth, async (req, res) => {
+/**
+ * Helper — resolves a Mongoose model by itemType string.
+ * Add new cases here as new purchasable types are introduced.
+ */
+function resolveModel(itemType) {
+  switch (itemType) {
+    case 'TestSeries': return require('../models/TestSeries');
+    default: return null;
+  }
+}
+
+// ─── Check if the current user has purchased a specific item ─────────────────
+// GET /api/purchase/check?itemType=TestSeries&itemId=<id>
+router.get('/check', auth, async (req, res) => {
   try {
-    const { seriesId } = req.params;
-    const purchase = await Purchase.findOne({ user: req.user._id, testSeries: seriesId, status: 'success' });
-    res.json({ purchased: !!purchase });
+    const { itemType, itemId } = req.query;
+    if (!itemType || !itemId) return res.status(400).json({ message: 'itemType and itemId are required' });
+    const purchase = await Purchase.findOne({
+      user: req.user._id,
+      itemType,
+      itemId,
+      status: 'success',
+    });
+    res.json({ purchased: !!purchase, purchase: purchase || null });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Get all purchases for a user
+// ─── Get all successful purchases for the current user ───────────────────────
+// GET /api/purchase/my?itemType=TestSeries   (itemType filter is optional)
 router.get('/my', auth, async (req, res) => {
   try {
-    const purchases = await Purchase.find({ user: req.user._id }).populate('testSeries');
+    const query = { user: req.user._id, status: 'success' };
+    if (req.query.itemType) query.itemType = req.query.itemType;
+    const purchases = await Purchase.find(query)
+      .populate('itemId')   // refPath auto-selects the right model
+      .sort({ createdAt: -1 });
     res.json(purchases);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
 
-// Record purchase after payment
-router.post('/record', auth, async (req, res) => {
+// ─── Admin: get all purchases for a specific item ────────────────────────────
+// GET /api/purchase/item/:itemType/:itemId
+router.get('/item/:itemType/:itemId', auth, async (req, res) => {
   try {
-    const { seriesId, amount, paymentId, status, method, details } = req.body;
-    const series = await TestSeries.findById(seriesId);
-    if (!series) return res.status(404).json({ message: 'Test series not found' });
-    const purchase = new Purchase({
-      user: req.user._id,
-      testSeries: seriesId,
-      amount,
-      paymentId,
-      status: status || 'success',
-      method: method || 'online',
-      details: details || {},
-    });
-    await purchase.save();
-    res.json({ success: true, purchase });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Record free access as purchase
-router.post('/record-free', auth, async (req, res) => {
-  try {
-    const { seriesId } = req.body;
-    const series = await TestSeries.findById(seriesId);
-    if (!series) return res.status(404).json({ message: 'Test series not found' });
-    const purchase = new Purchase({
-      user: req.user._id,
-      testSeries: seriesId,
-      amount: 0,
-      status: 'success',
-      method: 'free',
-      details: {},
-    });
-    await purchase.save();
-    res.json({ success: true, purchase });
+    const { itemType, itemId } = req.params;
+    const purchases = await Purchase.find({ itemType, itemId, status: 'success' })
+      .populate('user', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(purchases);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

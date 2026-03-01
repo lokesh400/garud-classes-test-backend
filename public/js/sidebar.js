@@ -34,6 +34,16 @@ function buildSidebar() {
   if (name)   name.textContent   = user.name;
   if (role)   role.textContent   = user.role;
 
+  // Populate top navbar
+  const navUser   = document.getElementById('navbar-user');
+  const navName   = document.getElementById('navbar-username');
+  const navRole   = document.getElementById('navbar-role');
+  const navAvatar = document.getElementById('navbar-avatar');
+  if (navUser)   { navUser.classList.remove('hidden'); navUser.classList.add('flex'); }
+  if (navName)   navName.textContent   = user.name;
+  if (navRole)   navRole.textContent   = user.role;
+  if (navAvatar) navAvatar.textContent = user.name.charAt(0).toUpperCase();
+
   const links = user.role === 'admin' ? ADMIN_LINKS : STUDENT_LINKS;
   const curr  = window.location.pathname;
 

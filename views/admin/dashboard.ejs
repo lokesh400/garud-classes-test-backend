@@ -1,8 +1,9 @@
 <%- include('../partials/head', { title: 'Admin Dashboard' }) %>
 <body class="min-h-screen bg-gray-50 text-gray-900">
-  <%- include('../partials/sidebar') %>
+  <%- include('../partials/navbar') %>
+    <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen">
+  <div class="md:ml-60 pt-14 min-h-screen">
     <div id="loading" class="flex items-center justify-center min-h-[60vh]">
       <div class="spinner"></div>
     </div>
@@ -17,7 +18,7 @@
       <div class="mt-10 bg-white rounded-xl shadow-md p-6">
         <h2 class="text-xl font-bold text-gray-800 mb-4">Quick Guide</h2>
         <div class="space-y-3 text-gray-600">
-          <p><span class="font-semibold text-garud-accent">1.</span> Go to <span class="font-semibold">Question Bank</span> to manage Subjects → Chapters → Topics</p>
+          <p><span class="font-semibold text-garud-accent">1.</span> Go to <span class="font-semibold">Question Bank</span> to manage Subjects â†’ Chapters â†’ Topics</p>
           <p><span class="font-semibold text-garud-accent">2.</span> Use the <span class="font-semibold">Upload</span> page to upload question images to Cloudinary</p>
           <p><span class="font-semibold text-garud-accent">3.</span> Create tests in the <span class="font-semibold">Tests</span> section with sections and assign questions</p>
           <p><span class="font-semibold text-garud-accent">4.</span> Publish tests to make them visible to students</p>

@@ -1,5 +1,6 @@
 const express = require('express');
 const Razorpay = require('razorpay');
+const crypto = require('crypto');
 const TestSeries = require('../models/TestSeries');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
@@ -33,7 +34,12 @@ router.post('/create-order', auth, async (req, res) => {
       payment_capture: 1,
     });
     console.log('[CREATE ORDER] Order created:', order);
-    res.json({ orderId: order.id, amount: order.amount, currency: order.currency });
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      razorpayKeyId: process.env.RAZORPAY_KEY_ID,
+    });
   } catch (error) {
     console.error('[CREATE ORDER] Error:', error);
     res.status(500).json({ message: error.message });
@@ -44,7 +50,21 @@ router.post('/create-order', auth, async (req, res) => {
 router.post('/verify', auth, async (req, res) => {
   try {
     console.log('[VERIFY] Body:', req.body, 'User:', req.user?._id);
-    const { seriesId, paymentId } = req.body;
+    const { seriesId, paymentId, orderId, signature } = req.body;
+
+    // Verify Razorpay payment signature
+    if (!orderId || !paymentId || !signature) {
+      return res.status(400).json({ message: 'Missing payment verification parameters' });
+    }
+    const expectedSignature = crypto
+      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+      .update(`${orderId}|${paymentId}`)
+      .digest('hex');
+    if (expectedSignature !== signature) {
+      console.log('[VERIFY] Signature mismatch');
+      return res.status(400).json({ message: 'Payment verification failed: invalid signature' });
+    }
+
     const series = await TestSeries.findById(seriesId);
     if (!series) {
       console.log('[VERIFY] Series not found');
@@ -54,22 +74,28 @@ router.post('/verify', auth, async (req, res) => {
       console.log('[VERIFY] Series is free');
       return res.status(400).json({ message: 'Test series is free' });
     }
-    // Optionally verify payment with Razorpay API
-    // For demo, just grant access
-    // purchasedBy logic removed; rely on Purchase model only
     // Record purchase
     const Purchase = require('../models/Purchase');
     const purchase = await Purchase.create({
-      user: req.user._id,
-      testSeries: seriesId,
-      amount: series.price,
-      paymentId,
-      status: 'success',
-      method: 'online',
-      details: {},
+      user:               req.user._id,
+      itemType:           'TestSeries',
+      itemId:             seriesId,
+      amount:             series.price,
+      method:             'online',
+      status:             'success',
+      razorpayOrderId:    orderId,
+      razorpayPaymentId:  paymentId,
+      razorpaySignature:  signature,
     });
-    console.log('[VERIFY] Purchase created:', purchase);
-    res.json({ success: true });
+    // Keep both sides in sync for quick access checks
+    const [updatedSeries, updatedUser] = await Promise.all([
+      TestSeries.findByIdAndUpdate(seriesId, { $addToSet: { purchasedBy: req.user._id } }, { new: true }),
+      require('../models/User').findByIdAndUpdate(req.user._id, { $addToSet: { purchasedSeries: seriesId } }, { new: true }),
+    ]);
+    console.log('[VERIFY] Purchase created:', purchase._id);
+    console.log('[VERIFY] TestSeries.purchasedBy count:', updatedSeries?.purchasedBy?.length);
+    console.log('[VERIFY] User.purchasedSeries count:', updatedUser?.purchasedSeries?.length);
+    res.json({ success: true, purchaseId: purchase._id });
   } catch (error) {
     console.error('[VERIFY] Error:', error);
     res.status(500).json({ message: error.message });
@@ -90,19 +116,25 @@ router.post('/free-access', auth, async (req, res) => {
       console.log('[FREE ACCESS] Series is not free');
       return res.status(400).json({ message: 'Test series is not free' });
     }
-    // purchasedBy logic removed; rely on Purchase model only
     // Record free purchase
     const Purchase = require('../models/Purchase');
     const purchase = await Purchase.create({
-      user: req.user._id,
-      testSeries: seriesId,
-      amount: 0,
-      status: 'success',
-      method: 'free',
-      details: {},
+      user:      req.user._id,
+      itemType:  'TestSeries',
+      itemId:    seriesId,
+      amount:    0,
+      method:    'free',
+      status:    'success',
     });
-    console.log('[FREE ACCESS] Purchase created:', purchase);
-    res.json({ success: true });
+    // Keep both sides in sync for quick access checks
+    const [updatedSeries, updatedUser] = await Promise.all([
+      TestSeries.findByIdAndUpdate(seriesId, { $addToSet: { purchasedBy: req.user._id } }, { new: true }),
+      require('../models/User').findByIdAndUpdate(req.user._id, { $addToSet: { purchasedSeries: seriesId } }, { new: true }),
+    ]);
+    console.log('[FREE ACCESS] Purchase created:', purchase._id);
+    console.log('[FREE ACCESS] TestSeries.purchasedBy count:', updatedSeries?.purchasedBy?.length);
+    console.log('[FREE ACCESS] User.purchasedSeries count:', updatedUser?.purchasedSeries?.length);
+    res.json({ success: true, purchaseId: purchase._id });
   } catch (error) {
     console.error('[FREE ACCESS] Error:', error);
     res.status(500).json({ message: error.message });

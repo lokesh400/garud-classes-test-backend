@@ -45,6 +45,13 @@ const userSchema = new mongoose.Schema({
     required: false,
     trim: true,
   },
+  // Quick-access list of purchased TestSeries ids.
+  // Source of truth is the Purchase collection; this is a denormalised cache
+  // for fast "has this user bought X?" checks without extra DB queries.
+  purchasedSeries: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TestSeries',
+  }],
 }, { timestamps: true });
 
 // Hash password before saving

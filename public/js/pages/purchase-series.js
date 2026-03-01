@@ -5,9 +5,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = requireAuth('student');
   if (!user) return;
 
-  let allSeries   = [];
+  let allSeries    = [];
   let purchasedIds = [];
-  let filter = 'all';
+  let filter       = 'all';
+  const seriesMap  = new Map(); // id → series object, avoids JSON-in-HTML issues
 
   async function loadRazorpay() {
     return new Promise(resolve => {
@@ -25,10 +26,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const [series, purchases] = await Promise.all([
         API.get('/test-series/published'),
-        API.get('/purchase/my'),
+        API.get('/purchase/my?itemType=TestSeries'),
       ]);
       allSeries    = series;
-      purchasedIds = purchases.map(p => p.testSeries?._id);
+      seriesMap.clear();
+      allSeries.forEach(s => seriesMap.set(s._id, s));
+      purchasedIds = purchases.map(p => p.itemId?._id);
       renderGrid();
     } catch { toast.error('Failed to load series'); }
     finally {
@@ -63,8 +66,8 @@ document.addEventListener('DOMContentLoaded', async () => {
               <span class="text-xl font-bold text-garud-highlight">₹${s.price || 0}</span>
               ${purchased
                 ? `<span class="px-5 py-2 bg-green-500 text-white rounded-lg font-semibold">Purchased</span>`
-                : `<button onclick="handleBuy('${s._id}', ${s.price || 0}, '${s.name.replace(/'/g,"\\'")}', '${(s.description||'').replace(/'/g,"\\'")}', '${s.currency||'INR'}')"
-                          class="px-5 py-2 bg-transparent border border-garud-highlight text-garud-highlight rounded-lg font-semibold hover:bg-gray-100 transition">
+                : `<button data-buy-id="${s._id}"
+                          class="btn-buy px-5 py-2 bg-transparent border border-garud-highlight text-garud-highlight rounded-lg font-semibold hover:bg-gray-100 transition">
                     Buy Now
                   </button>`}
             </div>
@@ -78,7 +81,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderGrid();
   });
 
-  window.handleBuy = async function(seriesId, price, name, description, currency) {
+  // Use event delegation — avoids broken inline onclick when name/description
+  // contain quotes, newlines or other special characters
+  document.getElementById('series-grid').addEventListener('click', async (e) => {
+    const btn = e.target.closest('.btn-buy');
+    if (!btn) return;
+    const seriesId = btn.dataset.buyId;
+    const s = seriesMap.get(seriesId);
+    if (!s) return;
+    await handleBuy(seriesId, s.price || 0, s.name, s.description || '', 'INR');
+  });
+
+  async function handleBuy(seriesId, price, name, description, currency) {
     if (price > 0) {
       const ok = await loadRazorpay();
       if (!ok) return toast.error('Failed to load payment gateway');
@@ -92,12 +106,18 @@ document.addEventListener('DOMContentLoaded', async () => {
           description,
           order_id:    data.orderId,
           handler: async (response) => {
-            await API.post('/payments/verify', { seriesId, paymentId: response.razorpay_payment_id });
-            toast.success('Payment successful! Access granted.');
-            // refetch
-            const purchases = await API.get('/purchase/my');
-            purchasedIds = purchases.map(p => p.testSeries?._id);
-            renderGrid();
+            try {
+              await API.post('/payments/verify', {
+                seriesId,
+                paymentId:  response.razorpay_payment_id,
+                orderId:    response.razorpay_order_id,
+                signature:  response.razorpay_signature,
+              });
+              toast.success('Payment successful! Access granted.');
+              const purchases = await API.get('/purchase/my?itemType=TestSeries');
+              purchasedIds = purchases.map(p => p.itemId?._id);
+              renderGrid();
+            } catch (err) { toast.error(err.message || 'Payment verification failed'); }
           },
           prefill: { name: user.name, email: user.email },
           theme: { color: '#e94560' },
@@ -108,12 +128,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       try {
         await API.post('/payments/free-access', { seriesId });
         toast.success('Enrolled successfully!');
-        const purchases = await API.get('/purchase/my');
-        purchasedIds = purchases.map(p => p.testSeries?._id);
+        const purchases = await API.get('/purchase/my?itemType=TestSeries');
+        purchasedIds = purchases.map(p => p.itemId?._id);
         renderGrid();
       } catch (err) { toast.error(err.message || 'Failed to enroll'); }
     }
-  };
+  }
 
   await fetchAll();
 });

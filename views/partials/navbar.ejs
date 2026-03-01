@@ -1,0 +1,34 @@
+<!-- Top Navbar — fixed across all pages -->
+<nav class="fixed top-0 left-0 right-0 h-14 bg-garud-accent text-white flex items-center px-4 z-50 shadow-md">
+
+  <!-- Hamburger (mobile only — toggles sidebar) -->
+  <button onclick="openSidebar()"
+          class="md:hidden mr-3 p-1.5 rounded hover:bg-white/10 transition"
+          aria-label="Open menu">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+    </svg>
+  </button>
+
+  <!-- Brand -->
+  <a href="/" class="flex items-center gap-2 select-none">
+    <span class="text-xl font-extrabold tracking-wide text-garud-highlight">GARUD</span>
+    <span class="text-xs text-white/60 mt-0.5 hidden sm:block">Classes</span>
+  </a>
+
+  <div class="flex-1"></div>
+
+  <!-- User info (populated by sidebar.js → buildSidebar) -->
+  <div id="navbar-user" class="hidden items-center gap-3">
+    <div class="flex flex-col items-end leading-tight">
+      <span id="navbar-username" class="text-sm font-semibold text-white"></span>
+      <span id="navbar-role" class="text-xs text-white/60 capitalize"></span>
+    </div>
+    <div id="navbar-avatar"
+         class="w-8 h-8 rounded-full bg-garud-highlight flex items-center justify-center
+                text-white font-bold text-sm flex-shrink-0">
+    </div>
+  </div>
+
+</nav>

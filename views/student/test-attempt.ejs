@@ -7,20 +7,43 @@
     <p class="text-gray-500 text-sm">Loading test…</p>
   </div>
 
-  <!-- Test UI (hidden until loaded) -->
-  <div id="test-ui" class="hidden flex flex-col min-h-screen">
+  <!-- Submit confirm modal -->
+  <div id="submit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+      <h2 class="text-xl font-bold text-gray-800 mb-2">Submit Test?</h2>
+      <p class="text-gray-500 text-sm mb-5">Once submitted you cannot change your answers.</p>
+      <div id="submit-stats" class="grid grid-cols-2 gap-3 mb-6 text-sm"></div>
+      <div class="flex gap-3 justify-end">
+        <button onclick="closeSubmitModal()"
+                class="px-5 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition font-medium">
+          Cancel
+        </button>
+        <button onclick="confirmSubmit()"
+                class="px-6 py-2 bg-garud-highlight text-white rounded-lg font-bold hover:opacity-90 transition">
+          Yes, Submit
+        </button>
+      </div>
+    </div>
+  </div>
 
-    <!-- Top bar -->
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between sticky top-0 z-20">
-      <h1 id="test-name" class="font-bold text-gray-800 text-sm"></h1>
-      <div class="flex items-center gap-4">
-        <!-- Timer -->
+  <!-- Test UI (hidden until loaded) -->
+  <div id="test-ui" class="hidden flex flex-col h-screen overflow-hidden">
+
+    <!-- Top bar (fixed) -->
+    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between z-20 shadow-sm flex-shrink-0">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-garud-accent flex items-center justify-center flex-shrink-0">
+          <span class="text-white text-xs font-bold">G</span>
+        </div>
+        <h1 id="test-name" class="font-bold text-gray-800 text-sm truncate"></h1>
+      </div>
+      <div class="flex items-center gap-3">
         <div id="timer"
-             class="font-mono font-bold text-lg px-3 py-1 rounded-lg bg-blue-50 text-blue-800"></div>
-        <!-- Mobile palette toggle -->
+             class="font-mono font-bold text-base px-3 py-1 rounded-lg bg-blue-50 text-blue-800 min-w-[72px] text-center"></div>
         <button onclick="togglePalette()"
-                class="md:hidden px-3 py-1 bg-gray-100 text-gray-700 rounded-lg text-sm">Palette</button>
-        <!-- Submit -->
+                class="md:hidden px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium">
+          ☰
+        </button>
         <button onclick="handleSubmit()"
                 class="px-4 py-2 bg-garud-highlight text-white rounded-lg text-sm font-bold hover:opacity-90 transition">
           Submit
@@ -28,38 +51,46 @@
       </div>
     </div>
 
-    <!-- Section tabs -->
+    <!-- Section tabs (fixed) -->
     <div id="section-tabs"
-         class="bg-white border-b border-gray-200 px-4 flex gap-1 overflow-x-auto"></div>
+         class="bg-white border-b border-gray-200 px-4 flex gap-0 overflow-x-auto flex-shrink-0"></div>
 
     <!-- Main layout -->
     <div class="flex flex-1 overflow-hidden">
 
-      <!-- Question area -->
-      <div class="flex-1 overflow-y-auto p-4 md:p-6">
-        <div class="bg-white rounded-xl shadow-sm p-6 max-w-3xl mx-auto">
+      <!-- Question area (only this scrolls) -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="bg-white min-h-full p-5 md:p-8">
 
-          <!-- Q number + type -->
-          <div class="flex items-center justify-between mb-4">
-            <span id="q-number" class="text-sm font-semibold text-gray-500"></span>
-            <span id="q-type"   class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium"></span>
+          <!-- Q number + type + marks -->
+          <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+            <div class="flex items-center gap-3">
+              <span id="q-number" class="text-sm font-semibold text-gray-500"></span>
+              <span id="q-type" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium"></span>
+            </div>
+            <div id="q-marks" class="flex items-center gap-2 text-xs font-medium">
+              <!-- filled by JS -->
+            </div>
           </div>
 
           <!-- Question image -->
-          <div class="mb-6 flex justify-center">
+          <div class="mb-6 bg-gray-50 rounded-lg overflow-hidden border min-h-[140px] flex items-start">
             <img id="q-image" alt="Question"
-                 class="max-h-72 object-contain rounded border bg-gray-50 w-full"/>
+                 class="max-h-[65vh] object-contain"
+                 onerror="this.parentElement.innerHTML='<span class=\'text-gray-400 text-sm p-4\'>Image unavailable</span>'"/>
           </div>
 
           <!-- MCQ options -->
-          <div id="mcq-options" class="space-y-3 mb-6 hidden">
-            <p class="text-sm font-medium text-gray-600">Select the correct option:</p>
-            <div class="grid grid-cols-2 gap-3" id="option-buttons"></div>
+          <div id="mcq-options" class="mb-6 hidden">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Select answer:</p>
+            <div class="flex flex-col gap-3" id="option-buttons"></div>
           </div>
 
           <!-- Numerical input -->
           <div id="num-input" class="mb-6 hidden">
-            <label class="block text-sm font-medium text-gray-600 mb-2">Enter numerical answer:</label>
+            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+              Enter numerical answer:
+            </label>
             <input id="numerical-answer" type="number" step="any"
                    class="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-lg text-lg font-mono
                           focus:border-blue-500 outline-none"
@@ -67,36 +98,41 @@
           </div>
 
           <!-- Action buttons (NTA-style) -->
-          <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
             <button onclick="handleSaveAndNext()"
                     class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition">
               Save &amp; Next
             </button>
             <button onclick="handleMarkAndNext()"
                     class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition">
-              Mark for Review &amp; Next
+              Mark &amp; Next
             </button>
             <button onclick="handleClearAnswer()"
                     class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
               Clear
             </button>
-            <button onclick="handlePrev()"
-                    class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
-              ← Prev
-            </button>
-            <button onclick="handleNext()"
-                    class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
-              Next →
-            </button>
+            <div class="ml-auto flex gap-2">
+              <button onclick="handlePrev()"
+                      class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
+                ← Prev
+              </button>
+              <button onclick="handleNext()"
+                      class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
+                Next →
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Right: Question palette -->
+      <!-- Right: Question palette (desktop) -->
       <div id="palette-panel"
-           class="hidden md:flex w-64 xl:w-72 bg-white border-l border-gray-200 flex-col overflow-hidden">
+           class="w-64 xl:w-72 bg-white border-l border-gray-200 flex-col overflow-hidden hidden md:flex">
+        <div class="p-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+          Question Palette
+        </div>
         <!-- Stats -->
-        <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1" id="palette-stats"></div>
+        <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1.5" id="palette-stats"></div>
         <!-- Palette scroll -->
         <div class="flex-1 overflow-y-auto p-3">
           <div id="palette-grid" class="grid grid-cols-5 gap-1.5"></div>
@@ -112,7 +148,11 @@
     <div id="palette-mobile"
          class="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-40
                 max-h-[70vh] overflow-hidden hidden flex-col">
-      <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1" id="palette-stats-mobile"></div>
+      <div class="flex items-center justify-between p-3 border-b border-gray-100">
+        <span class="text-sm font-semibold text-gray-700">Question Palette</span>
+        <button onclick="togglePalette()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+      </div>
+      <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1.5" id="palette-stats-mobile"></div>
       <div class="flex-1 overflow-y-auto p-3">
         <div id="palette-grid-mobile" class="grid grid-cols-6 gap-1.5"></div>
       </div>

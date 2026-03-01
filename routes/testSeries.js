@@ -53,7 +53,7 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
     if (!series) return res.status(404).json({ message: 'Test series not found' });
 
     // Fetch enrolled users with enrollment date from Purchase model
-    const purchases = await require('../models/Purchase').find({ testSeries: series._id, status: 'success' })
+    const purchases = await require('../models/Purchase').find({ itemType: 'TestSeries', itemId: series._id, status: 'success' })
       .populate('user', 'name email');
     const enrolledUsers = purchases.map(p => ({
       _id: p.user._id,

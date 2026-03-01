@@ -39,11 +39,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const statusClass = {
-    'not-visited':    'bg-[#c0c0c0] text-gray-700',
-    'not-answered':   'bg-[#e74c3c] text-white',
-    'answered':       'bg-[#27ae60] text-white',
-    'marked':         'bg-[#8e44ad] text-white',
-    'answered-marked':'bg-[#8e44ad] text-white ring-2 ring-[#27ae60] ring-offset-1',
+    'not-visited':     'bg-[#c0c0c0] text-gray-700',
+    'not-answered':    'bg-[#e74c3c] text-white',
+    'answered':        'bg-[#27ae60] text-white',
+    'marked':          'bg-[#8e44ad] text-white',
+    'answered-marked': 'bg-[#8e44ad] text-white ring-2 ring-[#27ae60] ring-offset-1',
   };
 
   // ── Start test ────────────────────────────────────────────────────
@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       startTimer();
       navigateTo(0, 0);
 
-      // Fullscreen
       if (document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
@@ -93,22 +92,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── UI initialisation ─────────────────────────────────────────────
   function initUI() {
     document.getElementById('test-name').textContent = test.name;
+    renderSectionTabs();
+  }
 
-    // Section tabs
+  function renderSectionTabs() {
     const tabsEl = document.getElementById('section-tabs');
-    tabsEl.innerHTML = test.sections.map((s, i) => `
-      <button id="tab-${i}" onclick="switchSection(${i})"
-              class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition
-                     ${i === 0 ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}">
-        ${s.name}
-      </button>`).join('');
+    tabsEl.innerHTML = test.sections.map((s, i) => {
+      const answered = s.questions.filter(q => {
+        const k = `${s._id}_${q.question._id}`;
+        const st = getStatus(k);
+        return st === 'answered' || st === 'answered-marked';
+      }).length;
+      const isActive = i === currentSection;
+      return `
+        <button id="tab-${i}" onclick="switchSection(${i})"
+                class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition flex items-center gap-1.5
+                       ${isActive ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}">
+          ${s.name}
+          <span class="text-xs ${isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'} rounded-full px-1.5 py-0.5 font-semibold">
+            ${answered}/${s.questions.length}
+          </span>
+        </button>`;
+    }).join('');
   }
 
   // ── Navigation ────────────────────────────────────────────────────
   function navigateTo(secIdx, qIdx) {
     currentSection  = secIdx;
     currentQuestion = qIdx;
-    const sec   = test.sections[secIdx];
+    const sec    = test.sections[secIdx];
     const qEntry = sec?.questions[qIdx];
     if (!qEntry) return;
 
@@ -118,24 +130,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderQuestion(sec, qEntry, key);
     renderPalette(false);
     renderPalette(true);
-    updateSectionTabs();
+    renderSectionTabs();
   }
 
   window.switchSection = function(idx) {
+    getCurrentAnswer();
     navigateTo(idx, 0);
   };
-
-  function updateSectionTabs() {
-    test.sections.forEach((_, i) => {
-      const btn = document.getElementById(`tab-${i}`);
-      if (!btn) return;
-      btn.className = `px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition ${
-        i === currentSection
-          ? 'border-blue-600 text-blue-600'
-          : 'border-transparent text-gray-500 hover:text-gray-700'
-      }`;
-    });
-  }
 
   // ── Render question ───────────────────────────────────────────────
   function renderQuestion(sec, qEntry, key) {
@@ -143,28 +144,45 @@ document.addEventListener('DOMContentLoaded', async () => {
     const ans  = answers[key];
     const isMcq = q.type === 'mcq';
 
+    // Number + type
     document.getElementById('q-number').textContent =
-      `Q ${currentQuestion + 1} of ${sec.questions.length}`;
-    document.getElementById('q-type').textContent   = q.type.toUpperCase();
-    document.getElementById('q-image').src          = q.imageUrl;
+      `Q ${currentQuestion + 1} / ${sec.questions.length}`;
+    document.getElementById('q-type').textContent = q.type.toUpperCase();
+
+    // Marks badge
+    const marksEl = document.getElementById('q-marks');
+    marksEl.innerHTML = `
+      <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">
+        +${qEntry.positiveMarks}
+      </span>
+      <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">
+        −${qEntry.negativeMarks}
+      </span>`;
+
+    // Image
+    const imgEl = document.getElementById('q-image');
+    imgEl.src = q.imageUrl || '';
+    imgEl.style.display = q.imageUrl ? 'block' : 'none';
 
     // MCQ / Numerical toggle
     document.getElementById('mcq-options').classList.toggle('hidden', !isMcq);
     document.getElementById('num-input').classList.toggle('hidden', isMcq);
 
     if (isMcq) {
-      const opts = ['A','B','C','D'];
+      const opts = ['A', 'B', 'C', 'D'];
       document.getElementById('option-buttons').innerHTML = opts.map(opt => {
         const selected = ans?.selectedOption === opt;
         return `
           <button onclick="selectMcq('${opt}')"
-                  class="flex items-center gap-2 px-4 py-3 rounded-lg border-2 font-medium text-sm transition
-                         ${selected ? 'border-blue-600 bg-blue-50 text-blue-800' : 'border-gray-200 text-gray-700 hover:border-blue-300'}">
-            <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold
+                  class="flex items-center gap-3 px-4 py-4 rounded-xl border-2 font-medium text-sm transition w-full text-left
+                         ${selected
+                           ? 'border-blue-600 bg-blue-50 text-blue-800 shadow-sm'
+                           : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-gray-50'}">
+            <span class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
                          ${selected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}">
               ${opt}
             </span>
-            Option ${opt}
+            <span>Option ${opt}</span>
           </button>`;
       }).join('');
     } else {
@@ -216,7 +234,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.handleSaveAndNext = function() {
     const { sec, qEntry, key } = getCurrentAnswer();
     saveAnswer(sec, qEntry, key);
-    delete reviewed[key]; // unmark review if was marked
+    delete reviewed[key];
+    renderSectionTabs();
     goNext();
   };
 
@@ -224,6 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const { sec, qEntry, key } = getCurrentAnswer();
     reviewed[key] = true;
     saveAnswer(sec, qEntry, key);
+    renderSectionTabs();
     goNext();
   };
 
@@ -237,10 +257,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderQuestion(sec, qEntry, key);
     renderPalette(false);
     renderPalette(true);
+    renderSectionTabs();
   };
 
   window.handlePrev = function() {
-    getCurrentAnswer(); // persist numerical input
+    getCurrentAnswer();
     if (currentQuestion > 0) {
       navigateTo(currentSection, currentQuestion - 1);
     } else if (currentSection > 0) {
@@ -279,6 +300,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const isActive = qi === currentQuestion;
       return `
         <button onclick="navigateTo(${currentSection}, ${qi})"
+                title="Question ${qi + 1}"
                 class="w-8 h-8 rounded text-xs font-bold transition
                        ${statusClass[st]}
                        ${isActive ? 'ring-2 ring-blue-400 ring-offset-1 scale-110' : 'hover:scale-105'}">
@@ -291,18 +313,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     test.sections.forEach(s => s.questions.forEach(q => {
       const k  = `${s._id}_${q.question._id}`;
       const st = getStatus(k);
-      if (st === 'answered')        answered++;
-      else if (st === 'not-answered')  notAnswered++;
-      else if (st === 'marked')        marked++;
-      else if (st === 'answered-marked') answeredMarked++;
-      else                             notVisited++;
+      if      (st === 'answered')         answered++;
+      else if (st === 'not-answered')     notAnswered++;
+      else if (st === 'marked')           marked++;
+      else if (st === 'answered-marked')  answeredMarked++;
+      else                                notVisited++;
     }));
 
     stats.innerHTML = `
-      <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-[#27ae60] inline-block"></span>${answered} Answered</div>
-      <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-[#e74c3c] inline-block"></span>${notAnswered} Not Answered</div>
-      <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-[#8e44ad] inline-block"></span>${marked} Marked</div>
-      <div class="flex items-center gap-1"><span class="w-3 h-3 rounded-sm bg-[#c0c0c0] inline-block"></span>${notVisited} Not Visited</div>`;
+      <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#27ae60] inline-block"></span><span>${answered} Answered</span></div>
+      <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#e74c3c] inline-block"></span><span>${notAnswered} Not Answered</span></div>
+      <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#8e44ad] inline-block"></span><span>${marked + answeredMarked} Marked</span></div>
+      <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#c0c0c0] inline-block"></span><span>${notVisited} Not Visited</span></div>`;
   }
 
   // ── Palette toggle (mobile) ───────────────────────────────────────
@@ -311,9 +333,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     const panel   = document.getElementById('palette-mobile');
     overlay.classList.toggle('hidden');
     panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) {
+      renderPalette(true);
+    }
   };
 
-  // Navigate to question from palette
   window.navigateTo = navigateTo;
 
   // ── Timer ─────────────────────────────────────────────────────────
@@ -338,14 +362,55 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? `${hrs}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`
       : `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
     el.textContent = str;
-    el.className   = `font-mono font-bold text-lg px-3 py-1 rounded-lg ${
-      timeLeft < 300 ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-800'
+    el.className   = `font-mono font-bold text-base px-3 py-1 rounded-lg min-w-[72px] text-center ${
+      timeLeft < 300 ? 'bg-red-100 text-red-700 animate-pulse' : 'bg-blue-50 text-blue-800'
     }`;
   }
 
-  // ── Submit ────────────────────────────────────────────────────────
+  // ── Submit modal ──────────────────────────────────────────────────
   window.handleSubmit = function() {
-    if (!confirm('Are you sure you want to submit the test? You cannot change answers after submission.')) return;
+    // Tally counts for modal
+    let answered = 0, notAnswered = 0, notVisited = 0, marked = 0;
+    test.sections.forEach(s => s.questions.forEach(q => {
+      const k  = `${s._id}_${q.question._id}`;
+      const st = getStatus(k);
+      if      (st === 'answered' || st === 'answered-marked') answered++;
+      else if (st === 'not-answered')  notAnswered++;
+      else if (st === 'marked')        marked++;
+      else                             notVisited++;
+    }));
+
+    document.getElementById('submit-stats').innerHTML = `
+      <div class="flex items-center gap-2 bg-green-50 rounded-lg p-2">
+        <span class="w-3 h-3 rounded-sm bg-[#27ae60] flex-shrink-0"></span>
+        <span class="font-semibold text-green-700">${answered}</span>
+        <span class="text-gray-500">Answered</span>
+      </div>
+      <div class="flex items-center gap-2 bg-red-50 rounded-lg p-2">
+        <span class="w-3 h-3 rounded-sm bg-[#e74c3c] flex-shrink-0"></span>
+        <span class="font-semibold text-red-700">${notAnswered}</span>
+        <span class="text-gray-500">Not Answered</span>
+      </div>
+      <div class="flex items-center gap-2 bg-purple-50 rounded-lg p-2">
+        <span class="w-3 h-3 rounded-sm bg-[#8e44ad] flex-shrink-0"></span>
+        <span class="font-semibold text-purple-700">${marked}</span>
+        <span class="text-gray-500">Marked</span>
+      </div>
+      <div class="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+        <span class="w-3 h-3 rounded-sm bg-[#c0c0c0] flex-shrink-0"></span>
+        <span class="font-semibold text-gray-600">${notVisited}</span>
+        <span class="text-gray-500">Not Visited</span>
+      </div>`;
+
+    document.getElementById('submit-modal').classList.remove('hidden');
+  };
+
+  window.closeSubmitModal = function() {
+    document.getElementById('submit-modal').classList.add('hidden');
+  };
+
+  window.confirmSubmit = function() {
+    document.getElementById('submit-modal').classList.add('hidden');
     submitTest(false);
   };
 
@@ -354,7 +419,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       await API.post(`/tests/${testId}/submit`);
       toast.success(auto ? 'Time up! Test auto-submitted.' : 'Test submitted successfully!');
-      // Exit fullscreen
       if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
       window.location.href = `/student/results/${testId}`;
     } catch { toast.error('Failed to submit test'); }
@@ -362,7 +426,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await startTest();
 
-  // Exit fullscreen on unload
   window.addEventListener('beforeunload', () => {
     if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
   });

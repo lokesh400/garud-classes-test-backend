@@ -3,6 +3,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+const http = require('http');
+const https = require('https');
 
 const Purchase = require('./models/Purchase');
 const { auth } = require('./middleware/auth');
@@ -30,6 +32,17 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Allow Razorpay checkout iframe to use sensors required for fraud detection
+app.use((req, res, next) => {
+  res.setHeader(
+    'Permissions-Policy',
+    'accelerometer=*, gyroscope=*, magnetometer=*, payment=*, camera=*'
+  );
+  // Prevent clickjacking on non-payment pages while allowing Razorpay iframe
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+
 // Page routes (EJS views)
 app.use('/', require('./routes/pages'));
 
@@ -46,10 +59,35 @@ const purchaseRouter = require('./routes/purchase');
 app.use('/api/payments', paymentsRouter);
 app.use('/api/purchase', purchaseRouter);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Garud Classes Test Portal API is running' });
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
 });
+
+function startKeepAlive() {
+  const url ="https://test.garudclasses.com/"; // RENDER_EXTERNAL_URL from environment
+  if (!url) {
+    console.warn("⚠️ RENDER_EXTERNAL_URL not set, keep-alive disabled");
+    return;
+  }
+  const isHttps = url.startsWith("https");
+  const client = isHttps ? https : http;
+  const pingUrl = `${url}/health`;
+  setInterval(() => {
+    const req = client.get(pingUrl, (res) => {
+      console.log(`🔄 Keep-alive ping → ${res.statusCode}`);
+      res.resume();
+    });
+    req.on("error", (err) => {
+      console.error("❌ Keep-alive error:", err.message);
+    });
+    req.setTimeout(5000, () => {
+      console.warn("⏱️ Keep-alive timeout");
+      req.destroy();
+    });
+  }, 10000);
+}
+
+startKeepAlive();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
