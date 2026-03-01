@@ -1,0 +1,34 @@
+<%- include('../partials/head', { title: 'Results' }) %>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen p-6 max-w-5xl mx-auto">
+    <div id="loading" class="flex items-center justify-center min-h-[60vh]"><div class="spinner"></div></div>
+    <div id="main-content" class="hidden">
+
+      <!-- Header -->
+      <div class="flex items-center gap-4 mb-6">
+        <button onclick="window.location.href='/student/dashboard'"
+                class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">←</button>
+        <div>
+          <h1 id="test-title"    class="text-2xl font-bold text-gray-800"></h1>
+          <p  id="submitted-at"  class="text-sm text-gray-500"></p>
+        </div>
+      </div>
+
+      <!-- Score cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8" id="score-cards"></div>
+
+      <!-- Section breakdown -->
+      <div id="sections-review"></div>
+    </div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/results.js"></script>
+</body>
+</html>

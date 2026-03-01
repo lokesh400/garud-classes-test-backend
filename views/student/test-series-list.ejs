@@ -1,0 +1,18 @@
+<%- include('../partials/head', { title: 'Test Series' }) %>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen p-6 max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold mb-6">Test Series</h1>
+    <div id="loading" class="flex items-center justify-center py-12"><div class="spinner"></div></div>
+    <div id="series-grid" class="hidden grid gap-6 grid-cols-1 md:grid-cols-2"></div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/student-test-series-list.js"></script>
+</body>
+</html>

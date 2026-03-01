@@ -1,27 +1,39 @@
+// EJS route: Study page (purchased test series)
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
+
+const Purchase = require('./models/Purchase');
+const { auth } = require('./middleware/auth');
 
 // Connect to database
 connectDB();
 
 const app = express();
 
-// Middleware
+
+// Set EJS as view engine
+app.set('view engine', 'ejs');
+app.set('views', __dirname + '/views');
+app.use(express.static(__dirname + '/public'));
+
 // app.use(cors());
 app.use(cors({
   origin: [
-    "http://localhost:5173",
-    "https://garud-classes-test-portal.vercel.app",
-    "https://testportal.garudclasses.com",
+    "http://localhost:5000",
+    "http://localhost:3000",
+    "https://test.garudclasses.com"
   ],
   credentials: true
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Routes
+// Page routes (EJS views)
+app.use('/', require('./routes/pages'));
+
+// API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/subjects', require('./routes/subjects'));
 app.use('/api/chapters', require('./routes/chapters'));

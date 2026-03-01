@@ -1,0 +1,42 @@
+<%- include('../partials/head', { title: 'Test Results' }) %>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen p-6 max-w-5xl mx-auto">
+    <div class="flex items-center gap-4 mb-6">
+      <button onclick="window.location.href='/admin/tests'"
+              class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">←</button>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">Test Results</h1>
+        <p id="test-name" class="text-sm text-gray-500"></p>
+      </div>
+    </div>
+
+    <div id="loading" class="flex items-center justify-center py-12"><div class="spinner"></div></div>
+
+    <div id="table-wrap" class="hidden bg-white rounded-xl shadow-md overflow-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Rank</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Student</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Email</th>
+            <th class="text-right px-4 py-3 font-medium text-gray-600">Score</th>
+            <th class="text-right px-4 py-3 font-medium text-gray-600">Max</th>
+            <th class="text-right px-4 py-3 font-medium text-gray-600">%</th>
+            <th class="text-right px-4 py-3 font-medium text-gray-600">Submitted</th>
+          </tr>
+        </thead>
+        <tbody id="results-body" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/test-results.js"></script>
+</body>
+</html>

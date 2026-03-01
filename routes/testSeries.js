@@ -2,10 +2,23 @@ const express = require('express');
 const TestSeries = require('../models/TestSeries');
 const TestAttempt = require('../models/TestAttempt');
 const { auth, adminOnly } = require('../middleware/auth');
+const upload = require('../middleware/upload');
+const { uploadToSubjectCloud } = require('../config/cloudinary');
 
 const router = express.Router();
 
 // ==================== ADMIN ROUTES ====================
+
+// Upload banner image for a test series
+router.post('/upload-banner', auth, adminOnly, upload.single('banner'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No image uploaded' });
+    const result = await uploadToSubjectCloud(req.file.buffer, 'Physics', 'garud-series-banners');
+    res.json({ url: result.secure_url });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 // Get all test series (admin)
 router.get('/admin/all', auth, adminOnly, async (req, res) => {
@@ -38,7 +51,18 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
       });
 
     if (!series) return res.status(404).json({ message: 'Test series not found' });
-    res.json(series);
+
+    // Fetch enrolled users with enrollment date from Purchase model
+    const purchases = await require('../models/Purchase').find({ testSeries: series._id, status: 'success' })
+      .populate('user', 'name email');
+    const enrolledUsers = purchases.map(p => ({
+      _id: p.user._id,
+      name: p.user.name,
+      email: p.user.email,
+      enrolledAt: p.createdAt
+    }));
+
+    res.json({ ...series.toObject(), enrolledUsers });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -47,10 +71,14 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
 // Create test series (admin)
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, price, tags, madeFor, image } = req.body;
     const series = new TestSeries({
       name,
       description,
+      price: price || 0,
+      tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [],
+      madeFor: madeFor || 'other',
+      image: image || '',
       tests: [],
       createdBy: req.user._id,
     });
@@ -188,6 +216,10 @@ router.get('/published', auth, async (req, res) => {
           _id: series._id,
           name: series.name,
           description: series.description,
+          price: series.price,
+          tags: series.tags,
+          madeFor: series.madeFor,
+          image: series.image,
           tests: testsWithInfo,
           createdAt: series.createdAt,
         };
@@ -239,6 +271,10 @@ router.get('/published/:id', auth, async (req, res) => {
       _id: series._id,
       name: series.name,
       description: series.description,
+      price: series.price,
+      tags: series.tags,
+      madeFor: series.madeFor,
+      image: series.image,
       tests: testsWithInfo,
       createdAt: series.createdAt,
     });

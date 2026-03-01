@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= typeof title !== 'undefined' ? title + ' — GARUD Classes' : 'GARUD Classes Test Portal' %></title>
+  <!-- Tailwind CDN Play CDN (supports config customisation) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              50:  '#eff6ff',
+              100: '#dbeafe',
+              200: '#bfdbfe',
+              300: '#93c5fd',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            garud: {
+              dark:      '#1a1a2e',
+              mid:       '#16213e',
+              accent:    '#0f3460',
+              highlight: '#e94560',
+            },
+          },
+        },
+      },
+    };
+  </script>
+  <style type="text/tailwindcss">
+    /* Custom scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+    /* Spinner utility */
+    .spinner {
+      border: 3px solid #e5e7eb;
+      border-top-color: #e94560;
+      border-radius: 50%;
+      width: 2.5rem;
+      height: 2.5rem;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    #toast-container {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .toast {
+      min-width: 220px;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.625rem;
+      background: #333;
+      color: #fff;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,.25);
+      animation: slideIn 0.25s ease;
+    }
+    .toast.success { background: #16a34a; }
+    .toast.error   { background: #dc2626; }
+    @keyframes slideIn {
+      from { transform: translateX(110%); opacity: 0; }
+      to   { transform: translateX(0);   opacity: 1; }
+    }
+  </style>
+</head>

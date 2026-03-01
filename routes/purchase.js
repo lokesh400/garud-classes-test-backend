@@ -4,6 +4,17 @@ const TestSeries = require('../models/TestSeries');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
+// Check if user has purchased a specific test series
+router.get('/series/:seriesId', auth, async (req, res) => {
+  try {
+    const { seriesId } = req.params;
+    const purchase = await Purchase.findOne({ user: req.user._id, testSeries: seriesId, status: 'success' });
+    res.json({ purchased: !!purchase });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get all purchases for a user
 router.get('/my', auth, async (req, res) => {
   try {

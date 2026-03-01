@@ -1,0 +1,23 @@
+<%- include('../partials/head', { title: 'Enrolled Users' }) %>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen p-6 max-w-3xl mx-auto">
+    <div class="flex items-center gap-4 mb-6">
+      <button onclick="history.back()"
+              class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">←</button>
+      <h1 class="text-2xl font-bold text-gray-800">Enrolled Users</h1>
+    </div>
+
+    <div id="loading" class="flex items-center justify-center py-12"><div class="spinner"></div></div>
+    <div id="main-content" class="hidden"></div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/test-series-enrolled.js"></script>
+</body>
+</html>

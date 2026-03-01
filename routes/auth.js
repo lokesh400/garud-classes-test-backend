@@ -5,6 +5,10 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+router.get('/login', (req, res) => {
+  res.render('login');
+});
+
 // Register
 router.post('/register', async (req, res) => {
   try {
@@ -86,7 +90,6 @@ router.get('/me', auth, async (req, res) => {
   });
 });
 
-module.exports = router;
 // Student profile update
 router.put('/student/profile', auth, async (req, res) => {
   try {
@@ -104,3 +107,6 @@ router.put('/student/profile', auth, async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
+module.exports = router;

@@ -1,0 +1,19 @@
+<%- include('../partials/head', { title: 'Dashboard' }) %>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 md:pt-0 min-h-screen flex flex-col items-center justify-center w-full">
+    <h1 class="text-4xl font-bold text-primary-600 mb-4">Welcome to Garud Classes!</h1>
+    <p class="text-lg text-gray-600">Your personalized dashboard will appear here soon.</p>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => requireAuth('student'));
+  </script>
+</body>
+</html>
