@@ -1,12 +1,70 @@
 <%- include('../partials/head', { title: 'Test' }) %>
 <body class="bg-[#f0f2f5] min-h-screen">
 
-  <%- include('../partials/navbar') %>
-
   <!-- Loading -->
-  <div id="loading" class="flex flex-col items-center justify-center min-h-screen pt-14">
+  <div id="loading" class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-garud-dark to-garud-accent">
     <div class="spinner mb-3"></div>
-    <p class="text-gray-500 text-sm">Loading test…</p>
+    <p class="text-white/60 text-sm">Loading test…</p>
+  </div>
+
+  <!-- Start screen (shown after data loads, before fullscreen) -->
+  <div id="start-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center
+       bg-gradient-to-br from-garud-dark via-garud-mid to-garud-accent">
+    <!-- Decorative blobs -->
+    <div class="absolute top-[-80px] left-[-80px] w-80 h-80 bg-garud-highlight/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-[-60px] right-[-60px] w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 text-center px-6 max-w-lg w-full fade-up">
+      <!-- Brand -->
+      <div class="flex items-center justify-center gap-2.5 mb-8">
+        <div class="w-10 h-10 rounded-xl bg-garud-highlight flex items-center justify-center">
+          <span class="text-white font-black text-lg">G</span>
+        </div>
+        <span class="text-2xl font-black text-white">GARUD <span class="text-garud-highlight">Classes</span></span>
+      </div>
+
+      <!-- Test card -->
+      <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-8 mb-6">
+        <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">Exam Ready</p>
+        <h1 id="start-test-name" class="text-2xl font-bold text-white mb-1"></h1>
+        <p id="start-test-meta" class="text-white/50 text-sm mb-6"></p>
+
+        <div class="grid grid-cols-3 gap-3 mb-6 text-center">
+          <div class="bg-white/10 rounded-xl p-3">
+            <p class="text-xl font-bold text-white" id="start-qs">—</p>
+            <p class="text-white/50 text-xs mt-0.5">Questions</p>
+          </div>
+          <div class="bg-white/10 rounded-xl p-3">
+            <p class="text-xl font-bold text-white" id="start-duration">—</p>
+            <p class="text-white/50 text-xs mt-0.5">Minutes</p>
+          </div>
+          <div class="bg-white/10 rounded-xl p-3">
+            <p class="text-xl font-bold text-white" id="start-marks">—</p>
+            <p class="text-white/50 text-xs mt-0.5">Max Marks</p>
+          </div>
+        </div>
+
+        <div class="bg-yellow-500/15 border border-yellow-400/30 rounded-xl px-4 py-3 text-yellow-200 text-xs text-left mb-6">
+          <p class="font-semibold mb-1">&#9888; Before you begin:</p>
+          <ul class="space-y-0.5 text-yellow-200/80">
+            <li>• The exam will open in <strong>full screen</strong>. Do not exit.</li>
+            <li>• Ensure a stable internet connection.</li>
+            <li>• The timer starts immediately on clicking Start.</li>
+          </ul>
+        </div>
+
+        <button id="start-exam-btn"
+                class="w-full py-4 bg-garud-highlight text-white font-bold text-lg rounded-2xl
+                       hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-garud-highlight/30">
+          Start Exam &rarr;
+        </button>
+      </div>
+
+      <button onclick="window.history.back()"
+              class="text-white/40 hover:text-white/70 text-sm transition">
+        ← Go Back
+      </button>
+    </div>
   </div>
 
   <!-- Submit confirm modal -->
@@ -29,7 +87,7 @@
   </div>
 
   <!-- Test UI (hidden until loaded) -->
-  <div id="test-ui" class="hidden flex flex-col h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
+  <div id="test-ui" class="hidden flex flex-col h-screen overflow-hidden">
 
     <!-- Top bar (fixed) -->
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between z-20 shadow-sm flex-shrink-0">

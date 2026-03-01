@@ -78,5 +78,68 @@
       from { transform: translateX(110%); opacity: 0; }
       to   { transform: translateX(0);   opacity: 1; }
     }
+
+    /* ── Page & card animations ────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .page-body      { animation: fadeIn 0.3s ease-out both; }
+    .fade-up        { animation: fadeUp 0.4s ease-out both; }
+    .fade-up-1      { animation: fadeUp 0.4s ease-out 0.07s both; }
+    .fade-up-2      { animation: fadeUp 0.4s ease-out 0.14s both; }
+    .fade-up-3      { animation: fadeUp 0.4s ease-out 0.21s both; }
+
+    /* ── Lift cards on hover ───────────────────────────────── */
+    .lift { transition: box-shadow 0.25s ease, transform 0.22s ease; }
+    .lift:hover {
+      box-shadow: 0 14px 40px rgba(15,52,96,0.14) !important;
+      transform: translateY(-3px);
+    }
+
+    /* ── Gradient page header strip ─────────────────────────── */
+    .page-header {
+      background: linear-gradient(135deg, #0f3460 0%, #16213e 60%, #1a1a2e 100%);
+      position: relative; overflow: hidden;
+    }
+    .page-header::before {
+      content: ''; position: absolute; top: -50%; right: -5%;
+      width: 260px; height: 260px;
+      background: rgba(233,69,96,0.09); border-radius: 50%;
+    }
+    .page-header::after {
+      content: ''; position: absolute; bottom: -40%; right: 18%;
+      width: 130px; height: 130px;
+      background: rgba(233,69,96,0.05); border-radius: 50%;
+    }
+
+    /* ── Improved scrollbar ────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #0f3460; }
+
+    /* ── Stat card gradient accents ───────────────────────── */
+    .stat-card { position: relative; overflow: hidden; }
+    .stat-card::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 4px; height: 100%; border-radius: 4px 0 0 4px;
+    }
+    .stat-blue::before  { background: #3b82f6; }
+    .stat-green::before { background: #10b981; }
+    .stat-red::before   { background: #e94560; }
+    .stat-amber::before { background: #f59e0b; }
+
+    /* ── Focus ring polish ─────────────────────────────────── */
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(15,52,96,0.12);
+    }
+    button { transition: opacity 0.18s, background 0.18s, transform 0.15s, box-shadow 0.18s; }
+    button:active { transform: scale(0.97); }
   </style>
 </head>

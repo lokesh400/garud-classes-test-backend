@@ -1,18 +1,24 @@
 <%- include('../partials/head', { title: 'Question Bank' }) %>
-<body class="min-h-screen bg-gray-50 text-gray-900">
+<body class="min-h-screen bg-slate-50 text-gray-900">
   <%- include('../partials/navbar') %>
   <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 min-h-screen p-6 max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Question Bank Manager</h1>
+  <div class="md:ml-60 pt-14 min-h-screen page-body">
+    <!-- Page Header -->
+    <div class="page-header px-6 md:px-8 py-7 fade-up">
+      <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
+      <h1 class="text-2xl md:text-3xl font-bold text-white">Question Bank Manager</h1>
+      <p class="text-white/60 text-sm mt-1">Manage subjects, chapters and topics</p>
+    </div>
 
+    <div class="p-6 md:p-8">
     <!-- Add Forms -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
 
       <!-- Add Subject -->
-      <form id="add-subject-form" class="bg-white rounded-xl shadow-md p-4">
+      <form id="add-subject-form" class="bg-white rounded-2xl shadow-sm border border-gray-100 lift p-5 fade-up">
         <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-          <span class="text-blue-500">Ã°Å¸â€œÅ¡</span> Add Subject
+          <span class="text-blue-500">📚</span> Add Subject
         </h3>
         <div class="flex gap-2">
           <input id="new-subject" type="text" placeholder="Subject name"
@@ -23,9 +29,9 @@
       </form>
 
       <!-- Add Chapter -->
-      <form id="add-chapter-form" class="bg-white rounded-xl shadow-md p-4">
+      <form id="add-chapter-form" class="bg-white rounded-2xl shadow-sm border border-gray-100 lift p-5 fade-up-1">
         <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-          <span class="text-green-500">Ã°Å¸â€œâ€˜</span> Add Chapter
+          <span class="text-green-500">📖</span> Add Chapter
         </h3>
         <select id="chapter-subject-select"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-green-400 outline-none">
@@ -40,9 +46,9 @@
       </form>
 
       <!-- Add Topic -->
-      <form id="add-topic-form" class="bg-white rounded-xl shadow-md p-4">
+      <form id="add-topic-form" class="bg-white rounded-2xl shadow-sm border border-gray-100 lift p-5 fade-up-2">
         <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-          <span class="text-purple-500">Ã°Å¸ÂÂ·</span> Add Topic
+          <span class="text-purple-500">🔷</span> Add Topic
         </h3>
         <select id="topic-chapter-select"
                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-purple-400 outline-none">
@@ -58,33 +64,34 @@
     </div>
 
     <!-- Three-column browser -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
       <!-- Subjects -->
-      <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <div class="bg-blue-50 px-4 py-3 border-b flex items-center gap-2">
-          <span class="text-blue-500 font-semibold text-sm">Ã°Å¸â€œÅ¡ Subjects</span>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lift fade-up">
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center gap-2">
+          <span class="text-white font-semibold text-sm">📚 Subjects</span>
         </div>
         <div id="subjects-list" class="divide-y divide-gray-100 max-h-96 overflow-y-auto"></div>
       </div>
 
       <!-- Chapters -->
-      <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <div class="bg-green-50 px-4 py-3 border-b">
-          <span class="text-green-600 font-semibold text-sm">Ã°Å¸â€œâ€˜ Chapters</span>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lift fade-up-1">
+        <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 px-4 py-3">
+          <span class="text-white font-semibold text-sm">📖 Chapters</span>
           <span id="chapters-title" class="text-xs text-gray-400 ml-2"></span>
         </div>
         <div id="chapters-list" class="divide-y divide-gray-100 max-h-96 overflow-y-auto"></div>
       </div>
 
       <!-- Topics -->
-      <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <div class="bg-purple-50 px-4 py-3 border-b">
-          <span class="text-purple-600 font-semibold text-sm">Ã°Å¸ÂÂ· Topics</span>
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lift fade-up-2">
+        <div class="bg-gradient-to-r from-violet-500 to-violet-600 px-4 py-3">
+          <span class="text-white font-semibold text-sm">🔷 Topics</span>
           <span id="topics-title" class="text-xs text-gray-400 ml-2"></span>
         </div>
         <div id="topics-list" class="divide-y divide-gray-100 max-h-96 overflow-y-auto"></div>
       </div>
     </div>
+    </div><!-- /p-6 md:p-8 -->
   </div>
 
   <%- include('../partials/toast') %>

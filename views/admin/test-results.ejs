@@ -1,36 +1,41 @@
 <%- include('../partials/head', { title: 'Test Results' }) %>
-<body class="min-h-screen bg-gray-50 text-gray-900">
+<body class="min-h-screen bg-slate-50 text-gray-900">
   <%- include('../partials/navbar') %>
   <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 min-h-screen p-6 max-w-5xl mx-auto">
-    <div class="flex items-center gap-4 mb-6">
-      <button onclick="window.location.href='/admin/tests'"
-              class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">Ã¢â€ Â</button>
-      <div>
-        <h1 class="text-2xl font-bold text-gray-800">Test Results</h1>
-        <p id="test-name" class="text-sm text-gray-500"></p>
+  <div class="md:ml-60 pt-14 min-h-screen page-body">
+    <div class="page-header px-6 md:px-8 py-7 fade-up">
+      <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
+      <div class="flex items-center gap-3">
+        <button onclick="window.location.href='/admin/tests'"
+                class="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition">&larr;</button>
+        <div>
+          <h1 class="text-2xl md:text-3xl font-bold text-white">Test Results</h1>
+          <p id="test-name" class="text-white/60 text-sm mt-0.5"></p>
+        </div>
       </div>
     </div>
 
-    <div id="loading" class="flex items-center justify-center py-12"><div class="spinner"></div></div>
+    <div class="p-6 md:p-8">
+    <div id="loading" class="flex items-center justify-center py-16"><div class="spinner"></div></div>
 
-    <div id="table-wrap" class="hidden bg-white rounded-xl shadow-md overflow-auto">
+    <div id="table-wrap" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-auto fade-up-1">
       <table class="w-full text-sm">
-        <thead class="bg-gray-50">
+        <thead class="bg-gradient-to-r from-garud-accent to-garud-mid text-white">
           <tr>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Rank</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Student</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Email</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">Score</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">Max</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">%</th>
-            <th class="text-right px-4 py-3 font-medium text-gray-600">Submitted</th>
+            <th class="text-left px-4 py-3 font-semibold">Rank</th>
+            <th class="text-left px-4 py-3 font-semibold">Student</th>
+            <th class="text-left px-4 py-3 font-semibold">Email</th>
+            <th class="text-right px-4 py-3 font-semibold">Score</th>
+            <th class="text-right px-4 py-3 font-semibold">Max</th>
+            <th class="text-right px-4 py-3 font-semibold">%</th>
+            <th class="text-right px-4 py-3 font-semibold">Submitted</th>
           </tr>
         </thead>
         <tbody id="results-body" class="divide-y divide-gray-100"></tbody>
       </table>
     </div>
+    </div><!-- /inner -->
   </div>
 
   <%- include('../partials/toast') %>

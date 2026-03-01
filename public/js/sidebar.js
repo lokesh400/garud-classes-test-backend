@@ -52,10 +52,10 @@ function buildSidebar() {
     return `
       <a href="${link.href}"
          onclick="closeSidebar()"
-         class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+         class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200
                 ${isActive
-                  ? 'bg-garud-highlight text-white shadow-lg'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-garud-highlight'}">
+                  ? 'bg-garud-highlight text-white shadow-lg shadow-garud-highlight/20'
+                  : 'text-white/55 hover:bg-white/10 hover:text-white'}">
         ${link.icon}
         <span>${link.label}</span>
       </a>`;

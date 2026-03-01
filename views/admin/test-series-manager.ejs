@@ -1,50 +1,55 @@
 <%- include('../partials/head', { title: 'Test Series Manager' }) %>
-<body class="min-h-screen bg-gray-50 text-gray-900">
+<body class="min-h-screen bg-slate-50 text-gray-900">
   <%- include('../partials/navbar') %>
   <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 min-h-screen p-6 max-w-7xl mx-auto">
+  <div class="md:ml-60 pt-14 min-h-screen page-body">
     <div id="loading" class="flex items-center justify-center min-h-[60vh]"><div class="spinner"></div></div>
 
     <div id="main-content" class="hidden">
       <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <div class="flex items-center gap-4">
-          <button onclick="window.location.href='/admin/test-series'"
-                  class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">Ã¢â€ Â</button>
-          <div>
-            <div class="flex items-center gap-3">
-              <h1 id="series-name" class="text-2xl font-bold text-gray-800"></h1>
-              <span id="publish-badge" class="px-2 py-0.5 text-xs rounded-full font-medium"></span>
+      <div class="page-header px-6 md:px-8 py-7 fade-up">
+        <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <button onclick="window.location.href='/admin/test-series'"
+                    class="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition">&larr;</button>
+            <div>
+              <div class="flex items-center gap-3">
+                <h1 id="series-name" class="text-2xl md:text-3xl font-bold text-white"></h1>
+                <span id="publish-badge" class="px-2 py-0.5 text-xs rounded-full font-medium"></span>
+              </div>
+              <p id="series-desc-p" class="text-white/60 text-sm mt-0.5 hidden"></p>
+              <p id="series-count" class="text-white/50 text-sm mt-0.5"></p>
             </div>
-            <p id="series-desc-p"  class="text-sm text-gray-500 mt-1 hidden"></p>
-            <p id="series-count"   class="text-sm text-gray-400 mt-1"></p>
           </div>
-        </div>
-        <div class="flex gap-2">
-          <button id="publish-btn" onclick="togglePublish()"
-                  class="px-4 py-2 rounded-lg font-medium transition"></button>
-          <button onclick="togglePicker()"
-                  class="flex items-center gap-2 px-4 py-2 bg-transparent border border-garud-highlight text-garud-highlight rounded-lg hover:bg-gray-100 transition">
-            + Add Tests
-          </button>
-          <button id="enrolled-btn"
-                  class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition">
-            See Enrolled Users
-          </button>
+          <div class="flex gap-2 flex-wrap">
+            <button id="publish-btn" onclick="togglePublish()"
+                    class="px-4 py-2 rounded-xl font-medium transition"></button>
+            <button onclick="togglePicker()"
+                    class="flex items-center gap-2 px-4 py-2 bg-white/10 border border-white/20 text-white rounded-xl hover:bg-white/20 transition">
+              + Add Tests
+            </button>
+            <button id="enrolled-btn"
+                    class="px-4 py-2 bg-garud-highlight text-white rounded-xl font-medium hover:opacity-90 transition">
+              Enrolled Users
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Tests in series -->
+      <div class="p-6 md:p-8">
       <div id="tests-in-series" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
 
       <!-- Test picker -->
-      <div id="picker-panel" class="hidden bg-white rounded-xl shadow-md p-6 mb-6">
+      <div id="picker-panel" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 lift p-6 mb-6">
         <h3 class="font-bold text-gray-800 mb-4">All Available Tests</h3>
         <div id="all-tests-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
-      </div>
-    </div>
-  </div>
+      </div><!-- /picker-panel -->
+      </div><!-- /p-6 -->
+    </div><!-- /main-content -->
+  </div><!-- /page-body -->
 
   <%- include('../partials/toast') %>
   <script src="/js/api.js"></script>

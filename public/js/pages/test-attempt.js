@@ -71,9 +71,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       startTimer();
       navigateTo(0, 0);
 
-      if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      }
+      // Show start screen (fullscreen triggered by user click)
+      document.getElementById('loading').classList.add('hidden');
+      showStartScreen();
     } catch (err) {
       const msg = err.message || '';
       if (msg.includes('already submitted')) {
@@ -84,8 +84,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = '/student/dashboard';
       }
     } finally {
-      document.getElementById('loading').classList.add('hidden');
-      document.getElementById('test-ui').classList.remove('hidden');
+      // loading hidden already above; test-ui shown via start screen
+    }
+  }
+
+  // ── Start screen ─────────────────────────────────────────────────
+  function showStartScreen() {
+    const screen = document.getElementById('start-screen');
+    if (!screen) { launchTest(); return; }
+
+    // Populate stats
+    document.getElementById('start-test-name').textContent = test.name || 'Test';
+    const totalQ = test.sections.reduce((s, sec) => s + sec.questions.length, 0);
+    const totalMarks = test.sections.reduce((sum, sec) =>
+      sum + sec.questions.reduce((s2, q) => s2 + (q.marks?.correct || 4), 0), 0);
+    document.getElementById('start-qs').textContent       = totalQ;
+    document.getElementById('start-duration').textContent = test.duration || '—';
+    document.getElementById('start-marks').textContent    = totalMarks;
+
+    screen.classList.remove('hidden');
+
+    document.getElementById('start-exam-btn').onclick = () => {
+      screen.classList.add('hidden');
+      launchTest();
+    };
+  }
+
+  function launchTest() {
+    document.getElementById('test-ui').classList.remove('hidden');
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen().catch(() => {});
     }
   }
 
