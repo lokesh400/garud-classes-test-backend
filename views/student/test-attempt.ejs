@@ -1,8 +1,10 @@
 <%- include('../partials/head', { title: 'Test' }) %>
 <body class="bg-[#f0f2f5] min-h-screen">
 
+  <%- include('../partials/navbar') %>
+
   <!-- Loading -->
-  <div id="loading" class="flex flex-col items-center justify-center min-h-screen">
+  <div id="loading" class="flex flex-col items-center justify-center min-h-screen pt-14">
     <div class="spinner mb-3"></div>
     <p class="text-gray-500 text-sm">Loading test…</p>
   </div>
@@ -27,7 +29,7 @@
   </div>
 
   <!-- Test UI (hidden until loaded) -->
-  <div id="test-ui" class="hidden flex flex-col h-screen overflow-hidden">
+  <div id="test-ui" class="hidden flex flex-col h-[calc(100vh-3.5rem)] mt-14 overflow-hidden">
 
     <!-- Top bar (fixed) -->
     <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between z-20 shadow-sm flex-shrink-0">

@@ -64,7 +64,7 @@ app.get("/health", (req, res) => {
 });
 
 function startKeepAlive() {
-  const url ="https://test.garudclasses.com/"; // RENDER_EXTERNAL_URL from environment
+  const url ="https://test.garudclasses.com"; // RENDER_EXTERNAL_URL from environment
   if (!url) {
     console.warn("⚠️ RENDER_EXTERNAL_URL not set, keep-alive disabled");
     return;
