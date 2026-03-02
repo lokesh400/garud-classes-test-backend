@@ -63,33 +63,18 @@ app.get("/health", (req, res) => {
   res.status(200).send("OK");
 });
 
-function startKeepAlive() {
-  const url ="https://test.garudclasses.com"; // RENDER_EXTERNAL_URL from environment
-  if (!url) {
-    console.warn("⚠️ RENDER_EXTERNAL_URL not set, keep-alive disabled");
-    return;
-  }
-  const isHttps = url.startsWith("https");
-  const client = isHttps ? https : http;
-  const pingUrl = `${url}/health`;
-  setInterval(() => {
-    const req = client.get(pingUrl, (res) => {
-      console.log(`🔄 Keep-alive ping → ${res.statusCode}`);
-      res.resume();
+function startKeepAlive(port) {
+  setInterval(async () => {
+    const result = await axios.get(`https://testportal.garudclasses.com/health`, { timeout: 5000 }).catch(err => {
+      console.error('Keep-alive error:', err.message);
+      return null;
     });
-    req.on("error", (err) => {
-      console.error("❌ Keep-alive error:", err.message);
-    });
-    req.setTimeout(5000, () => {
-      console.warn("⏱️ Keep-alive timeout");
-      req.destroy();
-    });
+    if (result) console.log(`🔄 Keep-alive ping → ${result.status} OK`);
   }, 10000);
 }
 
-startKeepAlive();
-
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Garud Classes running at http://localhost:${PORT}`);
+  startKeepAlive();
 });
