@@ -178,19 +178,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     return API.postForm('/questions', fd);
   }
 
-  function addToRecentList(question) {
-    const recent = document.getElementById('recent-list');
-    // Remove only the initial empty-state paragraph (has class text-gray-400 and is a direct child p)
-    const emptyMsg = recent.querySelector(':scope > p');
-    if (emptyMsg) emptyMsg.remove();
-    recent.insertAdjacentHTML('afterbegin', `
+  // ── Recent list (array-backed, never mutated via querySelector) ───
+  const uploadedQuestions = [];
+
+  function renderRecentList() {
+    const el = document.getElementById('recent-list');
+    if (!uploadedQuestions.length) {
+      el.innerHTML = '<p class="text-sm text-gray-400">No uploads yet in this session.</p>';
+      return;
+    }
+    el.innerHTML = uploadedQuestions.slice().reverse().map(q => `
       <div class="flex gap-3 border border-gray-200 rounded-lg p-3">
-        <img src="${question.imageUrl}" class="w-20 h-14 object-contain rounded border bg-gray-50"/>
+        <img src="${q.imageUrl}" class="w-20 h-14 object-contain rounded border bg-gray-50"/>
         <div class="text-xs text-gray-600">
-          <p class="font-semibold">${question.type.toUpperCase()}</p>
-          <p class="text-gray-400">Correct: ${question.correctOption ?? question.correctNumericalAnswer}</p>
+          <p class="font-semibold">${q.type.toUpperCase()}</p>
+          <p class="text-gray-400">Correct: ${q.correctOption ?? q.correctNumericalAnswer}</p>
         </div>
-      </div>`);
+      </div>`).join('');
+  }
+
+  function addToRecentList(question) {
+    uploadedQuestions.push(question);
+    renderRecentList();
   }
 
   // ── Form submit ───────────────────────────────────────────────────
@@ -242,14 +251,41 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.disabled = true;
     let done = 0, failed = 0;
 
-    for (const { file, parsed } of validFiles) {
-      btn.textContent = `Uploading ${done + 1} / ${validFiles.length}…`;
+    // Show a live status list for each file
+    const statusEl = document.getElementById('file-list-preview');
+    const statusMap = {};
+    validFiles.forEach(({ file }, i) => {
+      statusMap[i] = `row-${i}`;
+    });
+    statusEl.innerHTML = validFiles.map(({ file, parsed }, i) => {
+      const badge = parsed.type === 'mcq'
+        ? `<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">MCQ · ${parsed.correctOption}</span>`
+        : `<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Num · ${parsed.correctNumericalAnswer}</span>`;
+      return `<div id="row-${i}" class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
+        <span id="row-icon-${i}" class="flex-shrink-0">&#x23F3;</span>
+        <span class="text-gray-700 truncate flex-1">${file.name}</span>
+        ${badge}
+        <span id="row-status-${i}" class="flex-shrink-0 text-gray-400">Pending</span>
+      </div>`;
+    }).join('');
+
+    for (let i = 0; i < validFiles.length; i++) {
+      const { file, parsed } = validFiles[i];
+      document.getElementById(`row-status-${i}`).textContent = 'Uploading…';
+      document.getElementById(`row-icon-${i}`).textContent   = '⏫';
+      btn.textContent = `Uploading ${i + 1} / ${validFiles.length}…`;
       try {
         const question = await uploadOne(file, parsed, subject, chapter, topic);
         addToRecentList(question);
         done++;
+        document.getElementById(`row-status-${i}`).textContent = '✅ Done';
+        document.getElementById(`row-icon-${i}`).textContent   = '✅';
+        document.getElementById(`row-${i}`).className = 'flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs';
       } catch (err) {
         failed++;
+        document.getElementById(`row-status-${i}`).textContent = '❌ Failed';
+        document.getElementById(`row-icon-${i}`).textContent   = '❌';
+        document.getElementById(`row-${i}`).className = 'flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg text-xs';
         console.error(`Failed: ${file.name}`, err.message);
       }
     }
