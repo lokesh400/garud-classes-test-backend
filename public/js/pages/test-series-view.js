@@ -76,31 +76,77 @@ document.addEventListener('DOMContentLoaded', async () => {
     listEl.innerHTML = series.tests.map((t, i) => {
       const canAttempt  = purchased || price === 0;
       const isSubmitted = t.isSubmitted;
-      return `
-        <div class="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
-          <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm
-                        ${isSubmitted ? 'bg-green-500' : 'bg-gray-200 text-gray-600'}">
-              ${i + 1}
-            </div>
-            <div>
-              <p class="font-semibold text-gray-800">${t.name}</p>
-              <p class="text-xs text-gray-400">⏱ ${t.duration} min · ${t.sections?.reduce((a,s)=>a+s.questions.length,0)||0} questions</p>
-            </div>
-          </div>
-          <div>
-            ${isSubmitted
-              ? `<button onclick="window.location.href='/student/results/${t._id}'"
+      const isPractice  = t.mode === 'practice';
+      const now         = new Date();
+      const isLocked    = t.scheduledAt && new Date(t.scheduledAt) > now;
+      const modeLabel   = isPractice ? '🔁 Practice' : '🎯 Real';
+      const modeColor   = isPractice ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+      const schedText   = t.scheduledAt
+        ? `📅 ${new Date(t.scheduledAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}`
+        : '';
+
+      let actionBtn;
+      if (isLocked) {
+        const timeStr = new Date(t.scheduledAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' });
+        actionBtn = `<span class="text-sm text-amber-600 font-medium">🔒 Opens at ${timeStr}</span>`;
+      } else if (isSubmitted && !isPractice) {
+        // Real mode already submitted
+        actionBtn = `<button onclick="window.location.href='/student/results/${t._id}'"
                         class="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100 transition">
-                  View Results
-                </button>`
-              : canAttempt
-                ? `<button onclick="window.location.href='/student/test/${t._id}'"
+                  ✅ View Results
+                </button>`;
+      } else if (isSubmitted && isPractice) {
+        // Practice mode: can retry AND view last result
+        actionBtn = `<div class="flex gap-2">
+          <button onclick="window.location.href='/student/results/${t._id}'"
+                  class="px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100 transition">
+            Last Result
+          </button>
+          ${canAttempt
+            ? `<button onclick="window.location.href='/student/test/${t._id}'"
+                      class="px-3 py-2 bg-garud-highlight text-white rounded-lg text-sm font-medium hover:opacity-90 transition">
+                🔁 Retry
+              </button>`
+            : ''}
+        </div>`;
+      } else if (canAttempt) {
+        actionBtn = `<button onclick="window.location.href='/student/test/${t._id}'"
                           class="px-4 py-2 bg-garud-highlight text-white rounded-lg text-sm font-medium hover:opacity-90 transition">
                     ▶ Start
-                  </button>`
-                : `<span class="text-sm text-gray-400">🔒 Locked</span>`}
+                  </button>`;
+      } else {
+        actionBtn = `<span class="text-sm text-gray-400">🔒 Locked</span>`;
+      }
+
+      const syllabusHTML = t.syllabus
+        ? `<details class="mt-2 ml-14"><summary class="text-xs text-garud-accent cursor-pointer font-medium select-none">📋 View Syllabus</summary><ul class="mt-1.5 space-y-0.5 pl-1">${t.syllabus.split('\n').filter(l => l.trim()).map(l => `<li class="text-xs text-gray-600">• ${l.trim()}</li>`).join('')}</ul></details>`
+        : '';
+
+      return `
+        <div class="bg-white rounded-xl shadow-sm p-4">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-4 flex-1 min-w-0">
+              <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0
+                          ${isSubmitted && !isPractice ? 'bg-green-500' : isLocked ? 'bg-amber-400' : 'bg-garud-highlight'}">
+                ${i + 1}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-semibold text-gray-800">${t.name}</p>
+                  <span class="px-1.5 py-0.5 text-xs rounded-full font-medium ${modeColor}">${modeLabel}</span>
+                </div>
+                <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-400">
+                  <span>⏱ ${t.duration} min</span>
+                  <span>📝 ${t.totalQuestions || 0} questions</span>
+                  <span>📂 ${t.sectionCount || 0} sections</span>
+                  ${schedText ? `<span>${schedText}</span>` : ''}
+                </div>
+                ${t.description ? `<p class="text-xs text-gray-400 mt-0.5 truncate">${t.description}</p>` : ''}
+              </div>
+            </div>
+            <div class="flex-shrink-0">${actionBtn}</div>
           </div>
+          ${syllabusHTML}
         </div>`;
     }).join('') || '<p class="text-gray-400 text-sm">No tests in this series.</p>';
   }

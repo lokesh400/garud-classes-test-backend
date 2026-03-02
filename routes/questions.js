@@ -1,7 +1,6 @@
 const express = require('express');
 const Question = require('../models/Question');
-const Subject = require('../models/Subject');
-const { uploadToSubjectCloud, deleteFromSubjectCloud } = require('../config/cloudinary');
+const { uploadToRandomCloud, deleteFromCloud } = require('../config/cloudinary');
 const upload = require('../middleware/upload');
 const { auth, adminOnly } = require('../middleware/auth');
 
@@ -50,8 +49,8 @@ router.get('/:id', auth, async (req, res) => {
 // Upload question (admin only)
 // Uses memory storage + manual Cloudinary upload to the correct subject account
 router.post('/', auth, adminOnly, upload.single('image'), async (req, res) => {
-  let uploadResult = null;
-  let subjectName = null;
+  let uploadResult  = null;
+  let cloudPrefix   = null;
 
   try {
     const { type, correctOption, correctNumericalAnswer, subject, chapter, topic } = req.body;
@@ -60,19 +59,15 @@ router.post('/', auth, adminOnly, upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'Question image is required' });
     }
 
-    // Look up subject name for Cloudinary account selection
-    const subjectDoc = await Subject.findById(subject);
-    if (!subjectDoc) {
-      return res.status(400).json({ message: 'Subject not found' });
-    }
-    subjectName = subjectDoc.name;
-
-    // Upload image to the subject-specific Cloudinary account
-    uploadResult = await uploadToSubjectCloud(req.file.buffer, subjectName);
+    // Upload image to a randomly selected Cloudinary account
+    const { result, cloudPrefix: picked } = await uploadToRandomCloud(req.file.buffer);
+    uploadResult = result;
+    cloudPrefix  = picked;
 
     const questionData = {
-      imageUrl: uploadResult.secure_url,
+      imageUrl:      uploadResult.secure_url,
       imagePublicId: uploadResult.public_id,
+      cloudPrefix,    // store so we know which account to delete from later
       type,
       subject,
       chapter,
@@ -97,9 +92,9 @@ router.post('/', auth, adminOnly, upload.single('image'), async (req, res) => {
     res.status(201).json(populated);
   } catch (error) {
     // Clean up uploaded image if DB save fails
-    if (uploadResult && uploadResult.public_id && subjectName) {
+    if (uploadResult && uploadResult.public_id && cloudPrefix) {
       try {
-        await deleteFromSubjectCloud(uploadResult.public_id, subjectName);
+        await deleteFromCloud(uploadResult.public_id, cloudPrefix);
       } catch (cleanupErr) {
         console.error('Cloudinary cleanup failed:', cleanupErr.message);
       }
@@ -115,8 +110,9 @@ router.delete('/:id', auth, adminOnly, async (req, res) => {
     if (!question) return res.status(404).json({ message: 'Question not found' });
 
     // Delete from the correct Cloudinary account
-    if (question.imagePublicId && question.subject?.name) {
-      await deleteFromSubjectCloud(question.imagePublicId, question.subject.name);
+    if (question.imagePublicId) {
+      const target = question.cloudPrefix || question.subject?.name;
+      if (target) await deleteFromCloud(question.imagePublicId, target);
     }
 
     await Question.findByIdAndDelete(req.params.id);

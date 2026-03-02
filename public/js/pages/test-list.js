@@ -24,17 +24,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       el.innerHTML = '<div class="bg-white rounded-xl shadow-md p-12 text-center text-gray-400">No tests yet. Create one above.</div>';
       return;
     }
-    el.innerHTML = tests.map(t => `
+    el.innerHTML = tests.map(t => {
+      const modeLabel  = t.mode === 'practice' ? '🔁 Practice' : '🎯 Real';
+      const modeColor  = t.mode === 'practice' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700';
+      const schedLabel = t.scheduledAt
+        ? `📅 ${new Date(t.scheduledAt).toLocaleString()}`
+        : '📅 No schedule';
+      return `
       <div class="bg-white rounded-xl shadow-md p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div class="flex items-center gap-3">
+          <div class="flex items-center gap-3 flex-wrap">
             <h3 class="font-bold text-gray-800">${t.name}</h3>
             <span class="px-2 py-0.5 text-xs rounded-full font-medium ${t.isPublished ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
               ${t.isPublished ? 'Published' : 'Draft'}
             </span>
+            <span class="px-2 py-0.5 text-xs rounded-full font-medium ${modeColor}">${modeLabel}</span>
           </div>
           ${t.description ? `<p class="text-sm text-gray-500 mt-1">${t.description}</p>` : ''}
-          <p class="text-xs text-gray-400 mt-1">⏱ ${t.duration} min · ${t.sections.reduce((a,s)=>a+s.questions.length,0)} questions</p>
+          <p class="text-xs text-gray-400 mt-1">⏱ ${t.duration} min · ${t.sections.reduce((a,s)=>a+s.questions.length,0)} questions · ${schedLabel}</p>
         </div>
         <div class="flex gap-2 flex-shrink-0">
           <button onclick="window.location.href='/admin/tests/${t._id}'"
@@ -48,7 +55,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           <button onclick="deleteTest('${t._id}')"
                   class="px-3 py-2 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition">🗑</button>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   window.toggleCreate = function() {
@@ -75,10 +83,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('create-test-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
+      const scheduledVal = document.getElementById('test-scheduled-at').value;
       const test = await API.post('/tests', {
         name:        document.getElementById('test-name').value.trim(),
         duration:    parseInt(document.getElementById('test-duration').value),
         description: document.getElementById('test-desc').value.trim(),
+        mode:        document.getElementById('test-mode').value,
+        scheduledAt: scheduledVal ? new Date(scheduledVal).toISOString() : null,
+        syllabus:    document.getElementById('test-syllabus').value.trim(),
       });
       toast.success('Test created!');
       window.location.href = `/admin/tests/${test._id}`;

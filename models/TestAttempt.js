@@ -29,6 +29,11 @@ const answerSchema = new mongoose.Schema({
     type: Number,
     default: 0,
   },
+  // seconds spent on this question (real-time tracked from frontend)
+  timeSpent: {
+    type: Number,
+    default: 0,
+  },
 }, { _id: true });
 
 const testAttemptSchema = new mongoose.Schema({
@@ -64,7 +69,7 @@ const testAttemptSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Prevent duplicate attempts
-testAttemptSchema.index({ user: 1, test: 1 }, { unique: true });
+// Non-unique index for fast lookup by user+test
+testAttemptSchema.index({ user: 1, test: 1 });
 
 module.exports = mongoose.model('TestAttempt', testAttemptSchema);

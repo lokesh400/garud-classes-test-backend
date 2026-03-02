@@ -47,7 +47,7 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
       .populate('createdBy', 'name')
       .populate({
         path: 'tests',
-        select: 'name description duration isPublished sections',
+        select: 'name description duration isPublished sections scheduledAt mode syllabus',
       });
 
     if (!series) return res.status(404).json({ message: 'Test series not found' });
@@ -182,7 +182,7 @@ router.get('/published', auth, async (req, res) => {
       .populate({
         path: 'tests',
         match: { isPublished: true },
-        select: 'name description duration sections',
+        select: 'name description duration sections scheduledAt mode syllabus',
       })
       .sort({ createdAt: -1 });
 
@@ -191,9 +191,10 @@ router.get('/published', auth, async (req, res) => {
       seriesList.map(async (series) => {
         const testsWithInfo = await Promise.all(
           series.tests.map(async (test) => {
-            const attempt = await TestAttempt.findOne({
+            const submittedAttempt = await TestAttempt.findOne({
               user: req.user._id,
               test: test._id,
+              isSubmitted: true,
             });
             const totalQuestions = test.sections.reduce(
               (acc, s) => acc + s.questions.length,
@@ -206,8 +207,11 @@ router.get('/published', auth, async (req, res) => {
               duration: test.duration,
               totalQuestions,
               sectionCount: test.sections.length,
-              attempted: !!attempt,
-              isSubmitted: attempt?.isSubmitted || false,
+              attempted: !!submittedAttempt,
+              isSubmitted: submittedAttempt?.isSubmitted || false,
+              scheduledAt: test.scheduledAt,
+              mode: test.mode,
+              syllabus: test.syllabus,
             };
           })
         );
@@ -239,16 +243,17 @@ router.get('/published/:id', auth, async (req, res) => {
       .populate({
         path: 'tests',
         match: { isPublished: true },
-        select: 'name description duration sections',
+        select: 'name description duration sections scheduledAt mode syllabus',
       });
 
     if (!series) return res.status(404).json({ message: 'Test series not found' });
 
     const testsWithInfo = await Promise.all(
       series.tests.map(async (test) => {
-        const attempt = await TestAttempt.findOne({
+        const submittedAttempt = await TestAttempt.findOne({
           user: req.user._id,
           test: test._id,
+          isSubmitted: true,
         });
         const totalQuestions = test.sections.reduce(
           (acc, s) => acc + s.questions.length,
@@ -261,8 +266,11 @@ router.get('/published/:id', auth, async (req, res) => {
           duration: test.duration,
           totalQuestions,
           sectionCount: test.sections.length,
-          attempted: !!attempt,
-          isSubmitted: attempt?.isSubmitted || false,
+          attempted: !!submittedAttempt,
+          isSubmitted: submittedAttempt?.isSubmitted || false,
+          scheduledAt: test.scheduledAt,
+          mode: test.mode,
+          syllabus: test.syllabus,
         };
       })
     );

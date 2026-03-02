@@ -35,6 +35,11 @@ const testSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  // Syllabus / topics covered — shown to students before they start
+  syllabus: {
+    type: String,
+    default: '',
+  },
   duration: {
     type: Number, // in minutes
     required: true,
@@ -43,6 +48,17 @@ const testSchema = new mongoose.Schema({
   isPublished: {
     type: Boolean,
     default: false,
+  },
+  // Optional date/time before which no student can start the test
+  scheduledAt: {
+    type: Date,
+    default: null,
+  },
+  // 'real' → each student can submit only once; 'practice' → unlimited attempts
+  mode: {
+    type: String,
+    enum: ['real', 'practice'],
+    default: 'real',
   },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

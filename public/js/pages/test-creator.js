@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       allSubjects = s;
       renderTest();
       populateSubjectFilter();
+      populateSettings();
     } catch {
       toast.error('Failed to load test');
       window.location.href = '/admin/tests';
@@ -41,7 +42,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (subject) params.subject = subject;
     if (chapter) params.chapter = chapter;
     if (topic)   params.topic   = topic;
-    allQuestions = await API.get('/questions', params);
+
+    // Show spinner, hide grid while loading
+    const loadingEl = document.getElementById('picker-loading');
+    const gridEl    = document.getElementById('question-grid');
+    loadingEl.classList.remove('hidden');
+    loadingEl.classList.add('flex');
+    gridEl.classList.add('hidden');
+
+    try {
+      allQuestions = await API.get('/questions', params);
+    } catch {
+      allQuestions = [];
+      toast.error('Failed to load questions');
+    } finally {
+      loadingEl.classList.add('hidden');
+      loadingEl.classList.remove('flex');
+      gridEl.classList.remove('hidden');
+    }
     renderQuestionGrid();
   }
 
@@ -49,7 +67,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderTest() {
     document.getElementById('test-title').textContent = test.name;
     const total = test.sections.reduce((a, s) => a + s.questions.length, 0);
-    document.getElementById('test-meta').textContent = `Duration: ${test.duration} min | ${total} questions total`;
+    const modeLabel = test.mode === 'practice' ? '🔁 Practice' : '🎯 Real';
+    const schedLabel = test.scheduledAt
+      ? `📅 ${new Date(test.scheduledAt).toLocaleString()}`
+      : '📅 No schedule set';
+    document.getElementById('test-meta').textContent =
+      `Duration: ${test.duration} min | ${total} questions total | ${modeLabel} | ${schedLabel}`;
 
     const container = document.getElementById('sections-container');
     if (!test.sections.length) {
@@ -89,20 +112,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderQuestionGrid() {
     const grid = document.getElementById('question-grid');
     if (!allQuestions.length) {
-      grid.innerHTML = '<p class="col-span-full text-sm text-gray-400">No questions found for this filter.</p>';
+      grid.innerHTML = '<p class="col-span-full text-center text-sm text-gray-400 py-8">No questions found for this filter.</p>';
       return;
     }
-    grid.innerHTML = allQuestions.map(q => {
+
+    grid.innerHTML = allQuestions.map((q, idx) => {
       const inTest = isInTest(q._id);
       return `
-        <div class="relative border-2 rounded-lg overflow-hidden cursor-pointer hover:shadow-md transition
-                    ${inTest ? 'border-green-400 opacity-60' : 'border-gray-200 hover:border-garud-highlight'}"
-             onclick="${inTest ? '' : `pickQuestion('${q._id}')`}">
-          <img src="${q.imageUrl}" alt="" class="w-full h-24 object-contain bg-gray-50"/>
-          <div class="p-2 text-xs text-gray-500 flex justify-between">
-            <span>${q.type.toUpperCase()}</span>
-            ${inTest ? '<span class="text-green-600 font-bold">✓ Added</span>' : ''}
+        <div class="relative border-2 rounded-xl cursor-pointer transition-all
+                    ${inTest ? 'border-green-400' : 'border-gray-200 hover:border-garud-highlight hover:shadow-md'}"
+             data-qid="${q._id}"
+             onclick="${inTest ? '' : `pickQuestion('${q._id}')`}"
+             title="${inTest ? 'Already added' : 'Click to add'}">
+          <img src="${q.imageUrl}"
+               alt="Q${idx + 1}"
+               class="w-full h-52 object-contain bg-gray-50 block"/>
+          <div class="px-2 py-1.5 text-xs flex justify-between items-center bg-white border-t border-gray-100">
+            <span class="font-semibold text-gray-600">${(q.type || '').toUpperCase()}</span>
+            ${inTest
+              ? '<span class="text-green-600 font-bold">&#10003; Added</span>'
+              : `<span class="text-gray-400">Q${idx + 1}</span>`}
           </div>
+          ${inTest ? '<div class="absolute inset-0 bg-green-500/10 pointer-events-none"></div>' : ''}
         </div>`;
     }).join('');
   }
@@ -111,6 +142,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!test) return false;
     return test.sections.some(s => s.questions.some(q => q.question._id === qId));
   }
+
+  // ── Settings panel ────────────────────────────────────────────────
+  function populateSettings() {
+    if (test.scheduledAt) {
+      // datetime-local expects 'YYYY-MM-DDTHH:mm'
+      const d = new Date(test.scheduledAt);
+      const pad = n => String(n).padStart(2, '0');
+      const local = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+      document.getElementById('setting-scheduled-at').value = local;
+    }
+    if (test.mode) {
+      document.getElementById('setting-mode').value = test.mode;
+    }
+    if (test.syllabus) {
+      document.getElementById('setting-syllabus').value = test.syllabus;
+    }
+  }
+
+  window.toggleSettings = function() {
+    const panel = document.getElementById('settings-panel');
+    const arrow = document.getElementById('settings-arrow');
+    const hidden = panel.classList.toggle('hidden');
+    arrow.style.transform = hidden ? '' : 'rotate(90deg)';
+  };
+
+  window.saveSettings = async function() {
+    const scheduledVal = document.getElementById('setting-scheduled-at').value;
+    const mode         = document.getElementById('setting-mode').value;
+    const syllabus     = document.getElementById('setting-syllabus').value.trim();
+    try {
+      test = await API.put(`/tests/${testId}`, {
+        name:        test.name,
+        description: test.description,
+        duration:    test.duration,
+        isPublished: test.isPublished,
+        scheduledAt: scheduledVal ? new Date(scheduledVal).toISOString() : null,
+        mode,
+        syllabus,
+      });
+      toast.success('Settings saved!');
+      renderTest();
+    } catch (err) {
+      toast.error(err.message || 'Failed to save settings');
+    }
+  };
 
   // ── Section actions ───────────────────────────────────────────────
   window.addSection = async function() {

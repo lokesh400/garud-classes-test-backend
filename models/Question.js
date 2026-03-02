@@ -10,6 +10,11 @@ const questionSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  // Which Cloudinary account prefix this image was uploaded to (for deletion)
+  cloudPrefix: {
+    type: String,
+    default: '',
+  },
   // Question type
   type: {
     type: String,

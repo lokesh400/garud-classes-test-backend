@@ -16,12 +16,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentSection  = 0;
   let currentQuestion = 0;
 
-  // answers   : { `${secId}_${qId}` : { selectedOption, numericalAnswer } }
-  // visited   : { key: true }
-  // reviewed  : { key: true }
-  const answers  = {};
-  const visited  = {};
-  const reviewed = {};
+  // answers      : { `${secId}_${qId}` : { selectedOption, numericalAnswer } }
+  // visited      : { key: true }
+  // reviewed     : { key: true }
+  // timeSpentMap : { key: totalSeconds } — accumulated time per question
+  const answers      = {};
+  const visited      = {};
+  const reviewed     = {};
+  const timeSpentMap = {};
+  let questionEnteredAt = null; // Date.now() when current question was first shown
 
   // ── Status logic ──────────────────────────────────────────────────
   function getStatus(key) {
@@ -58,12 +61,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const elapsed   = Math.floor((Date.now() - startedAt) / 1000);
       timeLeft        = Math.max(0, duration - elapsed);
 
-      // Restore saved answers
+      // Restore saved answers + time spent
       if (attempt.answers) {
         attempt.answers.forEach(a => {
           const key = `${a.sectionId}_${a.question}`;
           answers[key] = { selectedOption: a.selectedOption, numericalAnswer: a.numericalAnswer };
           visited[key] = true;
+          if (a.timeSpent) timeSpentMap[key] = a.timeSpent;
         });
       }
 
@@ -79,13 +83,70 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (msg.includes('already submitted')) {
         toast.error('You have already submitted this test');
         window.location.href = `/student/results/${testId}`;
+      } else if (msg.includes('not yet available') || msg.toLowerCase().includes('not yet available')) {
+        // Show a locked screen instead of redirecting
+        document.getElementById('loading').classList.add('hidden');
+        showLockedScreen(err.data?.scheduledAt || null);
       } else {
-        toast.error(msg || 'Failed to start test');
-        window.location.href = '/student/dashboard';
+        // Don't silently redirect — show the error and let user go back
+        document.getElementById('loading').classList.add('hidden');
+        const screen = document.getElementById('start-screen');
+        if (screen) {
+          screen.innerHTML = `
+            <div class="relative z-10 text-center px-6 max-w-lg w-full fade-up">
+              <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-8 mb-6">
+                <div class="text-5xl mb-4">⚠️</div>
+                <h2 class="text-2xl font-bold text-white mb-2">Could not start test</h2>
+                <p class="text-white/70 text-sm mb-6">${msg || 'An unexpected error occurred. Please try again.'}</p>
+                <button onclick="window.history.back()"
+                        class="w-full py-3 bg-white/20 text-white font-semibold rounded-2xl hover:bg-white/30 transition">
+                  ← Go Back
+                </button>
+              </div>
+            </div>`;
+          screen.classList.remove('hidden');
+        } else {
+          toast.error(msg || 'Failed to start test');
+          window.history.back();
+        }
       }
     } finally {
       // loading hidden already above; test-ui shown via start screen
     }
+  }
+
+  // ── Locked screen (test not yet available) ──────────────────────
+  function showLockedScreen(scheduledAt) {
+    // Re-use start-screen container
+    const screen = document.getElementById('start-screen');
+    if (!screen) {
+      alert('This test has not started yet. Please come back later.');
+      window.history.back();
+      return;
+    }
+    const timeStr = scheduledAt
+      ? new Date(scheduledAt).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })
+      : 'a scheduled time';
+    screen.innerHTML = `
+      <div class="relative z-10 text-center px-6 max-w-lg w-full fade-up">
+        <div class="flex items-center justify-center gap-2.5 mb-8">
+          <div class="w-10 h-10 rounded-xl bg-garud-highlight flex items-center justify-center">
+            <span class="text-white font-black text-lg">G</span>
+          </div>
+          <span class="text-2xl font-black text-white">GARUD <span class="text-garud-highlight">Classes</span></span>
+        </div>
+        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-8 mb-6">
+          <div class="text-5xl mb-4">🔒</div>
+          <h2 class="text-2xl font-bold text-white mb-2">Test Not Yet Available</h2>
+          <p class="text-white/60 text-sm mb-4">This test will be available from:</p>
+          <p class="text-garud-highlight font-bold text-lg mb-6">${timeStr}</p>
+          <button onclick="window.history.back()"
+                  class="w-full py-3 bg-white/20 text-white font-semibold rounded-2xl hover:bg-white/30 transition">
+            ← Go Back
+          </button>
+        </div>
+      </div>`;
+    screen.classList.remove('hidden');
   }
 
   // ── Start screen ─────────────────────────────────────────────────
@@ -101,6 +162,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('start-qs').textContent       = totalQ;
     document.getElementById('start-duration').textContent = test.duration || '—';
     document.getElementById('start-marks').textContent    = totalMarks;
+
+    // Mode badge
+    const metaEl = document.getElementById('start-test-meta');
+    if (metaEl && test.mode) {
+      const isPractice = test.mode === 'practice';
+      const badge = `<span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full font-semibold
+                       ${isPractice ? 'bg-blue-500/30 text-blue-200' : 'bg-purple-500/30 text-purple-200'}">
+        ${isPractice ? '🔁 Practice Mode — unlimited attempts' : '🎯 Real Mode — one submission only'}
+      </span>`;
+      metaEl.innerHTML = badge;
+    }
+
+    // Syllabus
+    const syllabusContainer = document.getElementById('start-syllabus-wrap');
+    if (syllabusContainer) {
+      if (test.syllabus && test.syllabus.trim()) {
+        const lines = test.syllabus.trim().split('\n').map(l => `<li class="text-white/70 text-xs">${l}</li>`).join('');
+        syllabusContainer.innerHTML = `
+          <div class="bg-white/10 rounded-xl px-4 py-3 text-left mb-4">
+            <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">📋 Syllabus</p>
+            <ul class="space-y-0.5 list-disc list-inside">${lines}</ul>
+          </div>`;
+        syllabusContainer.classList.remove('hidden');
+      } else {
+        syllabusContainer.classList.add('hidden');
+      }
+    }
 
     screen.classList.remove('hidden');
 
@@ -144,10 +232,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }).join('');
   }
 
+  // ── Time tracking helpers ─────────────────────────────────────────
+  function flushCurrentTime() {
+    if (!questionEnteredAt) return;
+    const sec    = test.sections[currentSection];
+    const qEntry = sec?.questions[currentQuestion];
+    if (!qEntry) return;
+    const key = `${sec._id}_${qEntry.question._id}`;
+    timeSpentMap[key] = (timeSpentMap[key] || 0) + Math.floor((Date.now() - questionEnteredAt) / 1000);
+    questionEnteredAt = Date.now(); // reset so same question doesn't double-count if called again
+  }
+
   // ── Navigation ────────────────────────────────────────────────────
   function navigateTo(secIdx, qIdx) {
+    // Flush elapsed time for the question we are leaving
+    flushCurrentTime();
+
     currentSection  = secIdx;
     currentQuestion = qIdx;
+    questionEnteredAt = Date.now(); // start timing the new question
+
     const sec    = test.sections[secIdx];
     const qEntry = sec?.questions[qIdx];
     if (!qEntry) return;
@@ -246,31 +350,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     return { sec, qEntry, key };
   }
 
-  async function saveAnswer(sec, qEntry, key) {
-    const ans = answers[key];
-    if (!ans) return;
-    try {
-      await API.post(`/tests/${testId}/answer`, {
-        questionId: qEntry.question._id,
-        sectionId:  sec._id,
-        ...ans,
-      });
-    } catch { /* silently ignore auto-save failures */ }
-  }
-
   // ── NTA button handlers ───────────────────────────────────────────
   window.handleSaveAndNext = function() {
-    const { sec, qEntry, key } = getCurrentAnswer();
-    saveAnswer(sec, qEntry, key);
+    const { key } = getCurrentAnswer();
     delete reviewed[key];
     renderSectionTabs();
     goNext();
   };
 
   window.handleMarkAndNext = function() {
-    const { sec, qEntry, key } = getCurrentAnswer();
+    const { key } = getCurrentAnswer();
     reviewed[key] = true;
-    saveAnswer(sec, qEntry, key);
     renderSectionTabs();
     goNext();
   };
@@ -281,7 +371,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const key    = `${sec._id}_${qEntry.question._id}`;
     answers[key] = { selectedOption: null, numericalAnswer: null };
     delete reviewed[key];
-    saveAnswer(sec, qEntry, key);
     renderQuestion(sec, qEntry, key);
     renderPalette(false);
     renderPalette(true);
@@ -444,8 +533,28 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function submitTest(auto) {
     if (timerInterval) clearInterval(timerInterval);
+    // Flush time for the currently-open question, capture its answer
+    flushCurrentTime();
+    getCurrentAnswer();
+
+    // Build complete answers payload — one object per question across all sections
+    const allAnswers = [];
+    test.sections.forEach(sec => {
+      sec.questions.forEach(qEntry => {
+        const key = `${sec._id}_${qEntry.question._id}`;
+        const ans = answers[key] || {};
+        allAnswers.push({
+          questionId:      qEntry.question._id,
+          sectionId:       sec._id,
+          selectedOption:  ans.selectedOption  || null,
+          numericalAnswer: ans.numericalAnswer !== undefined ? ans.numericalAnswer : null,
+          timeSpent:       timeSpentMap[key]   || 0,
+        });
+      });
+    });
+
     try {
-      await API.post(`/tests/${testId}/submit`);
+      await API.post(`/tests/${testId}/submit`, { answers: allAnswers });
       toast.success(auto ? 'Time up! Test auto-submitted.' : 'Test submitted successfully!');
       if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
       window.location.href = `/student/results/${testId}`;

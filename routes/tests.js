@@ -23,12 +23,15 @@ router.get('/admin/all', auth, adminOnly, async (req, res) => {
 // Create test (admin only)
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, duration, sections } = req.body;
+    const { name, description, duration, sections, scheduledAt, mode, syllabus } = req.body;
     const test = new Test({
       name,
       description,
       duration,
       sections: sections || [],
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      mode: mode || 'real',
+      syllabus: syllabus || '',
       createdBy: req.user._id,
     });
     await test.save();
@@ -62,10 +65,14 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
 // Update test (admin)
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, duration, isPublished } = req.body;
+    const { name, description, duration, isPublished, scheduledAt, mode, syllabus } = req.body;
+    const updateFields = { name, description, duration, isPublished };
+    if (scheduledAt !== undefined) updateFields.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+    if (mode !== undefined) updateFields.mode = mode;
+    if (syllabus !== undefined) updateFields.syllabus = syllabus;
     const test = await Test.findByIdAndUpdate(
       req.params.id,
-      { name, description, duration, isPublished },
+      updateFields,
       { new: true }
     );
     if (!test) return res.status(404).json({ message: 'Test not found' });
@@ -209,7 +216,7 @@ router.get('/:id/results', auth, adminOnly, async (req, res) => {
 router.get('/published', auth, async (req, res) => {
   try {
     const tests = await Test.find({ isPublished: true })
-      .select('name description duration sections createdAt')
+      .select('name description duration sections createdAt scheduledAt mode syllabus')
       .sort({ createdAt: -1 });
 
     // Add question count and check if already attempted
@@ -218,6 +225,7 @@ router.get('/published', auth, async (req, res) => {
         const attempt = await TestAttempt.findOne({
           user: req.user._id,
           test: test._id,
+          isSubmitted: true,
         });
         const totalQuestions = test.sections.reduce(
           (acc, s) => acc + s.questions.length,
@@ -232,6 +240,9 @@ router.get('/published', auth, async (req, res) => {
           sectionCount: test.sections.length,
           attempted: !!attempt,
           isSubmitted: attempt?.isSubmitted || false,
+          scheduledAt: test.scheduledAt,
+          mode: test.mode,
+          syllabus: test.syllabus,
           createdAt: test.createdAt,
         };
       })
@@ -252,14 +263,38 @@ router.post('/:id/start', auth, async (req, res) => {
     if (!test) return res.status(404).json({ message: 'Test not found' });
     if (!test.isPublished) return res.status(400).json({ message: 'Test is not published' });
 
+    // Check scheduled time — block if test hasn't started yet
+    if (test.scheduledAt && new Date() < new Date(test.scheduledAt)) {
+      return res.status(403).json({
+        message: 'Test not yet available',
+        scheduledAt: test.scheduledAt,
+      });
+    }
+
     // Check existing attempt
     let attempt = await TestAttempt.findOne({
       user: req.user._id,
       test: test._id,
+      isSubmitted: false,
     });
 
-    if (attempt && attempt.isSubmitted) {
-      return res.status(400).json({ message: 'You have already submitted this test' });
+    // Find any submitted attempt
+    const submittedAttempt = await TestAttempt.findOne({
+      user: req.user._id,
+      test: test._id,
+      isSubmitted: true,
+    });
+
+    if (submittedAttempt) {
+      if (test.mode === 'real') {
+        // Real mode: one submission allowed — block
+        return res.status(400).json({ message: 'You have already submitted this test' });
+      }
+      // Practice mode — delete any stale in-progress attempt so we always start clean
+      if (attempt) {
+        await TestAttempt.deleteOne({ _id: attempt._id });
+        attempt = null;
+      }
     }
 
     if (!attempt) {
@@ -287,6 +322,9 @@ router.post('/:id/start', auth, async (req, res) => {
       name: test.name,
       description: test.description,
       duration: test.duration,
+      mode: test.mode,
+      scheduledAt: test.scheduledAt,
+      syllabus: test.syllabus,
       sections: test.sections.map((section) => ({
         _id: section._id,
         name: section.name,
@@ -319,7 +357,7 @@ router.post('/:id/start', auth, async (req, res) => {
 // Save answer (student - auto-save)
 router.post('/:id/answer', auth, async (req, res) => {
   try {
-    const { questionId, sectionId, selectedOption, numericalAnswer } = req.body;
+    const { questionId, sectionId, selectedOption, numericalAnswer, timeSpent } = req.body;
 
     const attempt = await TestAttempt.findOne({
       user: req.user._id,
@@ -341,6 +379,7 @@ router.post('/:id/answer', auth, async (req, res) => {
       sectionId,
       selectedOption: selectedOption || null,
       numericalAnswer: numericalAnswer !== undefined ? numericalAnswer : null,
+      timeSpent: typeof timeSpent === 'number' ? Math.round(timeSpent) : (existingIdx >= 0 ? attempt.answers[existingIdx].timeSpent : 0),
     };
 
     if (existingIdx >= 0) {
@@ -356,65 +395,64 @@ router.post('/:id/answer', auth, async (req, res) => {
   }
 });
 
-// Submit test (student)
+// Submit test (student) — receives full answers payload from client in one shot
 router.post('/:id/submit', auth, async (req, res) => {
   try {
+    const { answers: clientAnswers = [] } = req.body;
+
     const attempt = await TestAttempt.findOne({
       user: req.user._id,
       test: req.params.id,
       isSubmitted: false,
     });
+    if (!attempt) return res.status(400).json({ message: 'No active attempt found' });
 
-    if (!attempt) {
-      return res.status(400).json({ message: 'No active attempt found' });
-    }
+    const test = await Test.findById(req.params.id).populate('sections.questions.question');
 
-    const test = await Test.findById(req.params.id).populate(
-      'sections.questions.question'
-    );
-
-    // Grade each answer
+    // Grade and store all answers from the client payload in one pass
+    attempt.answers = [];
     let totalScore = 0;
-    for (const answer of attempt.answers) {
-      const section = test.sections.find(
-        (s) => s._id.toString() === answer.sectionId.toString()
-      );
+
+    for (const ca of clientAnswers) {
+      const { questionId, sectionId, selectedOption, numericalAnswer, timeSpent } = ca;
+
+      const section = test.sections.find(s => s._id.toString() === sectionId);
       if (!section) continue;
+      const qEntry = section.questions.find(q => q.question._id.toString() === questionId);
+      if (!qEntry) continue;
 
-      const questionEntry = section.questions.find(
-        (q) => q.question._id.toString() === answer.question.toString()
-      );
-      if (!questionEntry) continue;
-
-      const question = questionEntry.question;
+      const question = qEntry.question;
       let isCorrect = false;
-
-      if (question.type === 'mcq' && answer.selectedOption) {
-        isCorrect = answer.selectedOption === question.correctOption;
-      } else if (question.type === 'numerical' && answer.numericalAnswer !== null) {
-        isCorrect = Math.abs(answer.numericalAnswer - question.correctNumericalAnswer) < 0.01;
+      if (question.type === 'mcq' && selectedOption) {
+        isCorrect = selectedOption === question.correctOption;
+      } else if (question.type === 'numerical' && numericalAnswer !== null && numericalAnswer !== undefined) {
+        isCorrect = Math.abs(numericalAnswer - question.correctNumericalAnswer) < 0.01;
       }
 
-      answer.isCorrect = isCorrect;
-      answer.marksObtained = isCorrect
-        ? questionEntry.positiveMarks
-        : answer.selectedOption || answer.numericalAnswer !== null
-        ? -questionEntry.negativeMarks
+      const marksObtained = isCorrect
+        ? qEntry.positiveMarks
+        : (selectedOption || (numericalAnswer !== null && numericalAnswer !== undefined))
+        ? -qEntry.negativeMarks
         : 0;
 
-      totalScore += answer.marksObtained;
+      totalScore += marksObtained;
+      attempt.answers.push({
+        question:        questionId,
+        sectionId,
+        selectedOption:  selectedOption  || null,
+        numericalAnswer: numericalAnswer !== undefined ? numericalAnswer : null,
+        isCorrect,
+        marksObtained,
+        timeSpent:       typeof timeSpent === 'number' ? Math.round(timeSpent) : 0,
+      });
     }
 
-    attempt.totalScore = totalScore;
+    attempt.totalScore  = totalScore;
     attempt.isSubmitted = true;
     attempt.submittedAt = new Date();
     await attempt.save();
 
-    res.json({
-      totalScore: attempt.totalScore,
-      maxScore: attempt.maxScore,
-      answers: attempt.answers,
-    });
+    res.json({ totalScore: attempt.totalScore, maxScore: attempt.maxScore, answers: attempt.answers });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -427,7 +465,9 @@ router.get('/:id/my-result', auth, async (req, res) => {
       user: req.user._id,
       test: req.params.id,
       isSubmitted: true,
-    }).populate({
+    })
+    .sort({ submittedAt: -1 })  // always return the most recent attempt (important for practice mode retries)
+    .populate({
       path: 'answers.question',
       select: 'imageUrl type correctOption correctNumericalAnswer',
     });
