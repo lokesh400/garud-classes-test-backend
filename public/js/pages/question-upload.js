@@ -180,7 +180,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function addToRecentList(question) {
     const recent = document.getElementById('recent-list');
-    if (recent.querySelector('p')) recent.innerHTML = '';
+    // Remove only the initial empty-state paragraph (has class text-gray-400 and is a direct child p)
+    const emptyMsg = recent.querySelector(':scope > p');
+    if (emptyMsg) emptyMsg.remove();
     recent.insertAdjacentHTML('afterbegin', `
       <div class="flex gap-3 border border-gray-200 rounded-lg p-3">
         <img src="${question.imageUrl}" class="w-20 h-14 object-contain rounded border bg-gray-50"/>
