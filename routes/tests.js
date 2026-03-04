@@ -25,7 +25,7 @@ router.get('/admin/all', auth, adminOnly, async (req, res) => {
 // Create test (admin only)
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, duration, sections, scheduledAt, mode, syllabus } = req.body;
+    const { name, description, duration, sections, scheduledAt, mode, syllabus, testType } = req.body;
     const test = new Test({
       name,
       description,
@@ -34,6 +34,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
       scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
       mode: mode || 'real',
       syllabus: syllabus || '',
+      testType: testType || 'standard',
       createdBy: req.user._id,
     });
     await test.save();
@@ -67,11 +68,12 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
 // Update test (admin)
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, duration, isPublished, scheduledAt, mode, syllabus } = req.body;
+    const { name, description, duration, isPublished, scheduledAt, mode, syllabus, testType } = req.body;
     const updateFields = { name, description, duration, isPublished };
     if (scheduledAt !== undefined) updateFields.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
     if (mode !== undefined) updateFields.mode = mode;
     if (syllabus !== undefined) updateFields.syllabus = syllabus;
+    if (testType !== undefined) updateFields.testType = testType;
     const test = await Test.findByIdAndUpdate(
       req.params.id,
       updateFields,
@@ -222,7 +224,7 @@ router.get('/:id/results/:attemptId', auth, adminOnly, async (req, res) => {
       isSubmitted: true,
     }).populate('batch', 'name').populate({
       path: 'answers.question',
-      select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+      select: 'imageUrl type correctOption correctOptions correctNumericalAnswer subject chapter topic',
       populate: [
         { path: 'subject', select: 'name' },
         { path: 'chapter', select: 'name' },
@@ -236,7 +238,7 @@ router.get('/:id/results/:attemptId', auth, adminOnly, async (req, res) => {
       .select('name description duration sections')
       .populate({
         path: 'sections.questions.question',
-        select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+        select: 'imageUrl type correctOption correctOptions correctNumericalAnswer subject chapter topic',
         populate: [
           { path: 'subject', select: 'name' },
           { path: 'chapter', select: 'name' },
@@ -282,6 +284,7 @@ router.get('/published', auth, async (req, res) => {
           isSubmitted: attempt?.isSubmitted || false,
           scheduledAt: test.scheduledAt,
           mode: test.mode,
+          testType: test.testType || 'standard',
           syllabus: test.syllabus,
           createdAt: test.createdAt,
         };
@@ -371,7 +374,7 @@ router.post('/:id/start', auth, async (req, res) => {
       let maxScore = 0;
       test.sections.forEach((section) => {
         section.questions.forEach((q) => {
-          maxScore += q.positiveMarks;
+          maxScore += (q.positiveMarks || 0);
         });
       });
 
@@ -393,6 +396,7 @@ router.post('/:id/start', auth, async (req, res) => {
       description: test.description,
       duration: test.duration,
       mode: test.mode,
+      testType: test.testType || 'standard',
       scheduledAt: test.scheduledAt,
       syllabus: test.syllabus,
       sections: test.sections.map((section) => ({
@@ -442,9 +446,10 @@ router.post('/:id/submit', auth, async (req, res) => {
     // Grade and store all answers from the client payload in one pass
     attempt.answers = [];
     let totalScore = 0;
+    const isJeeAdvanced = test.testType === 'jee-advanced';
 
     for (const ca of clientAnswers) {
-      const { questionId, sectionId, selectedOption, numericalAnswer, timeSpent } = ca;
+      const { questionId, sectionId, selectedOption, selectedOptions, numericalAnswer, timeSpent } = ca;
 
       const section = test.sections.find(s => s._id.toString() === sectionId);
       if (!section) continue;
@@ -453,27 +458,55 @@ router.post('/:id/submit', auth, async (req, res) => {
 
       const question = qEntry.question;
       let isCorrect = false;
+      let marksObtained = 0;
+
       if (question.type === 'mcq' && selectedOption) {
         isCorrect = selectedOption === question.correctOption;
+        marksObtained = isCorrect ? qEntry.positiveMarks : -qEntry.negativeMarks;
       } else if (question.type === 'numerical' && numericalAnswer !== null && numericalAnswer !== undefined) {
         isCorrect = Math.abs(numericalAnswer - question.correctNumericalAnswer) < 0.01;
-      }
+        // JEE Advanced integer type: 0 marks for wrong answer (no negative)
+        marksObtained = isCorrect ? qEntry.positiveMarks : (isJeeAdvanced ? 0 : -qEntry.negativeMarks);
+      } else if (question.type === 'msq' && Array.isArray(selectedOptions) && selectedOptions.length > 0) {
+        // JEE Advanced MSQ marking scheme:
+        //  • Any wrong option selected (even alongside correct ones) → −negativeMarks only, no credit for right
+        //  • No wrong option selected + ALL correct options selected → full positive marks
+        //  • No wrong option selected + PARTIAL correct options selected → +1 per correctly-selected option
+        //  • No attempt → 0
+        const correctSet = new Set((question.correctOptions || []).map(o => o.toUpperCase()));
+        const chosen     = selectedOptions.map(o => o.toUpperCase());
+        const wrongSelected  = chosen.filter(o => !correctSet.has(o)).length;
+        const rightSelected  = chosen.filter(o =>  correctSet.has(o)).length;
 
-      const marksObtained = isCorrect
-        ? qEntry.positiveMarks
-        : (selectedOption || (numericalAnswer !== null && numericalAnswer !== undefined))
-        ? -qEntry.negativeMarks
-        : 0;
+        if (wrongSelected > 0) {
+          // Negative marks for any wrong selection
+          marksObtained = -qEntry.negativeMarks;
+          isCorrect = false;
+        } else if (rightSelected === correctSet.size) {
+          // All correct options selected, none wrong
+          marksObtained = qEntry.positiveMarks;
+          isCorrect = true;
+        } else {
+          // Partial credit — +1 per correctly-selected option (no wrong options)
+          marksObtained = rightSelected;
+          isCorrect = false;
+        }
+      } else {
+        // No attempt
+        marksObtained = 0;
+        isCorrect = false;
+      }
 
       totalScore += marksObtained;
       attempt.answers.push({
         question:        questionId,
         sectionId,
         selectedOption:  selectedOption  || null,
+        selectedOptions: Array.isArray(selectedOptions) ? selectedOptions : [],
         numericalAnswer: numericalAnswer !== undefined ? numericalAnswer : null,
         isCorrect,
         marksObtained,
-        timeSpent:       typeof timeSpent === 'number' ? Math.round(timeSpent) : 0,
+        timeSpent: typeof timeSpent === 'number' ? Math.round(timeSpent) : 0,
       });
     }
 
@@ -499,7 +532,7 @@ router.get('/:id/my-result', auth, async (req, res) => {
     .sort({ submittedAt: -1 })  // always return the most recent attempt (important for practice mode retries)
     .populate({
       path: 'answers.question',
-      select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+      select: 'imageUrl type correctOption correctOptions correctNumericalAnswer subject chapter topic',
       populate: [
         { path: 'subject', select: 'name' },
         { path: 'chapter', select: 'name' },
@@ -512,10 +545,10 @@ router.get('/:id/my-result', auth, async (req, res) => {
     }
 
     const test = await Test.findById(req.params.id)
-      .select('name description duration sections')
+      .select('name description duration sections testType')
       .populate({
         path: 'sections.questions.question',
-        select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+        select: 'imageUrl type correctOption correctOptions correctNumericalAnswer subject chapter topic',
         populate: [
           { path: 'subject', select: 'name' },
           { path: 'chapter', select: 'name' },

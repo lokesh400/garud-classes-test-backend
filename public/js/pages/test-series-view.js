@@ -77,6 +77,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const canAttempt  = purchased || price === 0;
       const isSubmitted = t.isSubmitted;
       const isPractice  = t.mode === 'practice';
+      const isJee       = t.testType === 'jee-advanced';
+      const attemptBase = isJee ? 'jee-test' : 'test';
       const now         = new Date();
       const isLocked    = t.scheduledAt && new Date(t.scheduledAt) > now;
       const modeLabel   = isPractice ? '🔁 Practice' : '🎯 Real';
@@ -103,14 +105,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             Last Result
           </button>
           ${canAttempt
-            ? `<button onclick="window.location.href='/student/test/${seriesId}/${t._id}'"
+            ? `<button onclick="window.location.href='/student/${attemptBase}/${seriesId}/${t._id}'"
                       class="px-3 py-2 bg-garud-highlight text-white rounded-lg text-sm font-medium hover:opacity-90 transition">
                 🔁 Retry
               </button>`
             : ''}
         </div>`;
       } else if (canAttempt) {
-        actionBtn = `<button onclick="window.location.href='/student/test/${seriesId}/${t._id}'"
+        actionBtn = `<button onclick="window.location.href='/student/${attemptBase}/${seriesId}/${t._id}'"
                           class="px-4 py-2 bg-garud-highlight text-white rounded-lg text-sm font-medium hover:opacity-90 transition">
                     ▶ Start
                   </button>`;
@@ -134,6 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="flex items-center gap-2 flex-wrap">
                   <p class="font-semibold text-gray-800">${t.name}</p>
                   <span class="px-1.5 py-0.5 text-xs rounded-full font-medium ${modeColor}">${modeLabel}</span>
+                  ${isJee ? '<span class="px-1.5 py-0.5 text-xs rounded-full font-medium bg-orange-100 text-orange-700">⚡ JEE Advanced</span>' : ''}
                 </div>
                 <div class="flex flex-wrap gap-x-3 gap-y-0.5 mt-0.5 text-xs text-gray-400">
                   <span>⏱ ${t.duration} min</span>

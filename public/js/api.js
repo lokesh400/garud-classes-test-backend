@@ -52,6 +52,7 @@ const API = {
   get:    (path, params)         => apiFetch(path + (params ? '?' + new URLSearchParams(params) : '')),
   post:   (path, body)           => apiFetch(path, { method: 'POST',   body: body instanceof FormData ? body : JSON.stringify(body) }),
   put:    (path, body)           => apiFetch(path, { method: 'PUT',    body: JSON.stringify(body) }),
+  patch:  (path, body)           => apiFetch(path, { method: 'PATCH',  body: JSON.stringify(body) }),
   delete: (path)                 => apiFetch(path, { method: 'DELETE' }),
   postForm: (path, formData)     => apiFetch(path, { method: 'POST',   body: formData }),
 };

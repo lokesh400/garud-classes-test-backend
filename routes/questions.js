@@ -53,7 +53,7 @@ router.post('/', auth, adminOnly, upload.single('image'), async (req, res) => {
   let cloudPrefix   = null;
 
   try {
-    const { type, correctOption, correctNumericalAnswer, subject, chapter, topic } = req.body;
+    const { type, correctOption, correctNumericalAnswer, correctOptions, subject, chapter, topic } = req.body;
 
     if (!req.file) {
       return res.status(400).json({ message: 'Question image is required' });
@@ -78,6 +78,11 @@ router.post('/', auth, adminOnly, upload.single('image'), async (req, res) => {
       questionData.correctOption = correctOption;
     } else if (type === 'numerical') {
       questionData.correctNumericalAnswer = parseFloat(correctNumericalAnswer);
+    } else if (type === 'msq') {
+      // correctOptions can come as array or comma-separated string
+      let opts = correctOptions;
+      if (typeof opts === 'string') opts = opts.split(',').map(o => o.trim().toUpperCase());
+      questionData.correctOptions = opts || [];
     }
 
     const question = new Question(questionData);

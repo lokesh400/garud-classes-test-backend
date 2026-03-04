@@ -60,6 +60,12 @@ const testSchema = new mongoose.Schema({
     enum: ['real', 'practice'],
     default: 'real',
   },
+  // 'standard' → MCQ+Numerical paper; 'jee-advanced' → MCQ+Numerical+MSQ paper
+  testType: {
+    type: String,
+    enum: ['standard', 'jee-advanced'],
+    default: 'standard',
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

@@ -16,6 +16,11 @@ const answerSchema = new mongoose.Schema({
     enum: ['A', 'B', 'C', 'D', null],
     default: null,
   },
+  // For MSQ (Multiple Select Questions)
+  selectedOptions: {
+    type: [String],
+    default: [],
+  },
   // For Numerical
   numericalAnswer: {
     type: Number,

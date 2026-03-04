@@ -182,7 +182,7 @@ router.get('/published', auth, async (req, res) => {
       .populate({
         path: 'tests',
         match: { isPublished: true },
-        select: 'name description duration sections scheduledAt mode syllabus',
+        select: 'name description duration sections scheduledAt mode syllabus testType',
       })
       .sort({ createdAt: -1 });
 
@@ -212,6 +212,7 @@ router.get('/published', auth, async (req, res) => {
               scheduledAt: test.scheduledAt,
               mode: test.mode,
               syllabus: test.syllabus,
+              testType: test.testType,
             };
           })
         );
@@ -243,7 +244,7 @@ router.get('/published/:id', auth, async (req, res) => {
       .populate({
         path: 'tests',
         match: { isPublished: true },
-        select: 'name description duration sections scheduledAt mode syllabus',
+        select: 'name description duration sections scheduledAt mode syllabus testType',
       });
 
     if (!series) return res.status(404).json({ message: 'Test series not found' });
@@ -271,6 +272,7 @@ router.get('/published/:id', auth, async (req, res) => {
           scheduledAt: test.scheduledAt,
           mode: test.mode,
           syllabus: test.syllabus,
+          testType: test.testType,
         };
       })
     );

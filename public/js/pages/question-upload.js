@@ -43,30 +43,51 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Paste-mode type toggle
   document.getElementById('sel-type').addEventListener('change', (e) => {
-    const isMcq = e.target.value === 'mcq';
-    document.getElementById('mcq-options').classList.toggle('hidden', !isMcq);
-    document.getElementById('numerical-options').classList.toggle('hidden', isMcq);
+    const type = e.target.value;
+    document.getElementById('mcq-options').classList.toggle('hidden', type !== 'mcq');
+    document.getElementById('msq-options').classList.toggle('hidden', type !== 'msq');
+    document.getElementById('numerical-options').classList.toggle('hidden', type !== 'numerical');
   });
 
   // ── Filename parser ───────────────────────────────────────────────
   // Format: "{qNum}-{answer}.ext"
-  //   answer = A/B/C/D  → MCQ
-  //   answer = number   → Numerical
+  //   answer = A/B/C/D             → MCQ        (e.g. 1-A.jpg)
+  //   answer = A,B  or  A,B,C …  → MSQ        (e.g. 2-A,B,C.jpg)
+  //   answer = number              → Numerical  (e.g. 3-120.jpg)
   function parseFilename(filename) {
-    const base   = filename.replace(/\.[^/.]+$/, '').trim(); // strip extension
+    const base    = filename.replace(/\.[^/.]+$/, '').trim(); // strip extension
     const dashIdx = base.indexOf('-');
     if (dashIdx === -1) return null;
-    const qNum  = base.slice(0, dashIdx).trim();
+    const qNum   = base.slice(0, dashIdx).trim();
     const answer = base.slice(dashIdx + 1).trim();
     if (!answer) return null;
+
+    // MSQ: two or more comma-separated option letters, e.g. "A,B" or "A,B,C"
+    if (/^[A-Da-d](,[A-Da-d])+$/.test(answer)) {
+      const opts = answer.split(',').map(o => o.toUpperCase());
+      return { qNum, type: 'msq', correctOptions: opts };
+    }
+    // MCQ: single letter
     if (/^[A-Da-d]$/.test(answer)) {
       return { qNum, type: 'mcq', correctOption: answer.toUpperCase() };
     }
+    // Numerical
     const num = parseFloat(answer);
     if (!isNaN(num)) {
       return { qNum, type: 'numerical', correctNumericalAnswer: num };
     }
     return null; // unrecognised format
+  }
+
+  // ── Badge helper (reused by file-list preview and live upload rows) ─
+  function parsedBadge(parsed) {
+    if (parsed.type === 'msq') {
+      return `<span class="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">MSQ · ${parsed.correctOptions.join(',')}</span>`;
+    }
+    if (parsed.type === 'mcq') {
+      return `<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">MCQ · ${parsed.correctOption}</span>`;
+    }
+    return `<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">Num · ${parsed.correctNumericalAnswer}</span>`;
   }
 
   // ── Tab switching ─────────────────────────────────────────────────
@@ -110,14 +131,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     listEl.innerHTML = files.map((f, i) => {
       const parsed = parseFilename(f.name);
       if (parsed) {
-        const badge = parsed.type === 'mcq'
-          ? `<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-medium">MCQ · ${parsed.correctOption}</span>`
-          : `<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-medium">Numerical · ${parsed.correctNumericalAnswer}</span>`;
         return `
           <div class="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg text-xs">
             <span class="text-green-500 font-bold flex-shrink-0">&#x2713;</span>
             <span class="text-gray-700 truncate flex-1" title="${f.name}">${f.name}</span>
-            ${badge}
+            ${parsedBadge(parsed)}
           </div>`;
       } else {
         return `
@@ -172,6 +190,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     fd.append('topic',   topic);
     if (parsed.type === 'mcq') {
       fd.append('correctOption', parsed.correctOption);
+    } else if (parsed.type === 'msq') {
+      // send as comma-separated string; backend splits on ','
+      fd.append('correctOptions', parsed.correctOptions.join(','));
     } else {
       fd.append('correctNumericalAnswer', parsed.correctNumericalAnswer);
     }
@@ -187,14 +208,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       el.innerHTML = '<p class="text-sm text-gray-400">No uploads yet in this session.</p>';
       return;
     }
-    el.innerHTML = uploadedQuestions.slice().reverse().map(q => `
+    el.innerHTML = uploadedQuestions.slice().reverse().map(q => {
+      const correctDisplay = q.type === 'msq'
+        ? (q.correctOptions || []).join(', ')
+        : (q.correctOption ?? q.correctNumericalAnswer);
+      const typeBg = q.type === 'msq' ? 'bg-orange-100 text-orange-700'
+                   : q.type === 'mcq' ? 'bg-purple-100 text-purple-700'
+                   : 'bg-blue-100 text-blue-700';
+      return `
       <div class="flex gap-3 border border-gray-200 rounded-lg p-3">
         <img src="${q.imageUrl}" class="w-20 h-14 object-contain rounded border bg-gray-50"/>
         <div class="text-xs text-gray-600">
-          <p class="font-semibold">${q.type.toUpperCase()}</p>
-          <p class="text-gray-400">Correct: ${q.correctOption ?? q.correctNumericalAnswer}</p>
+          <p class="font-semibold"><span class="px-1.5 py-0.5 rounded ${typeBg}">${q.type.toUpperCase()}</span></p>
+          <p class="text-gray-400 mt-1">Correct: <strong>${correctDisplay}</strong></p>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
 
   function addToRecentList(question) {
@@ -217,9 +246,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       const type = document.getElementById('sel-type').value;
       btn.disabled = true; btn.textContent = 'Uploading…';
       try {
+        // Collect MSQ checked options
+        const msqChecked = type === 'msq'
+          ? Array.from(document.querySelectorAll('.msq-check:checked')).map(cb => cb.value)
+          : [];
+        if (type === 'msq' && msqChecked.length < 2) {
+          btn.disabled = false; btn.textContent = 'Upload Question';
+          return toast.error('MSQ requires at least 2 correct options selected');
+        }
         const parsed = {
           type,
-          correctOption:         type === 'mcq' ? document.getElementById('sel-correct-option').value : undefined,
+          correctOption:          type === 'mcq' ? document.getElementById('sel-correct-option').value : undefined,
+          correctOptions:         type === 'msq' ? msqChecked : undefined,
           correctNumericalAnswer: type === 'numerical' ? parseFloat(document.getElementById('inp-numerical').value) : undefined,
         };
         const question = await uploadOne(pastedFile, parsed, subject, chapter, topic);
@@ -258,9 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       statusMap[i] = `row-${i}`;
     });
     statusEl.innerHTML = validFiles.map(({ file, parsed }, i) => {
-      const badge = parsed.type === 'mcq'
-        ? `<span class="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">MCQ · ${parsed.correctOption}</span>`
-        : `<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">Num · ${parsed.correctNumericalAnswer}</span>`;
+      const badge = parsedBadge(parsed);
       return `<div id="row-${i}" class="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs">
         <span id="row-icon-${i}" class="flex-shrink-0">&#x23F3;</span>
         <span class="text-gray-700 truncate flex-1">${file.name}</span>

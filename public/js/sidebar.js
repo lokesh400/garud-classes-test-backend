@@ -9,6 +9,7 @@ const ADMIN_LINKS = [
   { href: '/admin/upload',       label: 'Upload',        icon: iconUpload() },
   { href: '/admin/tests',        label: 'Tests',         icon: iconFile() },
   { href: '/admin/test-series',  label: 'Test Series',   icon: iconLayers() },
+  { href: '/admin/reports',      label: 'Reports',       icon: iconFlag() },
 ];
 
 const STUDENT_LINKS = [
@@ -16,7 +17,7 @@ const STUDENT_LINKS = [
   { href: '/student/purchase-series',label: 'Purchase Series', icon: iconLayers() },
   { href: '/student/study',          label: 'Study',           icon: iconBook() },
   { href: '/student/purchases',      label: 'My Purchases',    icon: iconFile() },
-  { href: '/student/tests',          label: 'My Tests',        icon: iconBook() },
+  // { href: '/student/tests',          label: 'My Tests',        icon: iconBook() },
 ];
 
 function buildSidebar() {
@@ -83,6 +84,7 @@ function iconUpload() { return svgWrap('M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4
 function iconFile()   { return svgWrap('M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'); }
 function iconLayers() { return svgWrap('M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'); }
 function iconBook()   { return svgWrap('M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'); }
+function iconFlag()   { return svgWrap('M3 3v18M3 6l9-3 9 3v9l-9 3-9-3V6z'); }
 function svgWrap(d)   {
   return `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
     <path stroke-linecap="round" stroke-linejoin="round" d="${d}"/>

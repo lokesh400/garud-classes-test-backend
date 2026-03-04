@@ -18,20 +18,34 @@ const questionSchema = new mongoose.Schema({
   // Question type
   type: {
     type: String,
-    enum: ['mcq', 'numerical'],
+    enum: ['mcq', 'numerical', 'msq'],
     required: true,
   },
   // For MCQ: correct option (A, B, C, or D)
   correctOption: {
     type: String,
-    enum: ['A', 'B', 'C', 'D'],
+    enum: ['A', 'B', 'C', 'D', null],
+    default: null,
     required: function () {
       return this.type === 'mcq';
+    },
+  },
+  // For MSQ (Multiple Select): one or more correct options
+  correctOptions: {
+    type: [{ type: String, enum: ['A', 'B', 'C', 'D'] }],
+    default: [],
+    validate: {
+      validator: function (v) {
+        if (this.type !== 'msq') return true;
+        return Array.isArray(v) && v.length >= 2;
+      },
+      message: 'MSQ questions must have at least 2 correct options',
     },
   },
   // For Numerical: correct numerical answer
   correctNumericalAnswer: {
     type: Number,
+    default: null,
     required: function () {
       return this.type === 'numerical';
     },

@@ -1,12 +1,13 @@
 /**
- * pages/test-attempt.js — NTA-style test interface
+ * pages/jee-advanced-attempt.js — JEE Advanced NTA-style interface
+ * Supports MCQ (single), MSQ (multiple select), and Numerical question types.
  * Depends on: api.js, toast.js, auth-guard.js
  */
 document.addEventListener('DOMContentLoaded', async () => {
   const user = requireAuth('student');
   if (!user) return;
 
-  // URL may be /student/test/:testId  OR  /student/test/:batchId/:testId
+  // URL: /student/jee-test/:testId  OR  /student/jee-test/:batchId/:testId
   const _pathParts = window.location.pathname.split('/');
   const _hasBatch  = _pathParts.length >= 5 && _pathParts[4];
   const testId  = _hasBatch ? _pathParts[4] : _pathParts[3];
@@ -20,30 +21,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   let currentSection  = 0;
   let currentQuestion = 0;
 
-  // answers      : { `${secId}_${qId}` : { selectedOption, selectedOptions, numericalAnswer } }
+  // answers      : { key: { selectedOption, selectedOptions, numericalAnswer } }
   // visited      : { key: true }
   // reviewed     : { key: true }
-  // timeSpentMap : { key: totalSeconds } — accumulated time per question
+  // timeSpentMap : { key: seconds }
   const answers      = {};
   const visited      = {};
   const reviewed     = {};
   const timeSpentMap = {};
-  let questionEnteredAt = null; // Date.now() when current question was first shown
+  let questionEnteredAt = null;
 
-  // All in-progress state is stored ONLY in localStorage during the test.
-  // Nothing is sent to the server until the student clicks Submit.
-  const storageKey = `test-attempt-${batchId || 'free'}-${testId}-${user._id || user.id}`;
+  const storageKey = `jee-attempt-${batchId || 'free'}-${testId}-${user._id || user.id}`;
 
-  // ── LocalStorage helpers ──────────────────────────────────────────
+  // ── LocalStorage ──────────────────────────────────────────────────
   function saveToLocalStorage() {
     try {
-      localStorage.setItem(storageKey, JSON.stringify({
-        answers:      { ...answers },
-        visited:      { ...visited },
-        reviewed:     { ...reviewed },
-        timeSpentMap: { ...timeSpentMap },
-      }));
-    } catch (_) { /* quota / private-browsing — fail silently */ }
+      localStorage.setItem(storageKey, JSON.stringify({ answers, visited, reviewed, timeSpentMap }));
+    } catch (_) {}
   }
 
   function loadFromLocalStorage() {
@@ -55,15 +49,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (s.visited)      Object.assign(visited,      s.visited);
       if (s.reviewed)     Object.assign(reviewed,     s.reviewed);
       if (s.timeSpentMap) Object.assign(timeSpentMap, s.timeSpentMap);
-    } catch (_) { /* corrupt data — ignore */ }
+    } catch (_) {}
   }
 
-  // ── Status logic ──────────────────────────────────────────────────
+  // ── Status ────────────────────────────────────────────────────────
   function getStatus(key) {
     const ans = answers[key];
-    const isAnswered = ans?.selectedOption != null ||
-                       (Array.isArray(ans?.selectedOptions) && ans.selectedOptions.length > 0) ||
-                       (ans?.numericalAnswer != null && ans?.numericalAnswer !== '');
+    const isAnswered =
+      ans?.selectedOption != null ||
+      (Array.isArray(ans?.selectedOptions) && ans.selectedOptions.length > 0) ||
+      (ans?.numericalAnswer != null && ans?.numericalAnswer !== '');
     const isVisited  = !!visited[key];
     const isReviewed = !!reviewed[key];
 
@@ -94,24 +89,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       const elapsed   = Math.floor((Date.now() - startedAt) / 1000);
       timeLeft        = Math.max(0, duration - elapsed);
 
-      // Restore saved answers + time spent (prefer localStorage — server answers are always
-      // empty during an in-progress attempt since nothing is auto-saved to the server)
       if (attempt.answers) {
         attempt.answers.forEach(a => {
           const key = `${a.sectionId}_${a.question}`;
-          answers[key] = { selectedOption: a.selectedOption, selectedOptions: a.selectedOptions || [], numericalAnswer: a.numericalAnswer };
+          answers[key] = {
+            selectedOption:  a.selectedOption,
+            selectedOptions: a.selectedOptions || [],
+            numericalAnswer: a.numericalAnswer,
+          };
           visited[key] = true;
           if (a.timeSpent) timeSpentMap[key] = a.timeSpent;
         });
       }
-      // Override with localStorage if available (more up-to-date than DB during a live attempt)
       loadFromLocalStorage();
 
       initUI();
       startTimer();
       navigateTo(0, 0);
 
-      // Show start screen (fullscreen triggered by user click)
       document.getElementById('loading').classList.add('hidden');
       showStartScreen();
     } catch (err) {
@@ -119,12 +114,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (msg.includes('already submitted')) {
         toast.error('You have already submitted this test');
         window.location.href = `/student/results/${testId}`;
-      } else if (msg.includes('not yet available') || msg.toLowerCase().includes('not yet available')) {
-        // Show a locked screen instead of redirecting
+      } else if (msg.toLowerCase().includes('not yet available')) {
         document.getElementById('loading').classList.add('hidden');
         showLockedScreen(err.data?.scheduledAt || null);
       } else {
-        // Don't silently redirect — show the error and let user go back
         document.getElementById('loading').classList.add('hidden');
         const screen = document.getElementById('start-screen');
         if (screen) {
@@ -133,11 +126,9 @@ document.addEventListener('DOMContentLoaded', async () => {
               <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-8 mb-6">
                 <div class="text-5xl mb-4">⚠️</div>
                 <h2 class="text-2xl font-bold text-white mb-2">Could not start test</h2>
-                <p class="text-white/70 text-sm mb-6">${msg || 'An unexpected error occurred. Please try again.'}</p>
+                <p class="text-white/70 text-sm mb-6">${msg || 'An unexpected error occurred.'}</p>
                 <button onclick="window.history.back()"
-                        class="w-full py-3 bg-white/20 text-white font-semibold rounded-2xl hover:bg-white/30 transition">
-                  ← Go Back
-                </button>
+                        class="w-full py-3 bg-white/20 text-white font-semibold rounded-2xl hover:bg-white/30 transition">← Go Back</button>
               </div>
             </div>`;
           screen.classList.remove('hidden');
@@ -146,20 +137,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           window.history.back();
         }
       }
-    } finally {
-      // loading hidden already above; test-ui shown via start screen
     }
   }
 
-  // ── Locked screen (test not yet available) ──────────────────────
   function showLockedScreen(scheduledAt) {
-    // Re-use start-screen container
     const screen = document.getElementById('start-screen');
-    if (!screen) {
-      alert('This test has not started yet. Please come back later.');
-      window.history.back();
-      return;
-    }
+    if (!screen) { alert('Test not yet available.'); window.history.back(); return; }
     const timeStr = scheduledAt
       ? new Date(scheduledAt).toLocaleString('en-IN', { dateStyle: 'long', timeStyle: 'short' })
       : 'a scheduled time';
@@ -175,42 +158,35 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="text-5xl mb-4">🔒</div>
           <h2 class="text-2xl font-bold text-white mb-2">Test Not Yet Available</h2>
           <p class="text-white/60 text-sm mb-4">This test will be available from:</p>
-          <p class="text-garud-highlight font-bold text-lg mb-6">${timeStr}</p>
+          <p class="text-orange-300 font-bold text-lg mb-6">${timeStr}</p>
           <button onclick="window.history.back()"
-                  class="w-full py-3 bg-white/20 text-white font-semibold rounded-2xl hover:bg-white/30 transition">
-            ← Go Back
-          </button>
+                  class="w-full py-3 bg-white/20 text-white font-semibold rounded-2xl hover:bg-white/30 transition">← Go Back</button>
         </div>
       </div>`;
     screen.classList.remove('hidden');
   }
 
-  // ── Start screen ─────────────────────────────────────────────────
   function showStartScreen() {
     const screen = document.getElementById('start-screen');
     if (!screen) { launchTest(); return; }
 
-    // Populate stats
     document.getElementById('start-test-name').textContent = test.name || 'Test';
     const totalQ = test.sections.reduce((s, sec) => s + sec.questions.length, 0);
     const totalMarks = test.sections.reduce((sum, sec) =>
-      sum + sec.questions.reduce((s2, q) => s2 + (q.marks?.correct || 4), 0), 0);
+      sum + sec.questions.reduce((s2, q) => s2 + (q.positiveMarks || 4), 0), 0);
     document.getElementById('start-qs').textContent       = totalQ;
     document.getElementById('start-duration').textContent = test.duration || '—';
     document.getElementById('start-marks').textContent    = totalMarks;
 
-    // Mode badge
     const metaEl = document.getElementById('start-test-meta');
     if (metaEl && test.mode) {
       const isPractice = test.mode === 'practice';
-      const badge = `<span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full font-semibold
-                       ${isPractice ? 'bg-blue-500/30 text-blue-200' : 'bg-purple-500/30 text-purple-200'}">
-        ${isPractice ? '🔁 Practice Mode — unlimited attempts' : '🎯 Real Mode — one submission only'}
+      metaEl.innerHTML = `<span class="inline-block mt-1 px-2 py-0.5 text-xs rounded-full font-semibold
+        ${isPractice ? 'bg-blue-500/30 text-blue-200' : 'bg-purple-500/30 text-purple-200'}">
+        ${isPractice ? '🔁 Practice Mode' : '🎯 Real Mode — one submission only'}
       </span>`;
-      metaEl.innerHTML = badge;
     }
 
-    // Syllabus
     const syllabusContainer = document.getElementById('start-syllabus-wrap');
     if (syllabusContainer) {
       if (test.syllabus && test.syllabus.trim()) {
@@ -221,13 +197,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <ul class="space-y-0.5 list-disc list-inside">${lines}</ul>
           </div>`;
         syllabusContainer.classList.remove('hidden');
-      } else {
-        syllabusContainer.classList.add('hidden');
       }
     }
 
     screen.classList.remove('hidden');
-
     document.getElementById('start-exam-btn').onclick = () => {
       screen.classList.add('hidden');
       launchTest();
@@ -241,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  // ── UI initialisation ─────────────────────────────────────────────
+  // ── UI init ───────────────────────────────────────────────────────
   function initUI() {
     document.getElementById('test-name').textContent = test.name;
     renderSectionTabs();
@@ -259,16 +232,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       return `
         <button id="tab-${i}" onclick="switchSection(${i})"
                 class="px-4 py-3 text-sm font-medium border-b-2 whitespace-nowrap transition flex items-center gap-1.5
-                       ${isActive ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}">
+                       ${isActive ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'}">
           ${s.name}
-          <span class="text-xs ${isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'} rounded-full px-1.5 py-0.5 font-semibold">
+          <span class="text-xs ${isActive ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-500'} rounded-full px-1.5 py-0.5 font-semibold">
             ${answered}/${s.questions.length}
           </span>
         </button>`;
     }).join('');
   }
 
-  // ── Time tracking helpers ─────────────────────────────────────────
+  // ── Time tracking ─────────────────────────────────────────────────
   function flushCurrentTime() {
     if (!questionEnteredAt) return;
     const sec    = test.sections[currentSection];
@@ -276,18 +249,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!qEntry) return;
     const key = `${sec._id}_${qEntry.question._id}`;
     timeSpentMap[key] = (timeSpentMap[key] || 0) + Math.floor((Date.now() - questionEnteredAt) / 1000);
-    questionEnteredAt = Date.now(); // reset so same question doesn't double-count if called again
-    saveToLocalStorage(); // persist time update locally (never sent to server until Submit)
+    questionEnteredAt = Date.now();
+    saveToLocalStorage();
   }
 
   // ── Navigation ────────────────────────────────────────────────────
   function navigateTo(secIdx, qIdx) {
-    // Flush elapsed time for the question we are leaving
     flushCurrentTime();
-
     currentSection  = secIdx;
     currentQuestion = qIdx;
-    questionEnteredAt = Date.now(); // start timing the new question
+    questionEnteredAt = Date.now();
 
     const sec    = test.sections[secIdx];
     const qEntry = sec?.questions[qIdx];
@@ -309,29 +280,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Render question ───────────────────────────────────────────────
   function renderQuestion(sec, qEntry, key) {
-    const q    = qEntry.question;
-    const ans  = answers[key];
+    const q   = qEntry.question;
+    const ans = answers[key];
     const type = q.type; // 'mcq' | 'msq' | 'numerical'
 
-    // Number + type
-    document.getElementById('q-number').textContent =
-      `Q ${currentQuestion + 1} / ${sec.questions.length}`;
+    // Number
+    document.getElementById('q-number').textContent = `Q ${currentQuestion + 1} / ${sec.questions.length}`;
+
+    // Type badge
     const typeEl = document.getElementById('q-type');
-    typeEl.textContent = type.toUpperCase();
+    if (type === 'msq') {
+      typeEl.textContent = 'MSQ';
+      typeEl.className = 'text-xs px-2 py-0.5 rounded font-medium bg-orange-100 text-orange-700';
+    } else if (type === 'numerical') {
+      typeEl.textContent = 'INTEGER';
+      typeEl.className = 'text-xs px-2 py-0.5 rounded font-medium bg-blue-100 text-blue-700';
+    } else {
+      typeEl.textContent = 'MCQ';
+      typeEl.className = 'text-xs px-2 py-0.5 rounded font-medium bg-purple-100 text-purple-700';
+    }
 
     // Marks badge
     const marksEl = document.getElementById('q-marks');
     if (type === 'msq') {
       marksEl.innerHTML = `
-        <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">+${qEntry.positiveMarks} (full)</span>
-        <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-semibold">+1/correct (partial)</span>
-        <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">−${qEntry.negativeMarks} (wrong)</span>`;
+        <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">+${qEntry.positiveMarks} (all correct)</span>
+        <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-semibold">+1/correct (partial, no wrong)</span>
+        <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">−${qEntry.negativeMarks} (any wrong)</span>`;
+    } else if (type === 'numerical') {
+      marksEl.innerHTML = `
+        <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">+${qEntry.positiveMarks}</span>
+        <span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-semibold">0 (wrong — no negative)</span>`;
     } else {
       marksEl.innerHTML = `
         <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded font-semibold">+${qEntry.positiveMarks}</span>
-        ${type === 'numerical'
-          ? '<span class="bg-gray-100 text-gray-500 px-2 py-0.5 rounded font-semibold">0 (wrong)</span>'
-          : `<span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">−${qEntry.negativeMarks}</span>`}`;
+        <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">−${qEntry.negativeMarks}</span>`;
     }
 
     // Image
@@ -339,7 +322,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     imgEl.src = q.imageUrl || '';
     imgEl.style.display = q.imageUrl ? 'block' : 'none';
 
-    // Show/hide input sections
+    // Show/hide question input sections
     document.getElementById('mcq-options').classList.toggle('hidden', type !== 'mcq');
     document.getElementById('msq-options').classList.toggle('hidden', type !== 'msq');
     document.getElementById('num-input').classList.toggle('hidden', type !== 'numerical');
@@ -352,10 +335,10 @@ document.addEventListener('DOMContentLoaded', async () => {
           <button onclick="selectMcq('${opt}')"
                   class="flex items-center gap-3 px-4 py-4 rounded-xl border-2 font-medium text-sm transition w-full text-left
                          ${selected
-                           ? 'border-blue-600 bg-blue-50 text-blue-800 shadow-sm'
-                           : 'border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-gray-50'}">
+                           ? 'border-purple-600 bg-purple-50 text-purple-800 shadow-sm'
+                           : 'border-gray-200 text-gray-700 hover:border-purple-300 hover:bg-gray-50'}">
             <span class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0
-                         ${selected ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}">
+                         ${selected ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-600'}">
               ${opt}
             </span>
             <span>Option ${opt}</span>
@@ -403,13 +386,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const cur    = answers[key]?.selectedOptions || [];
     const next   = checked ? [...new Set([...cur, opt])] : cur.filter(o => o !== opt);
     answers[key] = { selectedOption: null, selectedOptions: next, numericalAnswer: null };
+    // Re-render to update styles
     renderQuestion(sec, qEntry, key);
     renderPalette(false);
     renderPalette(true);
     saveToLocalStorage();
   };
 
-  // ── Save answer from current state ───────────────────────────────
+  // ── Capture current numerical answer ─────────────────────────────
   function getCurrentAnswer() {
     const sec    = test.sections[currentSection];
     const qEntry = sec.questions[currentQuestion];
@@ -419,11 +403,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (q.type === 'numerical') {
       const val = document.getElementById('numerical-answer').value;
       answers[key] = {
-        selectedOption: null,
+        selectedOption:  null,
         selectedOptions: [],
         numericalAnswer: val !== '' ? parseFloat(val) : null,
       };
     }
+    // MSQ is already updated live via toggleMsq clicks
     return { sec, qEntry, key };
   }
 
@@ -431,7 +416,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.handleSaveAndNext = function() {
     const { key } = getCurrentAnswer();
     delete reviewed[key];
-    saveToLocalStorage(); // persist numerical answer + reviewed state locally
+    saveToLocalStorage();
     renderSectionTabs();
     goNext();
   };
@@ -439,7 +424,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.handleMarkAndNext = function() {
     const { key } = getCurrentAnswer();
     reviewed[key] = true;
-    saveToLocalStorage(); // persist numerical answer + reviewed state locally
+    saveToLocalStorage();
     renderSectionTabs();
     goNext();
   };
@@ -454,7 +439,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPalette(false);
     renderPalette(true);
     renderSectionTabs();
-    saveToLocalStorage(); // persist cleared answer locally
+    saveToLocalStorage();
   };
 
   window.handlePrev = function() {
@@ -497,15 +482,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       const isActive = qi === currentQuestion;
       return `
         <button onclick="navigateTo(${currentSection}, ${qi})"
-                title="Question ${qi + 1}"
+                title="Q${qi + 1} (${(qEntry.question.type || '').toUpperCase()})"
                 class="w-8 h-8 rounded text-xs font-bold transition
                        ${statusClass[st]}
-                       ${isActive ? 'ring-2 ring-blue-400 ring-offset-1 scale-110' : 'hover:scale-105'}">
+                       ${isActive ? 'ring-2 ring-orange-400 ring-offset-1 scale-110' : 'hover:scale-105'}">
           ${qi + 1}
         </button>`;
     }).join('');
 
-    // Stats
     let answered = 0, notAnswered = 0, marked = 0, answeredMarked = 0, notVisited = 0;
     test.sections.forEach(s => s.questions.forEach(q => {
       const k  = `${s._id}_${q.question._id}`;
@@ -524,15 +508,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       <div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#c0c0c0] inline-block"></span><span>${notVisited} Not Visited</span></div>`;
   }
 
-  // ── Palette toggle (mobile) ───────────────────────────────────────
   window.togglePalette = function() {
     const overlay = document.getElementById('palette-overlay');
     const panel   = document.getElementById('palette-mobile');
     overlay.classList.toggle('hidden');
     panel.classList.toggle('hidden');
-    if (!panel.classList.contains('hidden')) {
-      renderPalette(true);
-    }
+    if (!panel.classList.contains('hidden')) renderPalette(true);
   };
 
   window.navigateTo = navigateTo;
@@ -566,7 +547,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ── Submit modal ──────────────────────────────────────────────────
   window.handleSubmit = function() {
-    // Tally counts for modal
     let answered = 0, notAnswered = 0, notVisited = 0, marked = 0;
     test.sections.forEach(s => s.questions.forEach(q => {
       const k  = `${s._id}_${q.question._id}`;
@@ -598,7 +578,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         <span class="font-semibold text-gray-600">${notVisited}</span>
         <span class="text-gray-500">Not Visited</span>
       </div>`;
-
     document.getElementById('submit-modal').classList.remove('hidden');
   };
 
@@ -613,11 +592,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function submitTest(auto) {
     if (timerInterval) clearInterval(timerInterval);
-    // Flush time for the currently-open question, capture its answer
     flushCurrentTime();
     getCurrentAnswer();
 
-    // Build complete answers payload — one object per question across all sections
     const allAnswers = [];
     test.sections.forEach(sec => {
       sec.questions.forEach(qEntry => {
@@ -626,17 +603,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         allAnswers.push({
           questionId:      qEntry.question._id,
           sectionId:       sec._id,
-          selectedOption:  ans.selectedOption   || null,
-          selectedOptions: ans.selectedOptions  || [],
+          selectedOption:  ans.selectedOption  || null,
+          selectedOptions: ans.selectedOptions || [],
           numericalAnswer: ans.numericalAnswer !== undefined ? ans.numericalAnswer : null,
-          timeSpent:       timeSpentMap[key]    || 0,
+          timeSpent:       timeSpentMap[key] || 0,
         });
       });
     });
 
     try {
       await API.post(`/tests/${testId}/submit`, { answers: allAnswers });
-      // Clear local state now that the server has the final submission
       try { localStorage.removeItem(storageKey); } catch (_) {}
       toast.success(auto ? 'Time up! Test auto-submitted.' : 'Test submitted successfully!');
       if (document.exitFullscreen) document.exitFullscreen().catch(() => {});

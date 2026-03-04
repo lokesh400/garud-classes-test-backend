@@ -1,0 +1,67 @@
+<%- include('../partials/head', { title: 'Question Reports' }) %>
+<body class="min-h-screen bg-slate-50 text-gray-900">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 min-h-screen page-body">
+
+    <!-- Page Header -->
+    <div class="page-header px-6 md:px-8 py-7 fade-up">
+      <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
+      <h1 class="text-2xl md:text-3xl font-bold text-white">🚩 Question Reports</h1>
+      <p class="text-white/60 text-sm mt-1">Student-flagged discrepancies in questions and answers</p>
+    </div>
+
+    <div class="p-6 md:p-8">
+
+      <!-- Filters bar -->
+      <div class="flex flex-wrap gap-3 mb-6 items-center">
+        <div class="flex gap-1 bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+          <button onclick="setFilter('all')"      id="f-all"      class="filter-btn active px-3 py-1.5 rounded-lg text-sm font-medium transition">All</button>
+          <button onclick="setFilter('pending')"  id="f-pending"  class="filter-btn px-3 py-1.5 rounded-lg text-sm font-medium transition">Pending</button>
+          <button onclick="setFilter('reviewed')" id="f-reviewed" class="filter-btn px-3 py-1.5 rounded-lg text-sm font-medium transition">Reviewed</button>
+          <button onclick="setFilter('resolved')" id="f-resolved" class="filter-btn px-3 py-1.5 rounded-lg text-sm font-medium transition">Resolved</button>
+        </div>
+        <span id="report-count" class="text-sm text-gray-400 ml-2"></span>
+        <button onclick="loadReports()" class="ml-auto px-4 py-2 border border-gray-200 rounded-xl text-sm text-gray-600 hover:bg-gray-50 transition">
+          ↻ Refresh
+        </button>
+      </div>
+
+      <!-- Reports list -->
+      <div id="reports-loading" class="text-center py-16 text-gray-400 text-sm">Loading reports…</div>
+      <div id="reports-list" class="space-y-4 hidden"></div>
+      <div id="reports-empty" class="hidden text-center py-16">
+        <div class="text-4xl mb-3">✅</div>
+        <p class="text-gray-500 font-medium">No reports found</p>
+        <p class="text-gray-400 text-sm mt-1">No question reports match the current filter.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status update modal -->
+  <div id="status-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-xs w-full">
+      <h3 class="font-bold text-gray-800 mb-4">Update Status</h3>
+      <div class="flex flex-col gap-2 mb-5">
+        <button onclick="updateStatus('pending')"  class="status-opt px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition text-left">⏳ Pending</button>
+        <button onclick="updateStatus('reviewed')" class="status-opt px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition text-left">🔍 Reviewed</button>
+        <button onclick="updateStatus('resolved')" class="status-opt px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition text-left">✅ Resolved</button>
+      </div>
+      <button onclick="closeStatusModal()" class="w-full py-2 border border-gray-200 rounded-xl text-sm text-gray-500 hover:bg-gray-50 transition">Cancel</button>
+    </div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/reports.js"></script>
+
+  <style>
+    .filter-btn       { color: #6b7280; }
+    .filter-btn.active{ background: #4f46e5; color: #fff; }
+  </style>
+</body>
+</html>

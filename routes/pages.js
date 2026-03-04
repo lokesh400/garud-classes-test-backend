@@ -24,6 +24,9 @@ router.get('/admin/tests',
 router.get('/admin/tests/:testId',
     (req, res) => res.render('admin/test-creator', { title: 'Test Creator' }));
 
+router.get('/admin/jee-advanced-tests/:testId',
+    (req, res) => res.render('admin/jee-advanced-creator', { title: 'JEE Advanced Creator' }));
+
 router.get('/admin/tests/:testId/results',
     (req, res) => res.render('admin/test-results', { title: 'Test Results' }));
 
@@ -35,6 +38,9 @@ router.get('/admin/test-series/:seriesId/enrolled',
 
 router.get('/admin/test-series/:seriesId',
     (req, res) => res.render('admin/test-series-manager', { title: 'Manage Series' }));
+
+router.get('/admin/reports',
+    (req, res) => res.render('admin/reports', { title: 'Question Reports' }));
 
 // ── Student ───────────────────────────────────────────────────────
 router.get('/student/dashboard',
@@ -49,6 +55,13 @@ router.get('/student/test/:batchId/:testId',
 
 router.get('/student/test/:testId',
     (req, res) => res.render('student/test-attempt', { title: 'Test' }));
+
+// JEE Advanced test attempt routes
+router.get('/student/jee-test/:batchId/:testId',
+    (req, res) => res.render('student/jee-advanced-attempt', { title: 'JEE Advanced Test' }));
+
+router.get('/student/jee-test/:testId',
+    (req, res) => res.render('student/jee-advanced-attempt', { title: 'JEE Advanced Test' }));
 
 router.get('/student/test-series/:seriesId',
     (req, res) => res.render('student/test-series-view', { title: 'Series Detail' }));

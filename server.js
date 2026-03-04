@@ -55,6 +55,7 @@ app.use('/api/topics', require('./routes/topics'));
 app.use('/api/questions', require('./routes/questions'));
 app.use('/api/tests', require('./routes/tests'));
 app.use('/api/test-series', require('./routes/testSeries'));
+app.use('/api/reports', require('./routes/reports'));
 const paymentsRouter = require('./routes/payments');
 const purchaseRouter = require('./routes/purchase');
 app.use('/api/payments', paymentsRouter);
