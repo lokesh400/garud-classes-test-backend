@@ -43,6 +43,10 @@ router.get('/student/dashboard',
 router.get('/student/test-series',
     (req, res) => res.render('student/test-series-list', { title: 'Test Series' }));
 
+// Batch-gated test: /student/test/:batchId/:testId  (must come before the simpler pattern)
+router.get('/student/test/:batchId/:testId',
+    (req, res) => res.render('student/test-attempt', { title: 'Test' }));
+
 router.get('/student/test/:testId',
     (req, res) => res.render('student/test-attempt', { title: 'Test' }));
 

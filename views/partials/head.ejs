@@ -3,7 +3,66 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title><%= typeof title !== 'undefined' ? title + ' — GARUD Classes' : 'GARUD Classes Test Portal' %></title>
+
+  <%
+    const _pageTitle  = typeof title !== 'undefined' ? title + ' — GARUD Classes Test Portal' : 'GARUD Classes Test Portal';
+    const _siteUrl    = 'https://testportal.garudclasses.com';
+    const _siteName   = 'GARUD Classes Test Portal';
+    const _desc       = 'GARUD Classes Test Portal — Practice mock tests, chapter-wise quizzes and full-length exams for competitive exam preparation. Trusted by students preparing for JEE, NEET, and government exams.';
+    const _keywords   = 'GARUD Classes, garudclasses, Garud Classes, test portal, mock test, online test series, JEE mock test, NEET mock test, competitive exam, chapter wise test, question bank, garud classes test';
+    const _logo       = _siteUrl + '/images/logo.png';
+  %>
+
+  <title><%= _pageTitle %></title>
+
+  <!-- ── Canonical & indexing ──────────────────────────────────── -->
+  <link rel="canonical" href="<%= _siteUrl %>"/>
+  <meta name="robots" content="index, follow"/>
+  <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"/>
+
+  <!-- ── Primary SEO meta ──────────────────────────────────────── -->
+  <meta name="description" content="<%= _desc %>"/>
+  <meta name="keywords"    content="<%= _keywords %>"/>
+  <meta name="author"      content="GARUD Classes"/>
+  <meta name="theme-color" content="#0f3460"/>
+
+  <!-- ── Open Graph (Facebook / WhatsApp / LinkedIn) ───────────── -->
+  <meta property="og:type"        content="website"/>
+  <meta property="og:url"         content="<%= _siteUrl %>"/>
+  <meta property="og:site_name"   content="<%= _siteName %>"/>
+  <meta property="og:title"       content="<%= _pageTitle %>"/>
+  <meta property="og:description" content="<%= _desc %>"/>
+  <meta property="og:image"       content="<%= _logo %>"/>
+  <meta property="og:image:width" content="512"/>
+  <meta property="og:image:height" content="512"/>
+  <meta property="og:locale"      content="en_IN"/>
+
+  <!-- ── Twitter Card ─────────────────────────────────────────── -->
+  <meta name="twitter:card"        content="summary"/>
+  <meta name="twitter:site"        content="@garudclasses"/>
+  <meta name="twitter:title"       content="<%= _pageTitle %>"/>
+  <meta name="twitter:description" content="<%= _desc %>"/>
+  <meta name="twitter:image"       content="<%= _logo %>"/>
+
+  <!-- ── Favicon ──────────────────────────────────────────────── -->
+  <link rel="icon"             type="image/png" sizes="32x32"  href="/images/logo.png"/>
+  <link rel="icon"             type="image/png" sizes="16x16"  href="/images/logo.png"/>
+  <link rel="apple-touch-icon"                  sizes="180x180" href="/images/logo.png"/>
+  <link rel="shortcut icon"    type="image/png"                 href="/images/logo.png"/>
+  <link rel="manifest" href="/site.webmanifest"/>
+
+  <!-- ── Structured data (JSON-LD) ────────────────────────────── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "EducationalOrganization",
+    "name": "GARUD Classes",
+    "url": "<%= _siteUrl %>",
+    "logo": "<%= _logo %>",
+    "description": "<%= _desc %>",
+    "sameAs": ["https://garudclasses.com"]
+  }
+  </script>
   <!-- Tailwind CDN Play CDN (supports config customisation) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>

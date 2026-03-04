@@ -6,7 +6,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = requireAuth('student');
   if (!user) return;
 
-  const testId = window.location.pathname.split('/')[3]; // /student/test/:testId
+  // URL may be /student/test/:testId  OR  /student/test/:batchId/:testId
+  const _pathParts = window.location.pathname.split('/');
+  const _hasBatch  = _pathParts.length >= 5 && _pathParts[4];
+  const testId  = _hasBatch ? _pathParts[4] : _pathParts[3];
+  const batchId = _hasBatch ? _pathParts[3] : null;
 
   let test    = null;
   let attempt = null;
@@ -25,6 +29,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   const reviewed     = {};
   const timeSpentMap = {};
   let questionEnteredAt = null; // Date.now() when current question was first shown
+
+  // All in-progress state is stored ONLY in localStorage during the test.
+  // Nothing is sent to the server until the student clicks Submit.
+  const storageKey = `test-attempt-${batchId || 'free'}-${testId}-${user._id || user.id}`;
+
+  // ── LocalStorage helpers ──────────────────────────────────────────
+  function saveToLocalStorage() {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify({
+        answers:      { ...answers },
+        visited:      { ...visited },
+        reviewed:     { ...reviewed },
+        timeSpentMap: { ...timeSpentMap },
+      }));
+    } catch (_) { /* quota / private-browsing — fail silently */ }
+  }
+
+  function loadFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      if (s.answers)      Object.assign(answers,      s.answers);
+      if (s.visited)      Object.assign(visited,      s.visited);
+      if (s.reviewed)     Object.assign(reviewed,     s.reviewed);
+      if (s.timeSpentMap) Object.assign(timeSpentMap, s.timeSpentMap);
+    } catch (_) { /* corrupt data — ignore */ }
+  }
 
   // ── Status logic ──────────────────────────────────────────────────
   function getStatus(key) {
@@ -52,7 +84,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ── Start test ────────────────────────────────────────────────────
   async function startTest() {
     try {
-      const res = await API.post(`/tests/${testId}/start`);
+      const res = await API.post(`/tests/${testId}/start`, batchId ? { batchId } : {});
       test    = res.test;
       attempt = res.attempt;
 
@@ -61,7 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const elapsed   = Math.floor((Date.now() - startedAt) / 1000);
       timeLeft        = Math.max(0, duration - elapsed);
 
-      // Restore saved answers + time spent
+      // Restore saved answers + time spent (prefer localStorage — server answers are always
+      // empty during an in-progress attempt since nothing is auto-saved to the server)
       if (attempt.answers) {
         attempt.answers.forEach(a => {
           const key = `${a.sectionId}_${a.question}`;
@@ -70,6 +103,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           if (a.timeSpent) timeSpentMap[key] = a.timeSpent;
         });
       }
+      // Override with localStorage if available (more up-to-date than DB during a live attempt)
+      loadFromLocalStorage();
 
       initUI();
       startTimer();
@@ -241,6 +276,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const key = `${sec._id}_${qEntry.question._id}`;
     timeSpentMap[key] = (timeSpentMap[key] || 0) + Math.floor((Date.now() - questionEnteredAt) / 1000);
     questionEnteredAt = Date.now(); // reset so same question doesn't double-count if called again
+    saveToLocalStorage(); // persist time update locally (never sent to server until Submit)
   }
 
   // ── Navigation ────────────────────────────────────────────────────
@@ -331,6 +367,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderQuestion(sec, qEntry, key);
     renderPalette(false);
     renderPalette(true);
+    saveToLocalStorage(); // persist answer locally (never sent to server until Submit)
   };
 
   // ── Save answer from current state ───────────────────────────────
@@ -354,6 +391,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.handleSaveAndNext = function() {
     const { key } = getCurrentAnswer();
     delete reviewed[key];
+    saveToLocalStorage(); // persist numerical answer + reviewed state locally
     renderSectionTabs();
     goNext();
   };
@@ -361,6 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.handleMarkAndNext = function() {
     const { key } = getCurrentAnswer();
     reviewed[key] = true;
+    saveToLocalStorage(); // persist numerical answer + reviewed state locally
     renderSectionTabs();
     goNext();
   };
@@ -375,6 +414,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderPalette(false);
     renderPalette(true);
     renderSectionTabs();
+    saveToLocalStorage(); // persist cleared answer locally
   };
 
   window.handlePrev = function() {
@@ -555,6 +595,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     try {
       await API.post(`/tests/${testId}/submit`, { answers: allAnswers });
+      // Clear local state now that the server has the final submission
+      try { localStorage.removeItem(storageKey); } catch (_) {}
       toast.success(auto ? 'Time up! Test auto-submitted.' : 'Test submitted successfully!');
       if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
       window.location.href = `/student/results/${testId}`;

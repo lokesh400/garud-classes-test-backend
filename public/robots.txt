@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# Block admin-only pages from indexing
+Disallow: /admin/
+Disallow: /student/test/
+Disallow: /student/results/
+Disallow: /student/purchases
+Disallow: /student/purchase-series
+
+# Allow login/register to be indexed (brand discovery)
+Allow: /login
+Allow: /register
+
+Sitemap: https://testportal.garudclasses.com/sitemap.xml

@@ -47,6 +47,11 @@ const testAttemptSchema = new mongoose.Schema({
     ref: 'Test',
     required: true,
   },
+  batch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TestSeries',
+    default: null,
+  },
   answers: [answerSchema],
   totalScore: {
     type: Number,

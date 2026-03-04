@@ -103,14 +103,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             Last Result
           </button>
           ${canAttempt
-            ? `<button onclick="window.location.href='/student/test/${t._id}'"
+            ? `<button onclick="window.location.href='/student/test/${seriesId}/${t._id}'"
                       class="px-3 py-2 bg-garud-highlight text-white rounded-lg text-sm font-medium hover:opacity-90 transition">
                 🔁 Retry
               </button>`
             : ''}
         </div>`;
       } else if (canAttempt) {
-        actionBtn = `<button onclick="window.location.href='/student/test/${t._id}'"
+        actionBtn = `<button onclick="window.location.href='/student/test/${seriesId}/${t._id}'"
                           class="px-4 py-2 bg-garud-highlight text-white rounded-lg text-sm font-medium hover:opacity-90 transition">
                     ▶ Start
                   </button>`;

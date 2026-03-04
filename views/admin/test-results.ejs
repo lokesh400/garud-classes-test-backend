@@ -26,10 +26,12 @@
             <th class="text-left px-4 py-3 font-semibold">Rank</th>
             <th class="text-left px-4 py-3 font-semibold">Student</th>
             <th class="text-left px-4 py-3 font-semibold">Email</th>
+            <th class="text-left px-4 py-3 font-semibold">Batch</th>
             <th class="text-right px-4 py-3 font-semibold">Score</th>
             <th class="text-right px-4 py-3 font-semibold">Max</th>
             <th class="text-right px-4 py-3 font-semibold">%</th>
             <th class="text-right px-4 py-3 font-semibold">Submitted</th>
+            <th class="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody id="results-body" class="divide-y divide-gray-100"></tbody>
@@ -38,11 +40,43 @@
     </div><!-- /inner -->
   </div>
 
+  <!-- ── Student detail drawer ── -->
+  <div id="drawer-overlay" class="fixed inset-0 bg-black/40 z-40 hidden" onclick="closeDrawer()"></div>
+  <div id="student-drawer"
+       class="fixed top-0 right-0 h-full w-full md:w-[680px] xl:w-[760px] bg-white z-50
+              shadow-2xl flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
+
+    <!-- Drawer header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b bg-gradient-to-r from-garud-accent to-garud-mid flex-shrink-0">
+      <div>
+        <p class="text-white/60 text-xs font-semibold uppercase tracking-widest">Student Detail</p>
+        <h2 id="drawer-student-name" class="text-lg font-bold text-white"></h2>
+        <p id="drawer-student-email" class="text-white/60 text-xs"></p>
+        <p id="drawer-batch-badge" class="hidden mt-1 inline-block text-xs font-semibold bg-white/20 text-white px-2 py-0.5 rounded-full"></p>
+      </div>
+      <button onclick="closeDrawer()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+    </div>
+
+    <!-- Drawer body (scrollable) -->
+    <div class="flex-1 overflow-y-auto p-5" id="drawer-body">
+      <div class="flex items-center justify-center h-40"><div class="spinner"></div></div>
+    </div>
+  </div>
+
   <%- include('../partials/toast') %>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/toast.js"></script>
   <script src="/js/auth-guard.js"></script>
   <script src="/js/sidebar.js"></script>
   <script src="/js/pages/test-results.js"></script>
+
+  <style>
+    .q-img-admin { display:block; width:95%; height:auto; }
+    @media(min-width:768px){ .q-img-admin { width:30vw; } }
+    /* Active drawer */
+    #student-drawer.open { transform: translateX(0); }
+  </style>
 </body>
 </html>

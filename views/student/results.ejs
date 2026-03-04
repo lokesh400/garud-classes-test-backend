@@ -10,31 +10,238 @@
       <!-- Header -->
       <div class="page-header px-6 md:px-8 py-7 fade-up">
         <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">Student Portal</p>
-        <div class="flex items-center gap-3">
-          <button onclick="window.location.href='/student/dashboard'"
-                  class="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition">&larr;</button>
-          <div>
-            <h1 id="test-title" class="text-2xl md:text-3xl font-bold text-white"></h1>
-            <p id="submitted-at" class="text-white/60 text-sm mt-0.5"></p>
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div class="flex items-center gap-3">
+            <button onclick="window.history.back()"
+                    class="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition">&larr;</button>
+            <div>
+              <h1 id="test-title" class="text-2xl md:text-3xl font-bold text-white"></h1>
+              <p id="submitted-at" class="text-white/60 text-sm mt-0.5"></p>
+            </div>
           </div>
+          <div id="score-badge" class="text-right"></div>
         </div>
       </div>
 
-      <div class="p-6 md:p-8">
-      <!-- Score cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8 fade-up-1" id="score-cards"></div>
+      <!-- Tab bar -->
+      <div class="sticky top-14 z-10 bg-white border-b border-gray-200 shadow-sm">
+        <div class="md:ml-0 flex overflow-x-auto">
+          <button id="tab-overview" onclick="switchTab('overview')"
+                  class="tab-btn px-5 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-garud-accent text-garud-accent transition">
+            📊 Overview
+          </button>
+          <button id="tab-sections" onclick="switchTab('sections')"
+                  class="tab-btn px-5 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-800 transition">
+            📋 Section &amp; Subject
+          </button>
+          <button id="tab-time" onclick="switchTab('time')"
+                  class="tab-btn px-5 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-800 transition">
+            ⏱ Time Analysis
+          </button>
+          <button id="tab-questions" onclick="switchTab('questions')"
+                  class="tab-btn px-5 py-3.5 text-sm font-semibold whitespace-nowrap border-b-2 border-transparent text-gray-500 hover:text-gray-800 transition">
+            📝 Questions Review
+          </button>
+        </div>
+      </div>
 
-      <!-- Section breakdown -->
-      <div id="sections-review"></div>
-      </div><!-- /p-6 -->
-    </div>
+      <div class="p-4 md:p-6">
+
+        <!-- ── OVERVIEW TAB ── -->
+        <div id="panel-overview">
+          <!-- Score cards -->
+          <div id="score-cards" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6 fade-up-1"></div>
+
+          <!-- Charts row -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 fade-up-2">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Answer Distribution</h3>
+              <div class="relative flex items-center justify-center" style="height:220px">
+                <canvas id="chart-donut"></canvas>
+                <div id="donut-center" class="absolute text-center pointer-events-none"></div>
+              </div>
+              <div id="donut-legend" class="flex justify-center gap-5 mt-3 text-xs text-gray-600 flex-wrap"></div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Score Per Section</h3>
+              <div style="height:220px"><canvas id="chart-section-score"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Performance meter -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 fade-up-3">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Performance Breakdown</h3>
+            <div id="perf-meter"></div>
+          </div>
+        </div>
+
+        <!-- ── SECTIONS / SUBJECT TAB ── -->
+        <div id="panel-sections" class="hidden">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Section-wise table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div class="px-5 py-4 border-b bg-gray-50 flex items-center gap-2">
+                <span class="text-base">📋</span>
+                <h3 class="font-bold text-gray-700">Section-wise Breakdown</h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                      <th class="text-left px-4 py-2.5">Section</th>
+                      <th class="px-3 py-2.5">✅ Correct</th>
+                      <th class="px-3 py-2.5">❌ Wrong</th>
+                      <th class="px-3 py-2.5">⬜ Skip</th>
+                      <th class="px-3 py-2.5">Score</th>
+                      <th class="px-3 py-2.5">Accuracy</th>
+                    </tr>
+                  </thead>
+                  <tbody id="section-table-body" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+            <!-- Subject-wise table -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              <div class="px-5 py-4 border-b bg-gray-50 flex items-center gap-2">
+                <span class="text-base">📚</span>
+                <h3 class="font-bold text-gray-700">Subject-wise Breakdown</h3>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                      <th class="text-left px-4 py-2.5">Subject</th>
+                      <th class="px-3 py-2.5">✅</th>
+                      <th class="px-3 py-2.5">❌</th>
+                      <th class="px-3 py-2.5">⬜</th>
+                      <th class="px-3 py-2.5">Accuracy</th>
+                      <th class="px-3 py-2.5">Avg Time</th>
+                    </tr>
+                  </thead>
+                  <tbody id="subject-table-body" class="divide-y divide-gray-100"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Subject accuracy chart -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Subject Accuracy (%)</h3>
+            <div style="height:260px"><canvas id="chart-subject-acc"></canvas></div>
+          </div>
+
+          <!-- Chapter-wise table -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+            <div class="px-5 py-4 border-b bg-gray-50 flex items-center gap-2">
+              <span class="text-base">📖</span>
+              <h3 class="font-bold text-gray-700">Chapter-wise Breakdown</h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                  <tr>
+                    <th class="text-left px-4 py-2.5">Chapter</th>
+                    <th class="text-left px-4 py-2.5">Subject</th>
+                    <th class="px-3 py-2.5">✅</th>
+                    <th class="px-3 py-2.5">❌</th>
+                    <th class="px-3 py-2.5">⬜</th>
+                    <th class="px-3 py-2.5">Accuracy</th>
+                    <th class="px-3 py-2.5">Avg Time</th>
+                  </tr>
+                </thead>
+                <tbody id="chapter-table-body" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── TIME ANALYSIS TAB ── -->
+        <div id="panel-time" class="hidden">
+          <!-- Time summary cards -->
+          <div id="time-cards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6"></div>
+
+          <!-- Time per question chart -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+            <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-1">Time Spent Per Question</h3>
+            <p class="text-xs text-gray-400 mb-4">Green = correct &nbsp;|&nbsp; Red = wrong &nbsp;|&nbsp; Grey = unattempted</p>
+            <div style="height:280px;overflow-x:auto"><canvas id="chart-time-per-q"></canvas></div>
+          </div>
+
+          <!-- Section time chart -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Time Per Section</h3>
+              <div style="height:240px"><canvas id="chart-section-time"></canvas></div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+              <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Avg Time: Correct vs Wrong</h3>
+              <div style="height:240px"><canvas id="chart-time-cw"></canvas></div>
+            </div>
+          </div>
+
+          <!-- Per-question time table -->
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="px-5 py-4 border-b bg-gray-50">
+              <h3 class="font-bold text-gray-700">Question-wise Time Detail</h3>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+                  <tr>
+                    <th class="px-4 py-2.5">Q#</th>
+                    <th class="text-left px-4 py-2.5">Section</th>
+                    <th class="text-left px-4 py-2.5">Subject</th>
+                    <th class="px-3 py-2.5">Result</th>
+                    <th class="px-3 py-2.5">Time Spent</th>
+                    <th class="px-3 py-2.5">vs Avg</th>
+                    <th class="px-3 py-2.5">Marks</th>
+                  </tr>
+                </thead>
+                <tbody id="time-table-body" class="divide-y divide-gray-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── QUESTIONS REVIEW TAB ── -->
+        <div id="panel-questions" class="hidden">
+          <!-- Filter bar -->
+          <div class="flex flex-wrap gap-2 mb-5">
+            <button onclick="filterQuestions('all')"    id="qf-all"    class="qfilter-btn active-qf px-3 py-1.5 rounded-full text-xs font-semibold border">All</button>
+            <button onclick="filterQuestions('correct')" id="qf-correct" class="qfilter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-600">✅ Correct</button>
+            <button onclick="filterQuestions('wrong')"   id="qf-wrong"   class="qfilter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-600">❌ Wrong</button>
+            <button onclick="filterQuestions('skipped')" id="qf-skipped" class="qfilter-btn px-3 py-1.5 rounded-full text-xs font-semibold border border-gray-200 text-gray-600">⬜ Skipped</button>
+          </div>
+          <div id="questions-list" class="space-y-4"></div>
+        </div>
+
+      </div><!-- /p-4 -->
+    </div><!-- /main-content -->
   </div>
 
   <%- include('../partials/toast') %>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script src="/js/api.js"></script>
   <script src="/js/toast.js"></script>
   <script src="/js/auth-guard.js"></script>
   <script src="/js/sidebar.js"></script>
   <script src="/js/pages/results.js"></script>
+
+  <style>
+    .tab-btn { cursor: pointer; }
+    .active-tab { border-color: #0f3460 !important; color: #0f3460 !important; }
+    .active-qf  { background:#0f3460; color:#fff; border-color:#0f3460; }
+    .q-card[data-hidden="true"] { display:none; }
+    /* Question images: consistent width, height auto */
+    .q-img {
+      display: block;
+      width: 95%;
+      height: auto;
+    }
+    @media (min-width: 768px) {
+      .q-img { width: 30vw; }
+    }
+  </style>
 </body>
 </html>

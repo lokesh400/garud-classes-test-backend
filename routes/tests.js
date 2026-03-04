@@ -1,6 +1,8 @@
 const express = require('express');
 const Test = require('../models/Test');
 const TestAttempt = require('../models/TestAttempt');
+const TestSeries = require('../models/TestSeries');
+const Purchase = require('../models/Purchase');
 const Question = require('../models/Question');
 const { auth, adminOnly } = require('../middleware/auth');
 
@@ -203,8 +205,46 @@ router.get('/:id/results', auth, adminOnly, async (req, res) => {
   try {
     const attempts = await TestAttempt.find({ test: req.params.id, isSubmitted: true })
       .populate('user', 'name email')
+      .populate('batch', 'name')
       .sort({ totalScore: -1 });
     res.json(attempts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get a single student's full attempt detail (admin)
+router.get('/:id/results/:attemptId', auth, adminOnly, async (req, res) => {
+  try {
+    const attempt = await TestAttempt.findOne({
+      _id: req.params.attemptId,
+      test: req.params.id,
+      isSubmitted: true,
+    }).populate('batch', 'name').populate({
+      path: 'answers.question',
+      select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+      populate: [
+        { path: 'subject', select: 'name' },
+        { path: 'chapter', select: 'name' },
+        { path: 'topic',   select: 'name' },
+      ],
+    }).populate('user', 'name email');
+
+    if (!attempt) return res.status(404).json({ message: 'Attempt not found' });
+
+    const test = await Test.findById(req.params.id)
+      .select('name description duration sections')
+      .populate({
+        path: 'sections.questions.question',
+        select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+        populate: [
+          { path: 'subject', select: 'name' },
+          { path: 'chapter', select: 'name' },
+          { path: 'topic',   select: 'name' },
+        ],
+      });
+
+    res.json({ attempt, test });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -271,6 +311,35 @@ router.post('/:id/start', auth, async (req, res) => {
       });
     }
 
+    // ── Batch-gated access check ─────────────────────────────────────
+    const { batchId } = req.body;
+    if (batchId) {
+      const series = await TestSeries.findOne({ _id: batchId, isPublished: true });
+      if (!series) return res.status(404).json({ message: 'Batch not found' });
+
+      // Verify this test belongs to the batch
+      const testInBatch = series.tests.some(t => t.toString() === test._id.toString());
+      if (!testInBatch) {
+        return res.status(403).json({ message: 'This test is not part of the specified batch' });
+      }
+
+      // Verify student has access (paid or batch is free)
+      if (series.price > 0) {
+        const hasPurchase = await Purchase.findOne({
+          user: req.user._id,
+          itemId: batchId,
+          itemType: 'TestSeries',
+          status: 'success',
+        });
+        const alsoInPurchasedBy = series.purchasedBy && series.purchasedBy.some(
+          uid => uid.toString() === req.user._id.toString()
+        );
+        if (!hasPurchase && !alsoInPurchasedBy) {
+          return res.status(403).json({ message: 'You do not have access to this batch' });
+        }
+      }
+    }
+
     // Check existing attempt
     let attempt = await TestAttempt.findOne({
       user: req.user._id,
@@ -309,6 +378,7 @@ router.post('/:id/start', auth, async (req, res) => {
       attempt = new TestAttempt({
         user: req.user._id,
         test: test._id,
+        batch: batchId || null,
         answers: [],
         maxScore,
         startedAt: new Date(),
@@ -354,48 +424,8 @@ router.post('/:id/start', auth, async (req, res) => {
   }
 });
 
-// Save answer (student - auto-save)
-router.post('/:id/answer', auth, async (req, res) => {
-  try {
-    const { questionId, sectionId, selectedOption, numericalAnswer, timeSpent } = req.body;
-
-    const attempt = await TestAttempt.findOne({
-      user: req.user._id,
-      test: req.params.id,
-      isSubmitted: false,
-    });
-
-    if (!attempt) {
-      return res.status(400).json({ message: 'No active attempt found' });
-    }
-
-    // Find or create answer
-    const existingIdx = attempt.answers.findIndex(
-      (a) => a.question.toString() === questionId && a.sectionId.toString() === sectionId
-    );
-
-    const answerData = {
-      question: questionId,
-      sectionId,
-      selectedOption: selectedOption || null,
-      numericalAnswer: numericalAnswer !== undefined ? numericalAnswer : null,
-      timeSpent: typeof timeSpent === 'number' ? Math.round(timeSpent) : (existingIdx >= 0 ? attempt.answers[existingIdx].timeSpent : 0),
-    };
-
-    if (existingIdx >= 0) {
-      attempt.answers[existingIdx] = { ...attempt.answers[existingIdx].toObject(), ...answerData };
-    } else {
-      attempt.answers.push(answerData);
-    }
-
-    await attempt.save();
-    res.json({ message: 'Answer saved' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Submit test (student) — receives full answers payload from client in one shot
+// Submit test (student) — receives the complete answers + timeSpent payload in one shot.
+// All answers and per-question time are held client-side until the student clicks Submit.
 router.post('/:id/submit', auth, async (req, res) => {
   try {
     const { answers: clientAnswers = [] } = req.body;
@@ -469,7 +499,12 @@ router.get('/:id/my-result', auth, async (req, res) => {
     .sort({ submittedAt: -1 })  // always return the most recent attempt (important for practice mode retries)
     .populate({
       path: 'answers.question',
-      select: 'imageUrl type correctOption correctNumericalAnswer',
+      select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+      populate: [
+        { path: 'subject', select: 'name' },
+        { path: 'chapter', select: 'name' },
+        { path: 'topic',   select: 'name' },
+      ],
     });
 
     if (!attempt) {
@@ -480,7 +515,12 @@ router.get('/:id/my-result', auth, async (req, res) => {
       .select('name description duration sections')
       .populate({
         path: 'sections.questions.question',
-        select: 'imageUrl type correctOption correctNumericalAnswer',
+        select: 'imageUrl type correctOption correctNumericalAnswer subject chapter topic',
+        populate: [
+          { path: 'subject', select: 'name' },
+          { path: 'chapter', select: 'name' },
+          { path: 'topic',   select: 'name' },
+        ],
       });
 
     res.json({ attempt, test });
