@@ -16,9 +16,11 @@
   <title><%= _pageTitle %></title>
 
   <!-- ── Canonical & indexing ──────────────────────────────────── -->
-  <link rel="canonical" href="<%= _siteUrl %>"/>
-  <meta name="robots" content="index, follow"/>
+  <link rel="canonical" href="<%= typeof pageUrl !== 'undefined' ? pageUrl : _siteUrl %>"/>
+  <meta name="robots"    content="index, follow"/>
   <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"/>
+  <meta name="bingbot"   content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"/>
+  <meta name="msvalidate.01" content="9D75CB9B8C8587CA6B378AC8E10FD2AC" />
 
   <!-- ── Primary SEO meta ──────────────────────────────────────── -->
   <meta name="description" content="<%= _desc %>"/>
@@ -53,15 +55,32 @@
 
   <!-- ── Structured data (JSON-LD) ────────────────────────────── -->
   <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "EducationalOrganization",
-    "name": "GARUD Classes",
-    "url": "<%= _siteUrl %>",
-    "logo": "<%= _logo %>",
-    "description": "<%= _desc %>",
-    "sameAs": ["https://garudclasses.com"]
-  }
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "EducationalOrganization",
+      "name": "GARUD Classes",
+      "url": "<%= _siteUrl %>",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "<%= _logo %>"
+      },
+      "description": "<%= _desc %>",
+      "sameAs": ["https://garudclasses.com"]
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "<%= _siteName %>",
+      "url": "<%= _siteUrl %>",
+      "description": "<%= _desc %>",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "<%= _siteUrl %>/student/test-series?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
   </script>
   <!-- Tailwind CDN Play CDN (supports config customisation) -->
   <script src="https://cdn.tailwindcss.com"></script>

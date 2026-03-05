@@ -1,15 +1,67 @@
+# ── All crawlers (default) ──────────────────────────────────────
 User-agent: *
 Allow: /
-
-# Block admin-only pages from indexing
-Disallow: /admin/
-Disallow: /student/test/
-Disallow: /student/results/
-Disallow: /student/purchases
-Disallow: /student/purchase-series
-
-# Allow login/register to be indexed (brand discovery)
 Allow: /login
 Allow: /register
+Allow: /student/test-series
+Allow: /student/purchase-series
+
+# Block private/dynamic pages from indexing
+Disallow: /admin/
+Disallow: /student/test/
+Disallow: /student/jee-test/
+Disallow: /student/results/
+Disallow: /student/purchases
+Disallow: /student/study
+Disallow: /api/
+
+# ── Googlebot ───────────────────────────────────────────────────
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /student/test/
+Disallow: /student/jee-test/
+Disallow: /student/results/
+Disallow: /student/purchases
+Disallow: /api/
+
+# ── Bingbot (Microsoft / Yahoo) ─────────────────────────────────
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /student/test/
+Disallow: /student/jee-test/
+Disallow: /student/results/
+Disallow: /student/purchases
+Disallow: /api/
+Crawl-delay: 5
+
+# ── DuckDuckBot ─────────────────────────────────────────────────
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /admin/
+Disallow: /student/test/
+Disallow: /student/jee-test/
+Disallow: /student/results/
+Disallow: /student/purchases
+Disallow: /api/
+
+# ── Yandex ──────────────────────────────────────────────────────
+User-agent: Yandexbot
+Allow: /
+Disallow: /admin/
+Disallow: /student/test/
+Disallow: /student/jee-test/
+Disallow: /student/results/
+Disallow: /student/purchases
+Disallow: /api/
+Crawl-delay: 5
+
+# ── Semrush / Ahrefs (SEO tools) ────────────────────────────────
+User-agent: SemrushBot
+Crawl-delay: 10
+
+User-agent: AhrefsBot
+Crawl-delay: 10
 
 Sitemap: https://testportal.garudclasses.com/sitemap.xml

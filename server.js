@@ -89,6 +89,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// ── Inject canonical page URL into every EJS template ───────────────────────
+app.use((req, res, next) => {
+  res.locals.pageUrl = 'https://testportal.garudclasses.com' + req.path;
+  next();
+});
+
 // ── Page routes (EJS views) ────────────────────────────────────────────────────
 app.use('/', require('./routes/pages'));
 
