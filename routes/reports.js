@@ -35,7 +35,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // ── GET /api/reports — admin: list all reports ────────────────────
-router.get('/', adminOnly, async (req, res) => {
+router.get('/', auth, adminOnly, async (req, res) => {
   try {
     const reports = await QuestionReport.find()
       .populate('question', 'imageUrl type correctOption correctOptions correctNumericalAnswer')
@@ -50,7 +50,7 @@ router.get('/', adminOnly, async (req, res) => {
 });
 
 // ── PATCH /api/reports/:id — admin: update status ─────────────────
-router.patch('/:id', adminOnly, async (req, res) => {
+router.patch('/:id', auth, adminOnly, async (req, res) => {
   try {
     const { status } = req.body;
     const report = await QuestionReport.findByIdAndUpdate(

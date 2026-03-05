@@ -34,14 +34,26 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function showPickerPlaceholder(msg) {
+    allQuestions = [];
+    const grid = document.getElementById('question-grid');
+    grid.innerHTML = `<p class="col-span-full text-center text-sm text-gray-400 py-12">${msg}</p>`;
+  }
+
   async function fetchQuestions() {
     const subject = document.getElementById('f-subject').value;
     const chapter = document.getElementById('f-chapter').value;
     const topic   = document.getElementById('f-topic').value;
-    const params  = {};
-    if (subject) params.subject = subject;
-    if (chapter) params.chapter = chapter;
-    if (topic)   params.topic   = topic;
+    const type    = document.getElementById('f-type').value;
+
+    // Require subject, chapter, and topic before hitting the server
+    if (!subject || !chapter || !topic) {
+      showPickerPlaceholder('Please select a Subject, Chapter, and Topic to load questions.');
+      return;
+    }
+
+    const params = { subject, chapter, topic };
+    if (type) params.type = type;
 
     // Show spinner, hide grid while loading
     const loadingEl = document.getElementById('picker-loading');
@@ -210,10 +222,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // ── Picker ────────────────────────────────────────────────────────
-  window.openPicker = async function(sectionId) {
+  window.openPicker = function(sectionId) {
     activeSectionId = sectionId;
+    // Reset all filter dropdowns
+    document.getElementById('f-subject').value = '';
+    document.getElementById('f-chapter').innerHTML = '<option value="">All Chapters</option>';
+    document.getElementById('f-topic').innerHTML   = '<option value="">All Topics</option>';
+    document.getElementById('f-type').value = '';
     document.getElementById('picker-modal').classList.remove('hidden');
-    await fetchQuestions();
+    showPickerPlaceholder('Please select a Subject, Chapter, and Topic to load questions.');
   };
 
   window.closePicker = function() {
@@ -275,6 +292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('f-topic').addEventListener('change', fetchQuestions);
+  document.getElementById('f-type').addEventListener('change', fetchQuestions);
 
   await fetchAll();
 });

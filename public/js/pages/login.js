@@ -3,7 +3,7 @@
  */
 document.addEventListener('DOMContentLoaded', () => {
   // If already logged in, redirect
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = (() => { try { return JSON.parse(sessionStorage.getItem('user') || 'null'); } catch { return null; } })();
   if (user) {
     window.location.href = user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard';
     return;
@@ -17,19 +17,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const email    = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
 
-    submitBtn.disabled = true;
+    submitBtn.disabled    = true;
     submitBtn.textContent = 'Signing in…';
 
     try {
       const data = await API.post('/auth/login', { email, password });
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Login successful!');
       window.location.href = data.user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard';
     } catch (err) {
       toast.error(err.message || 'Login failed');
     } finally {
-      submitBtn.disabled = false;
+      submitBtn.disabled    = false;
       submitBtn.textContent = 'Sign In';
     }
   });

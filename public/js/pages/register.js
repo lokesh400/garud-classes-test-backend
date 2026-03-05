@@ -2,7 +2,7 @@
  * pages/register.js — Multi-step registration
  */
 document.addEventListener('DOMContentLoaded', () => {
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = (() => { try { return JSON.parse(sessionStorage.getItem('user') || 'null'); } catch { return null; } })();
   if (user) {
     window.location.href = user.role === 'admin' ? '/admin/dashboard' : '/student/dashboard';
     return;
@@ -73,8 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
         targetExam:   document.getElementById('targetExam').value,
         mobile:       document.getElementById('mobile').value.trim(),
       });
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      sessionStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Registration successful!');
       window.location.href = '/student/dashboard';
     } catch (err) {

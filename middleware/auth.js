@@ -1,29 +1,22 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+// Session-based auth middleware (Passport.js)
 
-// Verify JWT token
-const auth = async (req, res, next) => {
-  try {
-    const token = req.header('Authorization')?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ message: 'No token, authorization denied' });
-    }
-
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-    if (!user) {
-      return res.status(401).json({ message: 'Token is not valid' });
-    }
-
-    req.user = user;
-    next();
-  } catch (error) {
-    res.status(401).json({ message: 'Token is not valid' });
-  }
+/**
+ * auth — requires an active authenticated session.
+ * Returns 401 if the user is not logged in.
+ */
+const auth = (req, res, next) => {
+  if (req.isAuthenticated()) return next();
+  res.status(401).json({ message: 'Not authenticated. Please log in.' });
 };
 
-// Admin only middleware
+/**
+ * adminOnly — requires auth AND admin role.
+ * Always checks isAuthenticated() first so req.user is guaranteed to exist.
+ */
 const adminOnly = (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    return res.status(401).json({ message: 'Not authenticated. Please log in.' });
+  }
   if (req.user.role !== 'admin') {
     return res.status(403).json({ message: 'Access denied. Admin only.' });
   }

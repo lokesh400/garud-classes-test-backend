@@ -1,112 +1,126 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const express  = require('express');
+const passport = require('passport');
+const rateLimit = require('express-rate-limit');
+const User     = require('../models/User');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.get('/login', (req, res) => {
-  res.render('login');
+// Rate-limiter: max 10 auth attempts per IP per 15 minutes
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many attempts — please try again after 15 minutes.' },
 });
 
-// Register
-router.post('/register', async (req, res) => {
+// ── Register ──────────────────────────────────────────────────────
+router.post('/register', authLimiter, async (req, res, next) => {
   try {
-    const { name, email, password, role, class: studentClass, targetExam, mobile, address } = req.body;
+    const {
+      name, email, password, role,
+      studentClass, targetExam, mobile, address,
+    } = req.body;
 
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email and password are required.' });
+    }
+    if (password.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters.' });
     }
 
     const user = new User({
-      name,
-      email,
-      password,
-      role: role || 'student',
-      class: studentClass,
+      name:       name.trim(),
+      email:      email.trim().toLowerCase(),
+      role:       role === 'admin' ? 'admin' : 'student',
+      class:      studentClass,
       targetExam,
       mobile,
       address,
     });
-    await user.save();
 
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+    // User.register hashes password with PBKDF2-SHA512 and saves the user
+    await User.register(user, password);
 
-    res.status(201).json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+    // Auto-login after registration
+    req.login(user, (err) => {
+      if (err) return next(err);
+      return res.status(201).json({
+        user: { id: user._id, name: user.name, email: user.email, role: user.role },
+      });
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    if (err.name === 'UserExistsError') {
+      return res.status(400).json({ message: 'An account with this email already exists.' });
+    }
+    next(err);
   }
 });
 
-// Login
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const user = await User.findOne({ email });
+// ── Login ─────────────────────────────────────────────────────────
+router.post('/login', authLimiter, (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return next(err);
     if (!user) {
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(400).json({ message: info?.message || 'Invalid email or password.' });
     }
 
-    const isMatch = await user.comparePassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-
-    res.json({
-      token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+    // Regenerate session ID before storing auth to prevent session-fixation attacks
+    req.session.regenerate((err) => {
+      if (err) return next(err);
+      req.login(user, (err) => {
+        if (err) return next(err);
+        return res.json({
+          user: { id: user._id, name: user.name, email: user.email, role: user.role },
+        });
+      });
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+  })(req, res, next);
 });
 
-// Get current user
-router.get('/me', auth, async (req, res) => {
+// ── Logout ────────────────────────────────────────────────────────
+router.post('/logout', (req, res, next) => {
+  req.logout((err) => {
+    if (err) return next(err);
+    req.session.destroy((err) => {
+      if (err) return next(err);
+      res.clearCookie('sid');   // name set in server.js
+      res.json({ message: 'Logged out successfully.' });
+    });
+  });
+});
+
+// ── Current user ──────────────────────────────────────────────────
+router.get('/me', auth, (req, res) => {
   res.json({
     user: {
-      id: req.user._id,
-      name: req.user.name,
+      id:    req.user._id,
+      name:  req.user.name,
       email: req.user.email,
-      role: req.user.role,
+      role:  req.user.role,
     },
   });
 });
 
-// Student profile update
-router.put('/student/profile', auth, async (req, res) => {
+// ── Student profile update ────────────────────────────────────────
+router.put('/student/profile', auth, async (req, res, next) => {
   try {
     const { name, class: studentClass, targetExam, mobile, address } = req.body;
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-    user.name = name;
-    user.class = studentClass;
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+    user.name       = name;
+    user.class      = studentClass;
     user.targetExam = targetExam;
-    user.mobile = mobile;
-    user.address = address;
+    user.mobile     = mobile;
+    user.address    = address;
     await user.save();
-    res.json({ message: 'Profile updated' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.json({ message: 'Profile updated.' });
+  } catch (err) {
+    next(err);
   }
 });
 
+module.exports = router;
 
 module.exports = router;

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+const passportLocalMongoose = require('passport-local-mongoose').default;
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -15,11 +15,6 @@ const userSchema = new mongoose.Schema({
     trim: true,
     immutable: true,
   },
-  password: {
-    type: String,
-    required: true,
-    minlength: 6,
-  },
   role: {
     type: String,
     enum: ['admin', 'student'],
@@ -27,22 +22,18 @@ const userSchema = new mongoose.Schema({
   },
   class: {
     type: String,
-    required: false,
     trim: true,
   },
   targetExam: {
     type: String,
-    required: false,
     trim: true,
   },
   mobile: {
     type: String,
-    required: false,
     trim: true,
   },
   address: {
     type: String,
-    required: false,
     trim: true,
   },
   // Quick-access list of purchased TestSeries ids.
@@ -54,17 +45,21 @@ const userSchema = new mongoose.Schema({
   }],
 }, { timestamps: true });
 
-// Hash password before saving
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
+// passport-local-mongoose adds hash + salt fields and register/authenticate methods.
+// usernameField maps to the 'email' field; PBKDF2-SHA512 with 310 000 iterations
+// (meets NIST SP 800-132 recommendations for 2024).
+userSchema.plugin(passportLocalMongoose, {
+  usernameField: 'email',
+  iterations:    310000,
+  keylen:        64,
+  digestAlgorithm: 'sha512',
+  errorMessages: {
+    UserExistsError:        'An account with this email already exists.',
+    IncorrectPasswordError: 'Invalid email or password.',
+    IncorrectUsernameError: 'Invalid email or password.',
+    MissingUsernameError:   'Email is required.',
+    MissingPasswordError:   'Password is required.',
+  },
 });
-
-// Compare password
-userSchema.methods.comparePassword = async function (candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
 
 module.exports = mongoose.model('User', userSchema);

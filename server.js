@@ -1,73 +1,114 @@
 // EJS route: Study page (purchased test series)
 require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const connectDB = require('./config/db');
-const http = require('http');
-const https = require('https');
-const axios = require('axios');
+const express       = require('express');
+const cors          = require('cors');
+const session       = require('express-session');
+const MongoStore   = require('connect-mongo').MongoStore;
+const passport      = require('./config/passport'); // configures passport strategies
+const helmet        = require('helmet');
+const mongoSanitize = require('express-mongo-sanitize');
+const connectDB     = require('./config/db');
+const axios         = require('axios');
 
-const Purchase = require('./models/Purchase');
 const { auth } = require('./middleware/auth');
 
 // Connect to database
 connectDB();
 
-const app = express();
+const app    = express();
+const isProd = process.env.NODE_ENV === 'production';
 
 
-// Set EJS as view engine
+// ── Security headers (helmet) ───────────────────────────────────────────────────
+// CSP is disabled here so existing inline scripts and Tailwind/Razorpay CDN
+// resources keep working. Enable & tighten with a nonce strategy when ready.
+app.use(helmet({
+  contentSecurityPolicy:    false, // configure separately when ready
+  crossOriginEmbedderPolicy: false, // Razorpay iframe requires this off
+}));
+
+// ── View engine ─────────────────────────────────────────────────────────────
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 
-// app.use(cors());
+// ── CORS ─────────────────────────────────────────────────────────────────
 app.use(cors({
   origin: [
-    "http://localhost:5000",
-    "http://localhost:3000",
-    "https://test.garudclasses.com"
+    'http://localhost:5000',
+    'http://localhost:3000',
+    'https://testportal.garudclasses.com',
   ],
-  credentials: true
+  credentials: true,
 }));
+
+// ── Body parsers ───────────────────────────────────────────────────────────
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Allow Razorpay checkout iframe to use sensors required for fraud detection
+// ── NoSQL injection sanitizer ─────────────────────────────────────────────────────
+// Strips $ and . from req.body, req.params, req.query
+app.use(mongoSanitize());
+
+// ── Startup env guard ─────────────────────────────────────────────────────
+if (!process.env.JWT_SECRET) {
+  console.error('FATAL: SESSION_SECRET env variable is not set. Add it to your .env file.');
+  process.exit(1);
+}
+
+// ── Session ─────────────────────────────────────────────────────────────────
+app.use(session({
+  name:              'sid',              // don't leak framework name via cookie
+  secret:            process.env.JWT_SECRET,
+  resave:            false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl:   process.env.MONGODB_URI,
+    ttl:        7 * 24 * 60 * 60,        // 7 days (seconds)
+    autoRemove: 'native',
+  }),
+  cookie: {
+    httpOnly: true,                      // JS cannot read the cookie
+    secure:   isProd,                    // HTTPS-only in production
+    sameSite: 'strict',                  // CSRF protection
+    maxAge:   7 * 24 * 60 * 60 * 1000,  // 7 days (ms)
+  },
+}));
+
+// ── Passport ─────────────────────────────────────────────────────────────────
+app.use(passport.initialize());
+app.use(passport.session());
+
+// ── Razorpay sensor permissions & clickjack protection ─────────────────────
 app.use((req, res, next) => {
   res.setHeader(
     'Permissions-Policy',
     'accelerometer=*, gyroscope=*, magnetometer=*, payment=*, camera=*'
   );
-  // Prevent clickjacking on non-payment pages while allowing Razorpay iframe
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
   next();
 });
 
-// Page routes (EJS views)
+// ── Page routes (EJS views) ────────────────────────────────────────────────────
 app.use('/', require('./routes/pages'));
 
-// API Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/subjects', require('./routes/subjects'));
-app.use('/api/chapters', require('./routes/chapters'));
-app.use('/api/topics', require('./routes/topics'));
-app.use('/api/questions', require('./routes/questions'));
-app.use('/api/tests', require('./routes/tests'));
+// ── API Routes ────────────────────────────────────────────────────────────────
+app.use('/api/auth',        require('./routes/auth'));
+app.use('/api/subjects',    require('./routes/subjects'));
+app.use('/api/chapters',    require('./routes/chapters'));
+app.use('/api/topics',      require('./routes/topics'));
+app.use('/api/questions',   require('./routes/questions'));
+app.use('/api/tests',       require('./routes/tests'));
 app.use('/api/test-series', require('./routes/testSeries'));
-app.use('/api/reports', require('./routes/reports'));
-const paymentsRouter = require('./routes/payments');
-const purchaseRouter = require('./routes/purchase');
-app.use('/api/payments', paymentsRouter);
-app.use('/api/purchase', purchaseRouter);
+app.use('/api/reports',     require('./routes/reports'));
+app.use('/api/payments',    require('./routes/payments'));
+app.use('/api/purchase',    require('./routes/purchase'));
 
-app.get("/health", (req, res) => {
-  res.status(200).send("OK");
-});
+app.get('/health', (req, res) => res.status(200).send('OK'));
 
-function startKeepAlive(port) {
+function startKeepAlive() {
   setInterval(async () => {
-    const result = await axios.get(`https://testportal.garudclasses.com/health`, { timeout: 5000 }).catch(err => {
+    const result = await axios.get('https://testportal.garudclasses.com/health', { timeout: 5000 }).catch(err => {
       console.error('Keep-alive error:', err.message);
       return null;
     });
