@@ -25,7 +25,7 @@ const purchaseSchema = new mongoose.Schema(
     itemType: {
       type: String,
       required: true,
-      enum: ['TestSeries'], // extend here: 'Course', 'Book', etc.
+      enum: ['TestSeries', 'Course'], // extend here: 'Book', etc.
       index: true,
     },
     itemId: {

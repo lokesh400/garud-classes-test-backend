@@ -60,6 +60,7 @@ router.post('/register', authLimiter, async (req, res, next) => {
 
 // ── Login ─────────────────────────────────────────────────────────
 router.post('/login', authLimiter, (req, res, next) => {
+  console.log('Login attempt:', req.body.email);
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
     if (!user) {
@@ -75,6 +76,30 @@ router.post('/login', authLimiter, (req, res, next) => {
           user: { id: user._id, name: user.name, email: user.email, role: user.role },
         });
       });
+    });
+  })(req, res, next);
+});
+
+
+router.post('/m/login', authLimiter, (req, res, next) => {
+  console.log('Login attempt:', req.body.email);
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return next(err);
+    if (!user) {
+      return res.status(400).json({ message: info?.message || 'Invalid email or password.' });
+    }
+
+    // Regenerate session ID before storing auth to prevent session-fixation attacks
+    req.session.regenerate((err) => {
+      req.login(user, (err) => {
+      if (err) return next(err);
+  const rawCookie = res.getHeader('set-cookie');
+  const cookieValue = (Array.isArray(rawCookie) ? rawCookie[0] : rawCookie)?.split(';')[0] ?? null;
+  return res.status(201).json({
+    cookie: cookieValue,                                          // ← add this
+    user: { id: user._id, name: user.name, email: user.email, role: user.role },
+  });
+});
     });
   })(req, res, next);
 });
@@ -103,6 +128,10 @@ router.get('/me', auth, (req, res) => {
   });
 });
 
+router.get('/m/me', auth, (req, res) => {
+  res.json(req.user);
+});
+
 // ── Student profile update ────────────────────────────────────────
 router.put('/student/profile', auth, async (req, res, next) => {
   try {
@@ -120,7 +149,5 @@ router.put('/student/profile', auth, async (req, res, next) => {
     next(err);
   }
 });
-
-module.exports = router;
 
 module.exports = router;

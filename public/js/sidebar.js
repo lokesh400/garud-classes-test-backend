@@ -9,13 +9,18 @@ const ADMIN_LINKS = [
   { href: '/admin/upload',       label: 'Upload',        icon: iconUpload() },
   { href: '/admin/tests',        label: 'Tests',         icon: iconFile() },
   { href: '/admin/test-series',  label: 'Test Series',   icon: iconLayers() },
+  { href: '/admin/courses/create/new', label: 'Create Course', icon: iconBook() },
+  { href: '/admin/battleground', label: 'Battleground', icon: iconFlag() },
   { href: '/admin/reports',      label: 'Reports',       icon: iconFlag() },
 ];
 
 const STUDENT_LINKS = [
   { href: '/student/dashboard',      label: 'Dashboard',       icon: iconHome() },
   { href: '/student/purchase-series',label: 'Purchase Series', icon: iconLayers() },
+  { href: '/student/purchase-courses',label: 'Purchase Courses', icon: iconBook() },
   { href: '/student/study',          label: 'Study',           icon: iconBook() },
+  { href: '/student/battleground',   label: 'Battleground',    icon: iconFlag() },
+  { href: '/student/battleground-prizes', label: 'Battleground Prizes', icon: iconTrophy() },
   { href: '/student/purchases',      label: 'My Purchases',    icon: iconFile() },
   // { href: '/student/tests',          label: 'My Tests',        icon: iconBook() },
 ];
@@ -85,6 +90,7 @@ function iconFile()   { return svgWrap('M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 
 function iconLayers() { return svgWrap('M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'); }
 function iconBook()   { return svgWrap('M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'); }
 function iconFlag()   { return svgWrap('M3 3v18M3 6l9-3 9 3v9l-9 3-9-3V6z'); }
+function iconTrophy() { return svgWrap('M8 21h8M12 17v4m-5-14V4a1 1 0 011-1h8a1 1 0 011 1v3m-10 0a3 3 0 11-6 0V6h6m10 1a3 3 0 106 0V6h-6m-8 5a4 4 0 008 0V7H9v4z'); }
 function svgWrap(d)   {
   return `<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
     <path stroke-linecap="round" stroke-linejoin="round" d="${d}"/>

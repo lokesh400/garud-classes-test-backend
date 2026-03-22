@@ -2,6 +2,9 @@ const express = require('express');
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
 const TestSeries = require('../models/TestSeries');
+const Course = require('../models/Course');
+const Purchase = require('../models/Purchase');
+const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
@@ -11,24 +14,76 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Create order for test series purchase
+function resolvePurchasePayload(body = {}) {
+  if (body.seriesId) {
+    return { itemType: 'TestSeries', itemId: body.seriesId };
+  }
+
+  if (body.courseId) {
+    return { itemType: 'Course', itemId: body.courseId };
+  }
+
+  if (body.itemType && body.itemId) {
+    return { itemType: body.itemType, itemId: body.itemId };
+  }
+
+  return { itemType: null, itemId: null };
+}
+
+async function getItemByType(itemType, itemId) {
+  if (itemType === 'TestSeries') return TestSeries.findById(itemId);
+  if (itemType === 'Course') return Course.findById(itemId);
+  return null;
+}
+
+async function syncOwnership(itemType, itemId, userId) {
+  if (itemType === 'TestSeries') {
+    await Promise.all([
+      TestSeries.findByIdAndUpdate(itemId, { $addToSet: { purchasedBy: userId } }, { new: true }),
+      User.findByIdAndUpdate(userId, { $addToSet: { purchasedSeries: itemId } }, { new: true }),
+    ]);
+    return;
+  }
+
+  if (itemType === 'Course') {
+    await Promise.all([
+      Course.findByIdAndUpdate(itemId, { $addToSet: { purchasedBy: userId } }, { new: true }),
+      User.findByIdAndUpdate(userId, { $addToSet: { purchasedCourses: itemId } }, { new: true }),
+    ]);
+  }
+}
+
+// Create order for paid purchase
 router.post('/create-order', auth, async (req, res) => {
   try {
     console.log('[CREATE ORDER] Body:', req.body, 'User:', req.user?._id);
-    const { seriesId } = req.body;
-    const series = await TestSeries.findById(seriesId);
-    if (!series) {
-      console.log('[CREATE ORDER] Series not found');
-      return res.status(404).json({ message: 'Test series not found' });
+    const { itemType, itemId } = resolvePurchasePayload(req.body);
+    if (!itemType || !itemId) {
+      return res.status(400).json({ message: 'itemType and itemId are required' });
     }
-    if (series.price === 0) {
-      console.log('[CREATE ORDER] Series is free');
-      return res.status(400).json({ message: 'Test series is free' });
+
+    const item = await getItemByType(itemType, itemId);
+    if (!item) {
+      return res.status(404).json({ message: `${itemType} not found` });
     }
+    if (item.price === 0) {
+      return res.status(400).json({ message: `${itemType} is free` });
+    }
+
+    const existing = await Purchase.findOne({
+      user: req.user._id,
+      itemType,
+      itemId,
+      status: 'success',
+    });
+    if (existing) {
+      return res.status(400).json({ message: 'Item already purchased' });
+    }
+
     // Razorpay receipt must be <= 40 chars
-    const shortReceipt = `series_${seriesId}`.slice(0, 30) + `_${Date.now()}`.slice(0, 10);
+    const shortReceipt = `${itemType.toLowerCase()}_${itemId}`.slice(0, 30) + `_${Date.now()}`.slice(0, 10);
     const order = await razorpay.orders.create({
-      amount: series.price * 100, // INR paise
+      amount: item.price * 100, // INR paise
       currency: 'INR',
       receipt: shortReceipt,
       payment_capture: 1,
@@ -50,7 +105,11 @@ router.post('/create-order', auth, async (req, res) => {
 router.post('/verify', auth, async (req, res) => {
   try {
     console.log('[VERIFY] Body:', req.body, 'User:', req.user?._id);
-    const { seriesId, paymentId, orderId, signature } = req.body;
+    const { paymentId, orderId, signature } = req.body;
+    const { itemType, itemId } = resolvePurchasePayload(req.body);
+    if (!itemType || !itemId) {
+      return res.status(400).json({ message: 'itemType and itemId are required' });
+    }
 
     // Verify Razorpay payment signature
     if (!orderId || !paymentId || !signature) {
@@ -65,36 +124,32 @@ router.post('/verify', auth, async (req, res) => {
       return res.status(400).json({ message: 'Payment verification failed: invalid signature' });
     }
 
-    const series = await TestSeries.findById(seriesId);
-    if (!series) {
-      console.log('[VERIFY] Series not found');
-      return res.status(404).json({ message: 'Test series not found' });
+    const item = await getItemByType(itemType, itemId);
+    if (!item) {
+      return res.status(404).json({ message: `${itemType} not found` });
     }
-    if (series.price === 0) {
-      console.log('[VERIFY] Series is free');
-      return res.status(400).json({ message: 'Test series is free' });
+    if (item.price === 0) {
+      return res.status(400).json({ message: `${itemType} is free` });
     }
-    // Record purchase
-    const Purchase = require('../models/Purchase');
+
+    const existing = await Purchase.findOne({ user: req.user._id, itemType, itemId, status: 'success' });
+    if (existing) {
+      return res.status(200).json({ success: true, purchaseId: existing._id, alreadyPurchased: true });
+    }
+
     const purchase = await Purchase.create({
       user:               req.user._id,
-      itemType:           'TestSeries',
-      itemId:             seriesId,
-      amount:             series.price,
+      itemType,
+      itemId,
+      amount:             item.price,
       method:             'online',
       status:             'success',
       razorpayOrderId:    orderId,
       razorpayPaymentId:  paymentId,
       razorpaySignature:  signature,
     });
-    // Keep both sides in sync for quick access checks
-    const [updatedSeries, updatedUser] = await Promise.all([
-      TestSeries.findByIdAndUpdate(seriesId, { $addToSet: { purchasedBy: req.user._id } }, { new: true }),
-      require('../models/User').findByIdAndUpdate(req.user._id, { $addToSet: { purchasedSeries: seriesId } }, { new: true }),
-    ]);
+    await syncOwnership(itemType, itemId, req.user._id);
     console.log('[VERIFY] Purchase created:', purchase._id);
-    console.log('[VERIFY] TestSeries.purchasedBy count:', updatedSeries?.purchasedBy?.length);
-    console.log('[VERIFY] User.purchasedSeries count:', updatedUser?.purchasedSeries?.length);
     res.json({ success: true, purchaseId: purchase._id });
   } catch (error) {
     console.error('[VERIFY] Error:', error);
@@ -106,34 +161,34 @@ router.post('/verify', auth, async (req, res) => {
 router.post('/free-access', auth, async (req, res) => {
   try {
     console.log('[FREE ACCESS] Body:', req.body, 'User:', req.user?._id);
-    const { seriesId } = req.body;
-    const series = await TestSeries.findById(seriesId);
-    if (!series) {
-      console.log('[FREE ACCESS] Series not found');
-      return res.status(404).json({ message: 'Test series not found' });
+    const { itemType, itemId } = resolvePurchasePayload(req.body);
+    if (!itemType || !itemId) {
+      return res.status(400).json({ message: 'itemType and itemId are required' });
     }
-    if (series.price !== 0) {
-      console.log('[FREE ACCESS] Series is not free');
-      return res.status(400).json({ message: 'Test series is not free' });
+
+    const item = await getItemByType(itemType, itemId);
+    if (!item) {
+      return res.status(404).json({ message: `${itemType} not found` });
     }
-    // Record free purchase
-    const Purchase = require('../models/Purchase');
+    if (item.price !== 0) {
+      return res.status(400).json({ message: `${itemType} is not free` });
+    }
+
+    const existing = await Purchase.findOne({ user: req.user._id, itemType, itemId, status: 'success' });
+    if (existing) {
+      return res.status(200).json({ success: true, purchaseId: existing._id, alreadyPurchased: true });
+    }
+
     const purchase = await Purchase.create({
       user:      req.user._id,
-      itemType:  'TestSeries',
-      itemId:    seriesId,
+      itemType,
+      itemId,
       amount:    0,
       method:    'free',
       status:    'success',
     });
-    // Keep both sides in sync for quick access checks
-    const [updatedSeries, updatedUser] = await Promise.all([
-      TestSeries.findByIdAndUpdate(seriesId, { $addToSet: { purchasedBy: req.user._id } }, { new: true }),
-      require('../models/User').findByIdAndUpdate(req.user._id, { $addToSet: { purchasedSeries: seriesId } }, { new: true }),
-    ]);
+    await syncOwnership(itemType, itemId, req.user._id);
     console.log('[FREE ACCESS] Purchase created:', purchase._id);
-    console.log('[FREE ACCESS] TestSeries.purchasedBy count:', updatedSeries?.purchasedBy?.length);
-    console.log('[FREE ACCESS] User.purchasedSeries count:', updatedUser?.purchasedSeries?.length);
     res.json({ success: true, purchaseId: purchase._id });
   } catch (error) {
     console.error('[FREE ACCESS] Error:', error);

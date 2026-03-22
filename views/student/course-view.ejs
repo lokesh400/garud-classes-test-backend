@@ -1,0 +1,50 @@
+<%- include('../partials/head', { title: 'Course Detail' }) %>
+<body class="min-h-screen bg-slate-50 text-gray-900">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 min-h-screen page-body">
+    <div class="page-header px-6 md:px-8 py-7 fade-up relative overflow-hidden">
+      <div class="absolute -top-14 right-8 w-48 h-48 rounded-full bg-cyan-300/20 blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-16 left-12 w-56 h-56 rounded-full bg-orange-300/20 blur-3xl pointer-events-none"></div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="window.location.href='/student/purchase-courses'"
+                class="w-10 h-10 flex items-center justify-center rounded-xl bg-white/15 hover:bg-white/25 text-white transition"
+                aria-label="Back">
+          &larr;
+        </button>
+        <div>
+          <p class="text-white/50 text-xs font-semibold uppercase tracking-widest">Student Portal</p>
+          <h1 id="course-name" class="text-2xl md:text-3xl font-bold text-white"></h1>
+          <p id="course-desc" class="text-sm text-white/75 mt-1 hidden max-w-2xl"></p>
+        </div>
+      </div>
+      <div id="purchase-actions" class="mt-4"></div>
+    </div>
+
+    <div class="p-6 md:p-8">
+    <div id="loading" class="flex items-center justify-center min-h-[60vh]"><div class="spinner"></div></div>
+
+    <div id="main-content" class="hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6 lift">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold text-gray-800">Course Lectures</h3>
+          <span id="lecture-count" class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold">0</span>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">Choose an action from the dropdown and launch each lecture in the dedicated immersive player.</p>
+      </div>
+
+      <div id="lectures-list" class="space-y-4"></div>
+    </div>
+    </div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/student/course-view.js"></script>
+</body>
+</html>

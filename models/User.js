@@ -43,6 +43,10 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'TestSeries',
   }],
+  purchasedCourses: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course',
+  }],
 }, { timestamps: true });
 
 // passport-local-mongoose adds hash + salt fields and register/authenticate methods.

@@ -1,0 +1,151 @@
+<%- include('../partials/head', { title: 'Create New Course' }) %>
+<body class="min-h-screen bg-slate-50 text-gray-900">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 min-h-screen page-body">
+    <div class="page-header px-6 md:px-8 py-7 fade-up">
+      <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
+      <h1 class="text-2xl md:text-3xl font-bold text-white">Create New Course</h1>
+      <p class="text-white/60 text-sm mt-1">Add and manage courses for your institute</p>
+    </div>
+
+    <div class="p-6 md:p-8 space-y-6">
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 lift fade-up-1">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold text-gray-800">Course Management</h2>
+            <p class="text-sm text-gray-500 mt-1">Create courses with videos and publish them for student purchase.</p>
+          </div>
+          <button id="open-create-course-modal"
+                  type="button"
+                  class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-garud-highlight text-white font-semibold hover:opacity-95">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            Create Course
+          </button>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lift fade-up-2">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 class="font-semibold text-gray-800">Existing Courses</h3>
+          <span id="course-count" class="text-xs font-medium px-2 py-1 rounded-lg bg-slate-100 text-slate-700">0</span>
+        </div>
+
+        <div id="course-list" class="divide-y divide-gray-100 max-h-[28rem] overflow-y-auto">
+          <div class="p-6 text-sm text-gray-500">Loading courses...</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Create Course Modal -->
+  <div id="create-course-modal"
+       class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+       aria-hidden="true">
+    <div id="course-modal-backdrop" class="absolute inset-0 bg-slate-900/60"></div>
+
+    <div class="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h3 id="course-modal-title" class="text-lg font-semibold text-gray-900">Create New Course</h3>
+        <button id="close-create-course-modal"
+                type="button"
+                class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                aria-label="Close modal">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <form id="create-course-form" class="p-6 space-y-4">
+        <div>
+          <label for="course-name" class="block text-sm font-medium text-gray-700 mb-1">Course Name</label>
+          <input id="course-name"
+                 name="courseName"
+                 type="text"
+                 maxlength="80"
+                 required
+                 placeholder="e.g. JEE Foundation Batch"
+                 class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm"/>
+        </div>
+
+        <div>
+          <label for="course-description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <textarea id="course-description"
+                    name="courseDescription"
+                    rows="3"
+                    maxlength="300"
+                    placeholder="Short description for students"
+                    class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm resize-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="course-price" class="block text-sm font-medium text-gray-700 mb-1">Price (INR)</label>
+            <input id="course-price" name="coursePrice" type="number" min="0" step="1" value="0"
+                   class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm"/>
+          </div>
+          <div>
+            <label for="course-made-for" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select id="course-made-for" name="courseMadeFor" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm">
+              <option value="other">Other</option>
+              <option value="jee">JEE</option>
+              <option value="neet">NEET</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="course-image" class="block text-sm font-medium text-gray-700 mb-1">Image URL</label>
+            <input id="course-image" name="courseImage" type="url" placeholder="https://..."
+                   class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm"/>
+          </div>
+          <div>
+            <label for="course-tags" class="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+            <input id="course-tags" name="courseTags" type="text" placeholder="foundation, revision"
+                   class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm"/>
+          </div>
+        </div>
+
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input id="course-published" name="coursePublished" type="checkbox" class="rounded border-gray-300"/>
+          Publish course immediately
+        </label>
+
+        <div class="border border-gray-200 rounded-xl p-3 bg-slate-50">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="text-sm font-semibold text-gray-700">Lectures, Video Links and PDFs</h4>
+            <button id="add-lecture-row" type="button" class="px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-garud-accent text-white">+ Add Lecture</button>
+          </div>
+          <div id="lecture-rows" class="space-y-2"></div>
+          <p class="text-xs text-gray-500 mt-2">Lecture title is required. Video link and PDFs are optional.</p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-3">
+          <button id="cancel-create-course"
+                  type="button"
+                  class="px-4 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50">
+            Cancel
+          </button>
+          <button id="submit-create-course"
+                  type="submit"
+                  class="px-4 py-2.5 rounded-xl bg-garud-highlight text-white font-semibold hover:opacity-95">
+            Save Course
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/admin/course.js"></script>
+</body>
+</html>

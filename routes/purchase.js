@@ -1,5 +1,7 @@
 const express = require('express');
 const Purchase = require('../models/Purchase');
+const TestSeries = require('../models/TestSeries');
+const Course = require('../models/Course');
 const { auth } = require('../middleware/auth');
 const router = express.Router();
 
@@ -10,6 +12,7 @@ const router = express.Router();
 function resolveModel(itemType) {
   switch (itemType) {
     case 'TestSeries': return require('../models/TestSeries');
+    case 'Course': return require('../models/Course');
     default: return null;
   }
 }
@@ -38,10 +41,41 @@ router.get('/my', auth, async (req, res) => {
   try {
     const query = { user: req.user._id, status: 'success' };
     if (req.query.itemType) query.itemType = req.query.itemType;
-    const purchases = await Purchase.find(query)
-      .populate('itemId')   // refPath auto-selects the right model
-      .sort({ createdAt: -1 });
-    res.json(purchases);
+
+    const purchases = await Purchase.find(query).sort({ createdAt: -1 }).lean();
+
+    const testSeriesIds = purchases
+      .filter((p) => p.itemType === 'TestSeries')
+      .map((p) => p.itemId);
+    const courseIds = purchases
+      .filter((p) => p.itemType === 'Course')
+      .map((p) => p.itemId);
+
+    const [seriesDocs, courseDocs] = await Promise.all([
+      testSeriesIds.length ? TestSeries.find({ _id: { $in: testSeriesIds } }).lean() : [],
+      courseIds.length ? Course.find({ _id: { $in: courseIds } }).lean() : [],
+    ]);
+
+    const seriesMap = new Map(seriesDocs.map((doc) => [String(doc._id), doc]));
+    const courseMap = new Map(courseDocs.map((doc) => [String(doc._id), doc]));
+
+    const enriched = purchases.map((purchase) => {
+      const itemKey = String(purchase.itemId);
+      const item = purchase.itemType === 'Course'
+        ? (courseMap.get(itemKey) || null)
+        : (seriesMap.get(itemKey) || null);
+
+      // Backward compatibility: keep itemId as populated object if available.
+      const result = { ...purchase, itemId: item || purchase.itemId };
+
+      // Explicit typed payload for frontend convenience.
+      if (purchase.itemType === 'Course') result.course = item;
+      if (purchase.itemType === 'TestSeries') result.testSeries = item;
+
+      return result;
+    });
+
+    res.json(enriched);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -17,6 +17,12 @@ connectDB();
 
 const app    = express();
 const isProd = process.env.NODE_ENV === 'production';
+const allowedOrigins = [
+  'http://localhost:5000',
+  'http://localhost:3000',
+  'http://localhost:8081',
+  'https://testportal.garudclasses.com',
+];
 
 
 // ── Security headers (helmet) ───────────────────────────────────────────────────
@@ -33,14 +39,21 @@ app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 
 // ── CORS ─────────────────────────────────────────────────────────────────
-app.use(cors({
-  origin: [
-    'http://localhost:5000',
-    'http://localhost:3000',
-    'https://testportal.garudclasses.com',
-  ],
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    console.warn(`Blocked CORS origin: ${origin}`);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
-}));
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 // ── Body parsers ───────────────────────────────────────────────────────────
 app.use(express.json({ limit: '50mb' }));
@@ -96,7 +109,10 @@ app.use((req, res, next) => {
 });
 
 // ── Page routes (EJS views) ────────────────────────────────────────────────────
-app.use('/', require('./routes/pages'));
+app.use('/', require('./routes/public/pages'));
+app.use('/', require('./routes/admin/pages'));
+app.use('/', require('./routes/student/pages'));
+app.use('/', require('./routes/admin/course-pages'));
 
 // ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth',        require('./routes/auth'));
@@ -106,9 +122,23 @@ app.use('/api/topics',      require('./routes/topics'));
 app.use('/api/questions',   require('./routes/questions'));
 app.use('/api/tests',       require('./routes/tests'));
 app.use('/api/test-series', require('./routes/testSeries'));
+app.use('/api/courses',     require('./routes/courses'));
 app.use('/api/reports',     require('./routes/reports'));
 app.use('/api/payments',    require('./routes/payments'));
 app.use('/api/purchase',    require('./routes/purchase'));
+app.use('/api/help',        require('./routes/helpsupport'));
+app.use('/api/ott',         require('./routes/ott'));
+app.use('/api/battlegrounds/admin', require('./routes/admin/battlegrounds'));
+app.use('/api/battlegrounds', require('./routes/student/battlegrounds'));
+app.use('/apiott',          require('./routes/ott'));
+
+app.get('/api/exams-targeted', (req, res) => {
+  res.json([
+    { name: 'JEE Main', value: 'jee-main' },
+    { name: 'JEE Advanced', value: 'jee-advanced' },
+    { name: 'NEET', value: 'neet' }
+  ]);
+});
 
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
@@ -121,6 +151,10 @@ function startKeepAlive() {
     if (result) console.log(`🔄 Keep-alive ping → ${result.status} OK`);
   }, 10000);
 }
+
+app.post('/api/test', (req, res) => {
+  res.json({ message: 'Test endpoint is working!' });
+});
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

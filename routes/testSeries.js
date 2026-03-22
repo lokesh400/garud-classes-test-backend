@@ -27,7 +27,7 @@ router.get('/admin/all', auth, adminOnly, async (req, res) => {
       .populate('createdBy', 'name')
       .populate({
         path: 'tests',
-        select: 'name duration isPublished sections',
+        select: 'name description duration isPublished sections scheduledAt mode syllabus testType',
       })
       .populate({
         path: 'purchasedBy',
@@ -102,7 +102,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
       .populate('createdBy', 'name')
       .populate({
         path: 'tests',
-        select: 'name description duration isPublished sections',
+        select: 'name description duration isPublished sections scheduledAt mode syllabus testType',
       });
 
     if (!series) return res.status(404).json({ message: 'Test series not found' });
@@ -142,7 +142,7 @@ router.post('/:id/tests', auth, adminOnly, async (req, res) => {
       .populate('createdBy', 'name')
       .populate({
         path: 'tests',
-        select: 'name description duration isPublished sections',
+        select: 'name description duration isPublished sections scheduledAt mode syllabus testType',
       });
 
     res.json(populated);
@@ -164,7 +164,7 @@ router.delete('/:id/tests/:testId', auth, adminOnly, async (req, res) => {
       .populate('createdBy', 'name')
       .populate({
         path: 'tests',
-        select: 'name description duration isPublished sections',
+        select: 'name description duration isPublished sections scheduledAt mode syllabus testType',
       });
 
     res.json(populated);
@@ -178,6 +178,17 @@ router.delete('/:id/tests/:testId', auth, adminOnly, async (req, res) => {
 // Get published test series (student)
 router.get('/published', auth, async (req, res) => {
   try {
+    const minimal = req.query.minimal === 'true' || req.query.fields === 'basic';
+
+    if (minimal) {
+      const basicSeries = await TestSeries.find({ isPublished: true })
+        .select('_id image name description')
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return res.json(basicSeries);
+    }
+
     const seriesList = await TestSeries.find({ isPublished: true })
       .populate({
         path: 'tests',
@@ -239,6 +250,7 @@ router.get('/published', auth, async (req, res) => {
 
 // Get single published test series (student)
 router.get('/published/:id', auth, async (req, res) => {
+  console.log('Fetching test series for student:', req.params.id);
   try {
     const series = await TestSeries.findOne({ _id: req.params.id, isPublished: true })
       .populate({
@@ -288,6 +300,26 @@ router.get('/published/:id', auth, async (req, res) => {
       tests: testsWithInfo,
       createdAt: series.createdAt,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+////////////////////////////////////////////
+///////////////////////////////////////////
+
+router.get('/my-purchase', auth, async (req, res) => {
+  console.log('Fetching test series purchases for user:', req.user._id);
+  try {
+    const me = await require('../models/User').findById(req.user._id);
+    if (!me) return res.status(404).json({ message: 'User not found' });
+    const p = me.purchasedSeries;
+    console.log('Purchased series IDs from user document:', p);
+
+    const purchases = await TestSeries.find({ _id: { $in: p } })
+      .select('_id name description image');
+    res.json(purchases);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

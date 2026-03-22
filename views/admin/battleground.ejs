@@ -1,0 +1,84 @@
+<%- include('../partials/head', { title: 'Battleground' }) %>
+<body class="min-h-screen bg-slate-50 text-gray-900">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 min-h-screen page-body">
+    <div class="page-header px-6 md:px-8 py-7 fade-up">
+      <div class="flex items-center justify-between gap-4">
+        <p class="text-white/50 text-xs font-semibold uppercase tracking-widest">Admin Panel</p>
+        <h1 class="text-2xl md:text-3xl font-bold text-white">Battleground</h1>
+      </div>
+      <p class="text-white/60 text-sm mt-2">Post daily class-wise subject quiz from question bank.</p>
+    </div>
+
+    <div class="p-6 md:p-8 space-y-6">
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 lift fade-up-1">
+        <h2 class="text-lg font-semibold text-gray-800">Post Daily Quiz</h2>
+        <form id="post-battleground-form" class="mt-4 space-y-5">
+          <div class="rounded-xl border border-slate-200 p-4 bg-slate-50">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">1) Battleground Target</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <select id="bg-class" class="px-3 py-2.5 border border-gray-300 rounded-xl text-sm" required>
+                <option value="">Select Class</option>
+                <option value="Class 11">Class 11</option>
+                <option value="Class 12">Class 12</option>
+              </select>
+              <select id="bg-target-subject" class="px-3 py-2.5 border border-gray-300 rounded-xl text-sm" required>
+                <option value="">Select Battleground Subject</option>
+                <option value="physics">Physics</option>
+                <option value="chemistry">Chemistry</option>
+                <option value="mathematics">Mathematics</option>
+                <option value="biology">Biology</option>
+              </select>
+              <input id="bg-date" type="date" class="px-3 py-2.5 border border-gray-300 rounded-xl text-sm" />
+            </div>
+          </div>
+
+          <div class="rounded-xl border border-slate-200 p-4 bg-white">
+            <h3 class="text-sm font-semibold text-slate-800 mb-3">2) Question Bank Selection</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <select id="bg-question-subject" class="px-3 py-2.5 border border-gray-300 rounded-xl text-sm" required>
+                <option value="">Select Subject (Schema)</option>
+              </select>
+              <select id="bg-chapter" class="px-3 py-2.5 border border-gray-300 rounded-xl text-sm" disabled required>
+                <option value="">Select Chapter</option>
+              </select>
+              <select id="bg-topic" class="px-3 py-2.5 border border-gray-300 rounded-xl text-sm" disabled required>
+                <option value="">Select Topic</option>
+              </select>
+              <select id="bg-question" class="px-3 py-2.5 border border-gray-300 rounded-xl text-sm" disabled required>
+                <option value="">Select Question</option>
+              </select>
+            </div>
+            <div id="bg-question-preview" class="hidden mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p id="bg-question-meta" class="text-xs text-slate-600 mb-2"></p>
+              <img id="bg-question-image" src="" alt="Question preview" class="w-full h-auto rounded-lg border border-slate-200" />
+            </div>
+          </div>
+
+          <button id="bg-submit" type="submit" class="px-4 py-2.5 rounded-xl bg-garud-highlight text-white font-semibold hover:opacity-95">Post</button>
+        </form>
+        <p class="text-xs text-gray-500 mt-3">Select class + battleground subject in first section, then select a question from subject/chapter/topic in second section.</p>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lift fade-up-2">
+        <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 class="font-semibold text-gray-800">Posted Quizzes</h3>
+          <button id="bg-refresh" type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-gray-300 text-gray-700 hover:bg-gray-100">Refresh</button>
+        </div>
+        <div id="bg-list" class="divide-y divide-gray-100">
+          <div class="p-6 text-sm text-gray-500">Loading...</div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/pages/admin/battleground.js"></script>
+</body>
+</html>
