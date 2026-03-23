@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
+const { getSignedR2Url } = require('../config/r2');
 const { auth, adminOnly } = require('../middleware/auth');
 
 const router = express.Router();
@@ -81,6 +82,47 @@ function isAllowedVideoHost(rawUrl) {
   } catch (_) {
     return false;
   }
+}
+
+function extractObjectKey(videoRef) {
+  if (!videoRef) return null;
+
+  const value = String(videoRef).trim();
+  if (!value) return null;
+
+  if (!/^https?:\/\//i.test(value)) return value.replace(/^\/+/, '');
+
+  try {
+    const parsed = new URL(value);
+    return parsed.pathname.replace(/^\/+/, '');
+  } catch (_) {
+    return null;
+  }
+}
+
+async function resolvePlaybackSource(videoRef) {
+  const value = String(videoRef || '').trim();
+  if (!value) {
+    throw new Error('No video link configured for this lecture');
+  }
+
+  if (/^https?:\/\//i.test(value)) {
+    return {
+      sourceUrl: value,
+      trustedSource: false,
+    };
+  }
+
+  const objectKey = extractObjectKey(value);
+  if (!objectKey) {
+    throw new Error('Invalid lecture video reference');
+  }
+
+  const signedUrl = await getSignedR2Url(objectKey);
+  return {
+    sourceUrl: signedUrl,
+    trustedSource: true,
+  };
 }
 
 async function ensureCoursePurchasedByUser(courseId, userId) {
@@ -328,12 +370,9 @@ router.get('/published/:id/lectures/:lectureId/playback', auth, async (req, res)
       return res.status(404).json({ message: 'Lecture not found' });
     }
 
-    const sourceUrl = String(lecture.videoLink || '').trim();
-    if (!sourceUrl) {
-      return res.status(400).json({ message: 'No video link configured for this lecture' });
-    }
+    const { sourceUrl, trustedSource } = await resolvePlaybackSource(lecture.videoLink);
 
-    if (!isAllowedVideoHost(sourceUrl)) {
+    if (!trustedSource && !isAllowedVideoHost(sourceUrl)) {
       return res.status(400).json({
         message: 'Video host is not allowed for signed playback. Configure VIDEO_ALLOWED_HOSTS if needed.',
       });
@@ -345,6 +384,7 @@ router.get('/published/:id/lectures/:lectureId/playback', auth, async (req, res)
       cid: String(course._id),
       lid: String(lecture._id),
       src: sourceUrl,
+      trusted: trustedSource ? 1 : 0,
       exp: now + PLAYBACK_TOKEN_TTL_SECONDS,
     });
 
@@ -380,7 +420,7 @@ router.get('/stream', auth, async (req, res) => {
       return res.status(401).json({ message: 'Playback token expired' });
     }
 
-    if (!isAllowedVideoHost(payload.src)) {
+    if (!payload.trusted && !isAllowedVideoHost(payload.src)) {
       return res.status(400).json({ message: 'Video host is not allowed for streaming' });
     }
 

@@ -49,6 +49,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     return `${String(minutes)}:${String(seconds).padStart(2, '0')}`;
   }
 
+  function getEmbedUrl(videoLink) {
+    const raw = String(videoLink || '').trim();
+    if (!raw) return '';
+
+    try {
+      const parsed = new URL(raw);
+      const host = parsed.hostname.toLowerCase();
+
+      if (host === 'youtu.be') {
+        const id = parsed.pathname.replace(/^\/+/, '').split('/')[0];
+        return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?rel=0` : '';
+      }
+
+      if (host.endsWith('youtube.com')) {
+        if (parsed.pathname.startsWith('/embed/')) {
+          const id = parsed.pathname.split('/embed/')[1]?.split('/')[0];
+          return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?rel=0` : '';
+        }
+        const id = parsed.searchParams.get('v');
+        return id ? `https://www.youtube.com/embed/${encodeURIComponent(id)}?rel=0` : '';
+      }
+
+      if (host === 'vimeo.com' || host.endsWith('.vimeo.com')) {
+        const segments = parsed.pathname.split('/').filter(Boolean);
+        const id = segments.find((part) => /^\d+$/.test(part));
+        return id ? `https://player.vimeo.com/video/${encodeURIComponent(id)}` : '';
+      }
+    } catch (_) {
+      return '';
+    }
+
+    return '';
+  }
+
   function updateQuery() {
     const next = new URLSearchParams(window.location.search);
     next.set('lectureId', activeLecture?._id || '');
@@ -237,8 +271,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    if (!String(activeLecture.videoLink || '').trim()) {
+    const rawVideoLink = String(activeLecture.videoLink || '').trim();
+    if (!rawVideoLink) {
       playerPanelEl.innerHTML = '<div class="h-full flex items-center justify-center text-sm text-white/60">No video link available for this lecture.</div>';
+      return;
+    }
+
+    const embedUrl = getEmbedUrl(rawVideoLink);
+    if (embedUrl) {
+      playerPanelEl.innerHTML = `
+        <div class="h-full flex flex-col">
+          <div class="px-4 py-3 border-b border-white/10 flex items-center justify-between gap-3">
+            <p class="text-sm font-semibold truncate">${escapeHtml(activeLecture.title || 'Lecture')}</p>
+            <span class="text-[11px] px-2 py-1 rounded-md bg-cyan-500/20 text-cyan-100 border border-cyan-400/30">Embedded Player</span>
+          </div>
+          <div class="flex-1 bg-black">
+            <iframe
+              src="${embedUrl}"
+              class="w-full h-full"
+              title="${escapeHtml(activeLecture.title || 'Lecture video')}"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              referrerpolicy="strict-origin-when-cross-origin"
+            ></iframe>
+          </div>
+        </div>
+      `;
       return;
     }
 

@@ -6,6 +6,12 @@ const HelpSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  status: {
+    type: String,
+    enum: ['open', 'closed'],
+    default: 'open',
+    index: true,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

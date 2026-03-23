@@ -1,10 +1,259 @@
 const express  = require('express');
 const passport = require('passport');
+const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const User     = require('../models/User');
+const PasswordResetOtp = require('../models/PasswordResetOtp');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
+const PASSWORD_RESET_TOKEN_TTL_SECONDS = Math.max(Number(process.env.PASSWORD_RESET_TOKEN_TTL_SECONDS || 600), 60);
+const PASSWORD_RESET_SECRET = process.env.PASSWORD_RESET_SECRET || process.env.JWT_SECRET || 'garud-password-reset-secret';
+
+function toBase64Url(value) {
+  return Buffer.from(value)
+    .toString('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+}
+
+function fromBase64Url(value) {
+  const normalized = String(value || '').replace(/-/g, '+').replace(/_/g, '/');
+  const pad = normalized.length % 4;
+  const withPadding = pad ? normalized + '='.repeat(4 - pad) : normalized;
+  return Buffer.from(withPadding, 'base64').toString('utf8');
+}
+
+function signPasswordResetPayload(payload) {
+  const encodedPayload = toBase64Url(JSON.stringify(payload));
+  const signature = crypto
+    .createHmac('sha256', PASSWORD_RESET_SECRET)
+    .update(encodedPayload)
+    .digest('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+  return `${encodedPayload}.${signature}`;
+}
+
+function verifyPasswordResetToken(token) {
+  const [encodedPayload, signature] = String(token || '').split('.');
+  if (!encodedPayload || !signature) {
+    throw new Error('Invalid reset token');
+  }
+
+  const expected = crypto
+    .createHmac('sha256', PASSWORD_RESET_SECRET)
+    .update(encodedPayload)
+    .digest('base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_');
+
+  const receivedBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expected);
+  if (receivedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {
+    throw new Error('Invalid reset token signature');
+  }
+
+  return JSON.parse(fromBase64Url(encodedPayload));
+}
+
+function normalizeLoginIdentifier(body = {}) {
+  return String(body.identifier || body.email || body.username || '')
+    .trim()
+    .toLowerCase();
+}
+
+async function findUserByIdentifier(identifier) {
+  return User.findOne({
+    $or: [
+      { email: identifier },
+      { username: identifier },
+    ],
+  }).select('_id email').lean();
+}
+
+async function consumeValidOtpForUser(userId, otp) {
+  const otpDoc = await PasswordResetOtp.findOne({ user: userId }).lean();
+  if (!otpDoc || !otpDoc.expiresAt || new Date(otpDoc.expiresAt).getTime() < Date.now()) {
+    if (otpDoc?._id) await PasswordResetOtp.deleteOne({ _id: otpDoc._id });
+    return false;
+  }
+
+  const otpHash = crypto.createHash('sha256').update(String(otp || '').trim()).digest('hex');
+  if (otpHash !== otpDoc.otpHash) {
+    return false;
+  }
+
+  await PasswordResetOtp.deleteOne({ _id: otpDoc._id });
+  return true;
+}
+
+async function handlePasswordResetOtpRequest(req, res, next) {
+  try {
+    const identifier = normalizeLoginIdentifier(req.body);
+    if (!identifier) {
+      return res.status(400).json({ message: 'Login identifier is required.' });
+    }
+
+    const user = await findUserByIdentifier(identifier);
+
+    // Avoid leaking whether an account exists for a given identifier.
+    if (!user) {
+      return res.json({ message: 'If this account exists, an OTP has been generated.' });
+    }
+
+    const otp = String(crypto.randomInt(100000, 1000000));
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+    await PasswordResetOtp.findOneAndUpdate(
+      { user: user._id },
+      {
+        user: user._id,
+        email: user.email,
+        otpHash,
+        expiresAt,
+      },
+      {
+        upsert: true,
+        setDefaultsOnInsert: true,
+      }
+    );
+
+    console.log(
+      `[FORGOT_PASSWORD_OTP] email=${user.email} otp=${otp} expiresAt=${expiresAt.toISOString()}`
+    );
+
+    return res.json({
+      message: 'OTP generated successfully. Check server console for now.',
+      expiresInSeconds: 600,
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
+
+async function handlePasswordReset(req, res, next) {
+  try {
+    const rawStep = String(req.body?.step || '').trim().toLowerCase();
+    const step = rawStep.replace(/\s+/g, '_').replace(/-/g, '_');
+
+    if (step === 'request_otp' || step === 'requestotp' || step === 'send_otp') {
+      return handlePasswordResetOtpRequest(req, res, next);
+    }
+
+    if (step === 'verify_otp' || step === 'verifyotp') {
+      const identifier = normalizeLoginIdentifier(req.body);
+      const otp = String(req.body?.otp || '').trim();
+
+      if (!identifier || !otp) {
+        return res.status(400).json({ message: 'Login identifier and OTP are required.' });
+      }
+
+      const user = await findUserByIdentifier(identifier);
+
+      if (!user) {
+        return res.status(400).json({ message: 'Invalid or expired OTP.' });
+      }
+
+      const isValidOtp = await consumeValidOtpForUser(user._id, otp);
+      if (!isValidOtp) {
+        return res.status(400).json({ message: 'Invalid or expired OTP.' });
+      }
+
+      const now = Math.floor(Date.now() / 1000);
+      const resetToken = signPasswordResetPayload({
+        uid: String(user._id),
+        email: user.email,
+        purpose: 'password_reset',
+        exp: now + PASSWORD_RESET_TOKEN_TTL_SECONDS,
+      });
+
+      return res.json({
+        message: 'OTP verified. Continue with new password.',
+        resetToken,
+        expiresInSeconds: PASSWORD_RESET_TOKEN_TTL_SECONDS,
+      });
+    }
+
+    if (step === 'set_new_password' || step === 'set_password' || step === 'new_password') {
+      const resetToken = String(req.body?.resetToken || '').trim();
+      const newPassword = String(req.body?.newPassword || '');
+
+      if (newPassword.length < 8) {
+        return res.status(400).json({ message: 'Password must be at least 8 characters.' });
+      }
+
+      let userId = null;
+      let email = null;
+
+      if (resetToken) {
+        let payload;
+        try {
+          payload = verifyPasswordResetToken(resetToken);
+        } catch (_) {
+          return res.status(401).json({ message: 'Invalid reset token.' });
+        }
+
+        const now = Math.floor(Date.now() / 1000);
+        if (!payload?.uid || payload?.purpose !== 'password_reset' || !payload?.exp || Number(payload.exp) < now) {
+          return res.status(401).json({ message: 'Reset token expired or invalid.' });
+        }
+
+        userId = payload.uid;
+        email = String(payload.email || '').toLowerCase();
+      } else {
+        const identifier = normalizeLoginIdentifier(req.body);
+        const otp = String(req.body?.otp || '').trim();
+        if (!identifier || !otp) {
+          return res.status(400).json({ message: 'Provide resetToken OR identifier and otp with newPassword.' });
+        }
+
+        const userForOtp = await findUserByIdentifier(identifier);
+        if (!userForOtp) {
+          return res.status(400).json({ message: 'Invalid or expired OTP.' });
+        }
+
+        const isValidOtp = await consumeValidOtpForUser(userForOtp._id, otp);
+        if (!isValidOtp) {
+          return res.status(400).json({ message: 'Invalid or expired OTP.' });
+        }
+
+        userId = userForOtp._id;
+        email = String(userForOtp.email || '').toLowerCase();
+      }
+
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found.' });
+      }
+
+      if (email && String(user.email).toLowerCase() !== email) {
+        return res.status(401).json({ message: 'Reset credentials are not valid for this user.' });
+      }
+
+      await new Promise((resolve, reject) => {
+        user.setPassword(newPassword, (err) => {
+          if (err) return reject(err);
+          console.log(err);
+          return resolve();
+        });
+      });
+      await user.save();
+
+      return res.json({ message: 'Password changed successfully.' });
+    }
+
+    return res.status(400).json({
+      message: 'Invalid step. Use one of: request_otp, verify_otp, set_new_password.',
+    });
+  } catch (err) {
+    return next(err);
+  }
+}
 
 // Rate-limiter: max 10 auth attempts per IP per 15 minutes
 const authLimiter = rateLimit({
@@ -102,6 +351,11 @@ router.post('/m/login', authLimiter, (req, res, next) => {
 });
     });
   })(req, res, next);
+});
+
+// ── Password Reset (single route, step-based) ───────────────────
+router.post('/password-reset', authLimiter, async (req, res, next) => {
+  return handlePasswordReset(req, res, next);
 });
 
 // ── Logout ────────────────────────────────────────────────────────
