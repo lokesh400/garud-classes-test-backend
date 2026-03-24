@@ -152,6 +152,13 @@ const sanitizeLecture = (lecture) => ({
   pdfs: sanitizeLecturePdfs(lecture?.pdfs),
 });
 
+const mapLectureForStudent = (lecture, index) => ({
+  _id: lecture?._id,
+  title: String(lecture?.title || '').trim() || `Lecture ${index + 1}`,
+  videoLink: String(lecture?.videoLink || '').trim(),
+  pdfs: sanitizeLecturePdfs(lecture?.pdfs),
+});
+
 // ==================== ADMIN ROUTES ====================
 router.get('/admin/all', auth, adminOnly, async (req, res) => {
   try {
@@ -313,6 +320,9 @@ router.get('/published', auth, async (req, res) => {
       return res.json(
         courses.map((course) => ({
           ...course,
+          lectures: Array.isArray(course.lectures)
+            ? course.lectures.map((lecture, index) => mapLectureForStudent(lecture, index))
+            : [],
           lectureCount: Array.isArray(course.lectures) ? course.lectures.length : 0,
         }))
       );
@@ -325,6 +335,9 @@ router.get('/published', auth, async (req, res) => {
     res.json(
       courses.map((course) => ({
         ...course,
+        lectures: Array.isArray(course.lectures)
+          ? course.lectures.map((lecture, index) => mapLectureForStudent(lecture, index))
+          : [],
         lectureCount: Array.isArray(course.lectures) ? course.lectures.length : 0,
       }))
     );
@@ -344,12 +357,12 @@ router.get('/published/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'Purchase this course to open it' });
     }
 
-    console.log(course)
-
     res.json({
       ...course,
+      lectures: Array.isArray(course.lectures)
+        ? course.lectures.map((lecture, index) => mapLectureForStudent(lecture, index))
+        : [],
       lectureCount: Array.isArray(course.lectures) ? course.lectures.length : 0,
-      
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

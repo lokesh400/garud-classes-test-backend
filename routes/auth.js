@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const User     = require('../models/User');
 const PasswordResetOtp = require('../models/PasswordResetOtp');
+const { sendPasswordResetOtpEmail } = require('../config/mailer');
 const { auth } = require('../middleware/auth');
 
 const router = express.Router();
@@ -123,12 +124,26 @@ async function handlePasswordResetOtpRequest(req, res, next) {
       }
     );
 
-    console.log(
-      `[FORGOT_PASSWORD_OTP] email=${user.email} otp=${otp} expiresAt=${expiresAt.toISOString()}`
-    );
+    try {
+      await sendPasswordResetOtpEmail({
+        toEmail: user.email,
+        otp,
+        expiresInMinutes: 10,
+      });
+    } catch (mailError) {
+      console.error(
+        `[FORGOT_PASSWORD_OTP_EMAIL_ERROR] email=${user.email} reason=${mailError.message}`
+      );
+      // Non-production fallback keeps password reset testable even without email setup.
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(
+          `[FORGOT_PASSWORD_OTP_DEV_FALLBACK] email=${user.email} otp=${otp} expiresAt=${expiresAt.toISOString()}`
+        );
+      }
+    }
 
     return res.json({
-      message: 'OTP generated successfully. Check server console for now.',
+      message: 'If this account exists, an OTP has been generated and sent.',
       expiresInSeconds: 600,
     });
   } catch (err) {

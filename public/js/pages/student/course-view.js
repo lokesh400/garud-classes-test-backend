@@ -4,13 +4,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const courseId = window.location.pathname.split('/')[3];
   const lecturesListEl = document.getElementById('lectures-list');
+  const lessonStatsEl = document.getElementById('lesson-stats');
   let course = null;
-
-  function closeLectureMenus() {
-    lecturesListEl.querySelectorAll('.lecture-menu-panel').forEach((panel) => {
-      panel.classList.add('hidden');
-    });
-  }
+  let expandedLectureIds = {};
 
   function render() {
     document.getElementById('course-name').textContent = course.name;
@@ -25,6 +21,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const lectures = Array.isArray(course.lectures) ? course.lectures : [];
     document.getElementById('lecture-count').textContent = String(lectures.length);
+    const attachmentCount = lectures.reduce((sum, lecture) => {
+      const pdfs = Array.isArray(lecture?.pdfs) ? lecture.pdfs : [];
+      return sum + pdfs.length;
+    }, 0);
+    if (lessonStatsEl) {
+      lessonStatsEl.textContent = `${lectures.length} lessons | ${attachmentCount} attachments`;
+    }
 
     const listEl = lecturesListEl;
 
@@ -38,43 +41,60 @@ document.addEventListener('DOMContentLoaded', async () => {
       const pdfs = Array.isArray(lecture.pdfs) ? lecture.pdfs : [];
       const videoAvailable = !!String(lecture.videoLink || '').trim();
       const attachmentAvailable = pdfs.length > 0;
+      const isExpanded = !!expandedLectureIds[String(lecture._id)];
 
       return `
         <div data-lecture-card="${lecture._id}" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden lift">
           <div class="h-1.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-emerald-500"></div>
           <div class="p-4 md:p-5">
-            <div class="flex items-center justify-between gap-3 flex-wrap">
-              <h3 class="font-semibold text-gray-900">${index + 1}. ${safeTitle}</h3>
-              <span class="text-xs px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-medium">${videoAvailable ? 'Video Ready' : 'No Video'} | ${pdfs.length} Attachments</span>
-            </div>
-            <div class="mt-3 relative lecture-menu">
-              <button
-                type="button"
-                data-menu-toggle
-                class="w-full sm:w-auto px-4 py-2.5 rounded-xl text-sm font-semibold bg-garud-highlight text-white hover:opacity-95"
-              >
-                Open Lecture Menu
-              </button>
+            <button
+              type="button"
+              data-toggle-lecture="${lecture._id}"
+              class="w-full flex items-center justify-between gap-3 text-left"
+            >
+              <div>
+                <h3 class="font-semibold text-gray-900">${index + 1}. ${safeTitle}</h3>
+                <p class="text-xs text-slate-500 mt-1">${videoAvailable ? 'Video available' : 'No video'} | ${pdfs.length} attachments</p>
+              </div>
+              <span class="text-blue-700 text-xl leading-none">${isExpanded ? '&#9650;' : '&#9660;'}</span>
+            </button>
 
-              <div class="lecture-menu-panel hidden absolute z-20 mt-2 w-full sm:w-64 rounded-xl border border-gray-200 bg-white shadow-lg p-2 space-y-1">
+            <div class="${isExpanded ? 'mt-4' : 'hidden'}" data-lecture-body="${lecture._id}">
+              <div class="flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   data-open-player="${lecture._id}"
                   data-action="video"
                   ${videoAvailable ? '' : 'disabled'}
-                  class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium ${videoAvailable ? 'text-gray-800 hover:bg-slate-100' : 'text-gray-400 cursor-not-allowed'}"
+                  class="px-4 py-2.5 rounded-xl text-sm font-semibold ${videoAvailable ? 'bg-garud-highlight text-white hover:opacity-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}"
                 >
-                  Play Lecture
+                  Play Video
                 </button>
                 <button
                   type="button"
                   data-open-player="${lecture._id}"
                   data-action="attachments"
                   ${attachmentAvailable ? '' : 'disabled'}
-                  class="w-full text-left px-3 py-2 rounded-lg text-sm font-medium ${attachmentAvailable ? 'text-gray-800 hover:bg-slate-100' : 'text-gray-400 cursor-not-allowed'}"
+                  class="px-4 py-2.5 rounded-xl text-sm font-semibold ${attachmentAvailable ? 'bg-white border border-blue-200 text-blue-700 hover:bg-blue-50' : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-200'}"
                 >
                   Open Attachments
                 </button>
+              </div>
+
+              <div class="mt-3">
+                <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Attachments</p>
+                ${attachmentAvailable
+                  ? `<div class="mt-2 space-y-2">${pdfs.map((pdf, pdfIndex) => `
+                      <a
+                        href="${escapeHtml(pdf.link || '#')}"
+                        target="_blank"
+                        rel="noopener"
+                        class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-blue-100 bg-blue-50/40 hover:bg-blue-50"
+                      >
+                        <span class="text-sm text-slate-800 truncate">${escapeHtml(pdf.title || `Attachment ${pdfIndex + 1}`)}</span>
+                        <span class="text-xs text-blue-700 font-semibold">Open</span>
+                      </a>`).join('')}</div>`
+                  : '<p class="mt-2 text-sm text-slate-500">No attachments for this lecture.</p>'}
               </div>
             </div>
           </div>
@@ -103,15 +123,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   lecturesListEl.addEventListener('click', (event) => {
-    const toggleBtn = event.target.closest('[data-menu-toggle]');
-    if (toggleBtn) {
-      const menu = toggleBtn.closest('.lecture-menu');
-      const panel = menu?.querySelector('.lecture-menu-panel');
-      if (!panel) return;
-
-      const isHidden = panel.classList.contains('hidden');
-      closeLectureMenus();
-      if (isHidden) panel.classList.remove('hidden');
+    const toggleLectureBtn = event.target.closest('[data-toggle-lecture]');
+    if (toggleLectureBtn) {
+      const lectureId = String(toggleLectureBtn.dataset.toggleLecture || '');
+      if (!lectureId) return;
+      expandedLectureIds = {
+        ...expandedLectureIds,
+        [lectureId]: !expandedLectureIds[lectureId],
+      };
+      render();
       return;
     }
 
@@ -121,15 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const action = openBtn.dataset.action || 'video';
     const lectureId = openBtn.dataset.openPlayer;
     if (!lectureId) return;
-
-    closeLectureMenus();
     window.location.href = `/student/course/${courseId}/player?lectureId=${encodeURIComponent(lectureId)}&tab=${encodeURIComponent(action)}`;
-  });
-
-  document.addEventListener('click', (event) => {
-    if (!event.target.closest('.lecture-menu')) {
-      closeLectureMenus();
-    }
   });
 
   await loadData();
