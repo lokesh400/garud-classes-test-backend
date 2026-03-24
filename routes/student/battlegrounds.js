@@ -73,24 +73,11 @@ function normalizeSubjectKey(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-function isSeniorClass11Or12(classLevel) {
-  const normalized = normalizeClassLevel(classLevel);
-  return /(^|\D)(11|12)(\D|$)/.test(normalized);
-}
-
 function getStreakRequirement(classLevel) {
-  if (isSeniorClass11Or12(classLevel)) {
-    return {
-      compulsory: ['physics', 'chemistry'],
-      oneOf: ['mathematics', 'biology'],
-      type: 'senior-pcm-or-pcb',
-    };
-  }
-
   return {
-    compulsory: [],
-    oneOf: [],
-    type: 'any-subject',
+    compulsory: ['physics', 'chemistry'],
+    oneOf: ['mathematics', 'biology'],
+    type: 'senior-pcm-or-pcb',
   };
 }
 

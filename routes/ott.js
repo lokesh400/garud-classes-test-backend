@@ -6,6 +6,17 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+async function ensureCoursePurchasedByUser(courseId, userId) {
+  const purchase = await Purchase.findOne({
+    user: userId,
+    itemType: 'Course',
+    itemId: courseId,
+    status: 'success',
+  }).lean();
+
+  return !!purchase;
+}
+
 function sanitizeLecturePdfsForResponse(pdfs) {
   if (!Array.isArray(pdfs)) return [];
   return pdfs
@@ -22,6 +33,15 @@ function mapLectureForOtt(lecture, index) {
     _id: lecture?._id,
     videoname: title || `Lecture ${index + 1}`,
     hasVideo: !!String(lecture?.videoLink || '').trim(),
+    pdfs: sanitizeLecturePdfsForResponse(lecture?.pdfs),
+  };
+}
+
+function mapLectureForOttDetail(lecture, index) {
+  return {
+    _id: lecture?._id,
+    title: String(lecture?.title || '').trim() || `Lecture ${index + 1}`,
+    videoLink: String(lecture?.videoLink || '').trim(),
     pdfs: sanitizeLecturePdfsForResponse(lecture?.pdfs),
   };
 }
@@ -112,6 +132,38 @@ router.get('/explore-courses', auth, async (req, res) => {
     console.log('Explore courses fetched:', result, 'for user:', req.user._id);
 
     res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// GET /api/ott/published/:id
+// GET /api/ott/courses/published/:courseId
+// Compatibility detail endpoints for mobile clients.
+router.get(['/published/:id', '/courses/published/:courseId'], auth, async (req, res) => {
+  try {
+    const courseId = String(req.params.id || req.params.courseId || '').trim();
+    if (!courseId) {
+      return res.status(400).json({ message: 'course id is required' });
+    }
+
+    const course = await Course.findOne({ _id: courseId, isPublished: true }).lean();
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
+
+    const purchased = await ensureCoursePurchasedByUser(course._id, req.user._id);
+    if (!purchased) {
+      return res.status(403).json({ message: 'Purchase this course to open it' });
+    }
+
+    res.json({
+      ...course,
+      lectures: Array.isArray(course.lectures)
+        ? course.lectures.map((lecture, index) => mapLectureForOttDetail(lecture, index))
+        : [],
+      lectureCount: Array.isArray(course.lectures) ? course.lectures.length : 0,
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

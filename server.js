@@ -17,6 +17,10 @@ connectDB();
 
 const app    = express();
 const isProd = process.env.NODE_ENV === 'production';
+const sessionCookieSameSite = (
+  process.env.SESSION_COOKIE_SAMESITE || (isProd ? 'lax' : 'lax')
+).toLowerCase();
+const sessionCookieSecure = isProd || sessionCookieSameSite === 'none';
 const allowedOrigins = [
   'http://localhost:5000',
   'http://localhost:3000',
@@ -64,17 +68,23 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(mongoSanitize());
 
 // ── Startup env guard ─────────────────────────────────────────────────────
-if (!process.env.JWT_SECRET) {
+if (!process.env.SESSION_SECRET) {
   console.error('FATAL: SESSION_SECRET env variable is not set. Add it to your .env file.');
   process.exit(1);
+}
+
+// Render sits behind a reverse proxy; trust it so secure cookies are set correctly.
+if (isProd) {
+  app.set('trust proxy', 1);
 }
 
 // ── Session ─────────────────────────────────────────────────────────────────
 app.use(session({
   name:              'sid',              // don't leak framework name via cookie
-  secret:            process.env.JWT_SECRET,
+  secret:            process.env.SESSION_SECRET,
   resave:            false,
   saveUninitialized: false,
+  proxy:             isProd,
   store: MongoStore.create({
     mongoUrl:   process.env.MONGODB_URI,
     ttl:        7 * 24 * 60 * 60,        // 7 days (seconds)
@@ -82,8 +92,8 @@ app.use(session({
   }),
   cookie: {
     httpOnly: true,                      // JS cannot read the cookie
-    secure:   isProd,                    // HTTPS-only in production
-    sameSite: 'strict',                  // CSRF protection
+    secure:   sessionCookieSecure,       // HTTPS-only; required when SameSite=None
+    sameSite: sessionCookieSameSite,     // strict/lax/none (env configurable)
     maxAge:   7 * 24 * 60 * 60 * 1000,  // 7 days (ms)
   },
 }));

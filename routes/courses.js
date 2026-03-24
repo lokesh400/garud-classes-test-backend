@@ -344,9 +344,12 @@ router.get('/published/:id', auth, async (req, res) => {
       return res.status(403).json({ message: 'Purchase this course to open it' });
     }
 
+    console.log(course)
+
     res.json({
       ...course,
       lectureCount: Array.isArray(course.lectures) ? course.lectures.length : 0,
+      
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
