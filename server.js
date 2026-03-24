@@ -68,10 +68,10 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(mongoSanitize());
 
 // ── Startup env guard ─────────────────────────────────────────────────────
-if (!process.env.SESSION_SECRET) {
-  console.error('FATAL: SESSION_SECRET env variable is not set. Add it to your .env file.');
-  process.exit(1);
-}
+// if (!process.env.SESSION_SECRET) {
+//   console.error('FATAL: SESSION_SECRET env variable is not set. Add it to your .env file.');
+//   process.exit(1);
+// }
 
 // Render sits behind a reverse proxy; trust it so secure cookies are set correctly.
 if (isProd) {
@@ -150,7 +150,7 @@ app.get('/api/exams-targeted', (req, res) => {
     { name: 'JEE Advanced', value: 'jee-advanced' },
     { name: 'NEET', value: 'neet' }
   ]);
-});
+})
 
 app.get('/health', (req, res) => res.status(200).send('OK'));
 
