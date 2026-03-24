@@ -17,6 +17,7 @@ connectDB();
 
 const app    = express();
 const isProd = process.env.NODE_ENV === 'production';
+const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 const sessionCookieSameSite = (
   process.env.SESSION_COOKIE_SAMESITE || (isProd ? 'lax' : 'lax')
 ).toLowerCase();
@@ -68,10 +69,14 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(mongoSanitize());
 
 // ── Startup env guard ─────────────────────────────────────────────────────
-// if (!process.env.SESSION_SECRET) {
-//   console.error('FATAL: SESSION_SECRET env variable is not set. Add it to your .env file.');
-//   process.exit(1);
-// }
+if (!process.env.SESSION_SECRET) {
+  console.error('FATAL: SESSION_SECRET env variable is not set.');
+  process.exit(1);
+}
+if (!mongoUri) {
+  console.error('FATAL: MongoDB URI is missing. Set MONGODB_URI (or MONGO_URI) in environment variables.');
+  process.exit(1);
+}
 
 // Render sits behind a reverse proxy; trust it so secure cookies are set correctly.
 if (isProd) {
@@ -86,7 +91,7 @@ app.use(session({
   saveUninitialized: false,
   proxy:             isProd,
   store: MongoStore.create({
-    mongoUrl:   process.env.MONGODB_URI,
+    mongoUrl:   mongoUri,
     ttl:        7 * 24 * 60 * 60,        // 7 days (seconds)
     autoRemove: 'native',
   }),
