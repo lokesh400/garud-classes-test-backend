@@ -118,6 +118,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.get('/account/delete', (req, res) => res.render('account-delete', { title: 'Account Deletion Policy' }));
+
 // ── Page routes (EJS views) ────────────────────────────────────────────────────
 app.use('/', require('./routes/public/pages'));
 app.use('/', require('./routes/admin/pages'));
@@ -164,6 +166,11 @@ function startKeepAlive() {
 
 app.post('/api/test', (req, res) => {
   res.json({ message: 'Test endpoint is working!' });
+});
+
+// ── Custom 404 page ───────────────────────────────────────────────────────────
+app.use((req, res) => {
+  res.status(404).render('404', { title: 'Page Not Found' });
 });
 
 const PORT = process.env.PORT || 5000;

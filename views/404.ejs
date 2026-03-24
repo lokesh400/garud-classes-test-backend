@@ -1,0 +1,39 @@
+<%- include('./partials/head', { title: 'Page Not Found' }) %>
+<body class="min-h-screen bg-gradient-to-br from-garud-dark via-garud-mid to-garud-accent text-white page-body overflow-hidden">
+  <div class="absolute -top-16 -left-20 w-80 h-80 bg-garud-highlight/10 rounded-full blur-3xl"></div>
+  <div class="absolute -bottom-20 -right-16 w-72 h-72 bg-white/10 rounded-full blur-3xl"></div>
+
+  <main class="relative z-10 min-h-screen flex items-center justify-center px-4 py-10">
+    <section class="w-full max-w-3xl bg-white/5 backdrop-blur-md border border-white/15 rounded-3xl shadow-2xl p-6 sm:p-10 text-center fade-up">
+      <p class="text-garud-highlight text-xs tracking-[0.32em] uppercase font-bold">Error 404</p>
+
+      <div class="mt-3 mb-2">
+        <h1 class="text-7xl sm:text-8xl font-black leading-none">
+          <span class="text-white">4</span>
+          <span class="text-garud-highlight drop-shadow-[0_0_25px_rgba(233,69,96,0.55)]">0</span>
+          <span class="text-white">4</span>
+        </h1>
+      </div>
+
+      <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Page Not Found</h2>
+      <p class="mt-3 text-white/75 max-w-xl mx-auto leading-relaxed">
+        The page you are looking for may have been moved, deleted, or the URL might be incorrect.
+      </p>
+
+      <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <a href="/" class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-garud-highlight text-white font-semibold hover:opacity-90 transition">
+          Go To Home
+        </a>
+        <a href="/login" class="inline-flex items-center justify-center px-5 py-3 rounded-xl border border-white/25 text-white/85 hover:bg-white/10 transition">
+          Back To Login
+        </a>
+      </div>
+
+      <p class="mt-7 text-xs text-white/45">
+        Need help? Contact
+        <a class="text-garud-highlight hover:underline" href="mailto:info@garudclasses.com">info@garudclasses.com</a>
+      </p>
+    </section>
+  </main>
+</body>
+</html>
