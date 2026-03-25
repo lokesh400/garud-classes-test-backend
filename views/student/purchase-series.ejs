@@ -1,30 +1,131 @@
 <%- include('../partials/head', { title: 'Purchase Test Series' }) %>
-<body class="min-h-screen bg-slate-50 text-gray-900">
+<body class="min-h-screen bg-[#fffaf2] text-slate-900">
   <%- include('../partials/navbar') %>
   <%- include('../partials/sidebar') %>
 
-  <div class="md:ml-60 pt-14 min-h-screen page-body">
-    <div class="page-header px-6 md:px-8 py-7 fade-up">
-      <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Student Portal</p>
-      <h1 class="text-2xl md:text-3xl font-bold text-white">Purchase Test Series</h1>
-      <p class="text-white/60 text-sm mt-1">Explore our test series for JEE, NEET and more</p>
-    </div>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-    <div class="p-6 md:p-8">
-    <!-- Filter -->
-    <div class="mb-6">
-      <select id="category-filter"
-              class="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 outline-none">
-        <option value="all">All Categories</option>
-        <option value="jee">JEE</option>
-        <option value="neet">NEET</option>
-        <option value="other">Other</option>
-      </select>
-    </div>
+    .series-shell {
+      font-family: 'Outfit', sans-serif;
+      background:
+        radial-gradient(circle at 10% 8%, rgba(251, 191, 36, 0.2), transparent 34%),
+        radial-gradient(circle at 95% 18%, rgba(59, 130, 246, 0.16), transparent 34%),
+        linear-gradient(180deg, #fff9e9 0%, #fffef8 45%, #ffffff 100%);
+      min-height: calc(100vh - 3.5rem);
+    }
 
-    <div id="loading" class="flex items-center justify-center py-12"><div class="spinner"></div></div>
-    <div id="series-grid" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
-    </div><!-- /p-6 -->
+    .series-title {
+      font-family: 'Sora', sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    .series-hero {
+      border-radius: 1.45rem;
+      background: linear-gradient(128deg, #0f172a 0%, #1e293b 58%, #334155 100%);
+      box-shadow: 0 24px 52px rgba(15, 23, 42, 0.22);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .series-hero::before {
+      content: '';
+      position: absolute;
+      width: 300px;
+      height: 300px;
+      border-radius: 999px;
+      right: -95px;
+      top: -145px;
+      background: rgba(245, 158, 11, 0.29);
+    }
+
+    .series-hero::after {
+      content: '';
+      position: absolute;
+      width: 230px;
+      height: 230px;
+      border-radius: 999px;
+      left: -70px;
+      bottom: -135px;
+      background: rgba(34, 211, 238, 0.2);
+    }
+
+    .series-control {
+      border: 1px solid #d7e0eb;
+      border-radius: 0.9rem;
+      background: #fff;
+      color: #1e293b;
+      font-size: 0.95rem;
+      font-weight: 600;
+      min-height: 2.8rem;
+    }
+
+    .series-card {
+      border: 1px solid #e7edf5;
+      border-radius: 1.1rem;
+      background: linear-gradient(180deg, #fff 0%, #fffdf9 100%);
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.24s ease;
+    }
+
+    .series-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 38px rgba(2, 6, 23, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      .series-hero { border-radius: 1.1rem; }
+    }
+  </style>
+
+  <div class="md:ml-60 pt-14 page-body series-shell">
+    <div class="max-w-7xl w-full mx-auto px-4 md:px-8 py-6 md:py-8">
+      <section class="series-hero p-6 md:p-8 fade-up">
+        <div class="relative z-10">
+          <p class="text-white/60 text-xs uppercase tracking-[0.2em] font-semibold">Student Marketplace</p>
+          <h1 class="series-title text-3xl md:text-4xl text-white font-extrabold mt-2">Purchase Test Series</h1>
+          <p class="text-base text-white/75 mt-2 max-w-2xl">Choose premium mock packs for JEE, NEET, and beyond with complete exam-style practice and instant access after checkout.</p>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 max-w-3xl">
+            <div class="rounded-xl bg-white/10 border border-white/20 p-3">
+              <p class="text-[11px] uppercase tracking-wide text-white/60">Available</p>
+              <p id="series-count" class="text-lg font-bold text-white mt-1">0</p>
+            </div>
+            <div class="rounded-xl bg-white/10 border border-white/20 p-3">
+              <p class="text-[11px] uppercase tracking-wide text-white/60">Purchased</p>
+              <p id="purchased-count" class="text-lg font-bold text-white mt-1">0</p>
+            </div>
+            <div class="rounded-xl bg-white/10 border border-white/20 p-3 col-span-2 sm:col-span-1">
+              <p class="text-[11px] uppercase tracking-wide text-white/60">Category</p>
+              <p id="active-category-label" class="text-lg font-bold text-white mt-1">All</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-6 bg-white/85 border border-orange-100 rounded-2xl p-4 md:p-5 fade-up-1">
+        <div class="grid grid-cols-1 md:grid-cols-[220px,minmax(0,1fr),180px] gap-3">
+          <select id="category-filter" class="series-control px-3.5">
+            <option value="all">All Categories</option>
+            <option value="jee">JEE</option>
+            <option value="neet">NEET</option>
+            <option value="other">Other</option>
+          </select>
+
+          <input id="series-search" type="search" placeholder="Search test series by name..." class="series-control px-3.5 placeholder:text-slate-400" />
+
+          <select id="sort-filter" class="series-control px-3.5">
+            <option value="latest">Sort: Latest</option>
+            <option value="price-low">Price: Low to High</option>
+            <option value="price-high">Price: High to Low</option>
+            <option value="name">Name: A to Z</option>
+          </select>
+        </div>
+      </section>
+
+      <div id="loading" class="flex items-center justify-center py-16"><div class="spinner"></div></div>
+      <div id="series-grid" class="hidden grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 mt-6 fade-up-2"></div>
+    </div>
   </div><!-- /page-body -->
 
   <!-- Razorpay CDN will be loaded dynamically -->

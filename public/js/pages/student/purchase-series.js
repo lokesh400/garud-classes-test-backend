@@ -8,7 +8,45 @@ document.addEventListener('DOMContentLoaded', async () => {
   let allSeries    = [];
   let purchasedIds = [];
   let filter       = 'all';
+  let searchQuery  = '';
+  let sortMode     = 'latest';
   const seriesMap  = new Map(); // id → series object, avoids JSON-in-HTML issues
+
+  function escapeHtml(value) {
+    return String(value || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function sanitizeUrl(url) {
+    const value = String(url || '').trim();
+    if (!value) return '';
+    if (value.startsWith('/')) return value;
+    if (/^https?:\/\//i.test(value)) return value;
+    return '';
+  }
+
+  function updateStats(filteredCount) {
+    const seriesCountEl = document.getElementById('series-count');
+    const purchasedCountEl = document.getElementById('purchased-count');
+    const activeCategoryEl = document.getElementById('active-category-label');
+
+    if (seriesCountEl) {
+      seriesCountEl.textContent = String(filteredCount);
+    }
+
+    if (purchasedCountEl) {
+      purchasedCountEl.textContent = String(purchasedIds.length);
+    }
+
+    if (activeCategoryEl) {
+      const label = filter === 'all' ? 'All' : filter.toUpperCase();
+      activeCategoryEl.textContent = label;
+    }
+  }
 
   async function loadRazorpay() {
     return new Promise(resolve => {
@@ -41,38 +79,65 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function renderGrid() {
-    const filtered = filter === 'all' ? allSeries : allSeries.filter(s => s.madeFor === filter);
+    const byCategory = filter === 'all' ? allSeries : allSeries.filter(s => s.madeFor === filter);
+    const bySearch = byCategory.filter((s) => {
+      if (!searchQuery) return true;
+      const hay = `${s.name || ''} ${s.description || ''} ${(s.tags || []).join(' ')}`.toLowerCase();
+      return hay.includes(searchQuery);
+    });
+
+    const filtered = [...bySearch].sort((a, b) => {
+      if (sortMode === 'price-low') {
+        return Number(a.price || 0) - Number(b.price || 0);
+      }
+      if (sortMode === 'price-high') {
+        return Number(b.price || 0) - Number(a.price || 0);
+      }
+      if (sortMode === 'name') {
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      }
+      // latest
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    });
+
+    updateStats(filtered.length);
     const grid = document.getElementById('series-grid');
     if (!filtered.length) {
-      grid.innerHTML = '<div class="col-span-full bg-white rounded-xl shadow-md p-12 text-center text-gray-400">No test series found for this category.</div>';
+      grid.innerHTML = '<div class="col-span-full bg-white rounded-2xl border border-slate-200 p-14 text-center text-slate-500 text-base font-medium">No test series found for your current filters.</div>';
       return;
     }
     grid.innerHTML = filtered.map(s => {
       const purchased = purchasedIds.includes(s._id);
+      const safeName = escapeHtml(s.name || 'Untitled Series');
+      const safeDesc = escapeHtml(s.description || '');
+      const imageUrl = sanitizeUrl(s.image);
+      const madeFor = escapeHtml((s.madeFor || '').toUpperCase());
+      const tags = Array.isArray(s.tags) ? s.tags.map((tag) => escapeHtml(tag)).join(', ') : '';
+      const price = Number(s.price || 0);
       return `
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition">
-          <div class="h-2 bg-gradient-to-r from-garud-accent via-purple-500 to-garud-highlight"></div>
-          <div class="p-6 flex flex-col justify-between h-full">
+        <article class="series-card h-full">
+          <div class="h-2 bg-gradient-to-r from-orange-500 via-amber-500 to-cyan-500"></div>
+          <div class="p-5 md:p-6 flex flex-col justify-between h-full">
             <div>
-              ${s.image ? `<img src="${s.image}" alt="${s.name}" class="w-full h-36 object-cover rounded-lg mb-3 bg-gray-100"/>` : ''}
-              <div class="flex items-center gap-2 mb-2">
-                ${s.madeFor ? `<span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${s.madeFor.toUpperCase()}</span>` : ''}
-                ${s.tags?.length ? `<span class="text-xs text-gray-500">${s.tags.join(', ')}</span>` : ''}
+              ${imageUrl ? `<img src="${imageUrl}" alt="${safeName}" class="w-full h-40 object-cover rounded-xl mb-3 bg-slate-100"/>` : '<div class="w-full h-40 rounded-xl mb-3 bg-gradient-to-br from-orange-100 to-cyan-100"></div>'}
+              <div class="flex flex-wrap items-center gap-2 mb-2.5">
+                ${madeFor ? `<span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${madeFor}</span>` : ''}
+                ${tags ? `<span class="text-xs text-slate-500">${tags}</span>` : ''}
               </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-1">${s.name}</h3>
-              ${s.description ? `<p class="text-sm text-gray-500 mb-3">${s.description}</p>` : ''}
+              <h3 class="text-xl font-bold text-slate-900 mb-1.5">${safeName}</h3>
+              ${safeDesc ? `<p class="text-sm text-slate-500 mb-3 line-clamp-3">${safeDesc}</p>` : ''}
             </div>
-            <div class="mt-4 flex items-center justify-between">
-              <span class="text-xl font-bold text-garud-highlight">₹${s.price || 0}</span>
+            <div class="mt-5 flex items-center justify-between gap-2">
+              <span class="text-2xl font-bold text-orange-600">₹${price}</span>
               ${purchased
-                ? `<span class="px-5 py-2 bg-green-500 text-white rounded-lg font-semibold">Purchased</span>`
+                ? `<span class="px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-semibold">Purchased</span>`
                 : `<button data-buy-id="${s._id}"
-                          class="btn-buy px-5 py-2 bg-transparent border border-garud-highlight text-garud-highlight rounded-lg font-semibold hover:bg-gray-100 transition">
+                          class="btn-buy px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition">
                     Buy Now
                   </button>`}
             </div>
           </div>
-        </div>`;
+        </article>`;
     }).join('');
   }
 
@@ -80,6 +145,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     filter = e.target.value;
     renderGrid();
   });
+
+  const seriesSearchEl = document.getElementById('series-search');
+  if (seriesSearchEl) {
+    seriesSearchEl.addEventListener('input', (e) => {
+      searchQuery = String(e.target?.value || '').trim().toLowerCase();
+      renderGrid();
+    });
+  }
+
+  const sortFilterEl = document.getElementById('sort-filter');
+  if (sortFilterEl) {
+    sortFilterEl.addEventListener('change', (e) => {
+      sortMode = e.target.value || 'latest';
+      renderGrid();
+    });
+  }
 
   // Use event delegation — avoids broken inline onclick when name/description
   // contain quotes, newlines or other special characters
