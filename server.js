@@ -35,7 +35,7 @@ const allowedOrigins = [
 ];
 
 
-// ── Security headers (helmet) ───────────────────────────────────────────────────
+// ── Security headers (helmet) ──────────────────────────────────────────────────
 // CSP is disabled here so existing inline scripts and Tailwind/Razorpay CDN
 // resources keep working. Enable & tighten with a nonce strategy when ready.
 app.use(helmet({
