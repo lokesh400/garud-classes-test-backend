@@ -76,6 +76,10 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Batch',
   }],
+  expoPushTokens: [{
+    type: String,
+    trim: true,
+  }],
 }, { timestamps: true });
 
 userSchema.plugin(passportLocalMongoose, {

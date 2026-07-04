@@ -93,4 +93,8 @@ router.get("/admin/batch/:batchId", (req, res) =>
   res.render("admin/live-batch-detail", { title: "Batch Detail" }),
 );
 
+router.get("/admin/announcements", auth, adminOnly, (req, res) =>
+  res.render("admin/announcements", { title: "Announcements" }),
+);
+
 module.exports = router;

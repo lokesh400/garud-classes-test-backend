@@ -1,0 +1,129 @@
+<%- include('../partials/head', { title: 'Announcements' }) %>
+<body class="min-h-screen bg-slate-50 text-gray-900">
+  <%- include('../partials/navbar') %>
+  <%- include('../partials/sidebar') %>
+
+  <div class="md:ml-60 pt-14 min-h-screen">
+    <div class="page-header px-6 md:px-8 py-7 fade-up">
+      <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Admin Panel</p>
+      <h1 class="text-2xl md:text-3xl font-bold text-white">Announcements</h1>
+      <p class="text-white/60 text-sm mt-1">Send push notifications to batches</p>
+    </div>
+
+    <div class="p-6 md:p-8">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 fade-up-1">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">Create New Announcement</h2>
+        
+        <form id="announcement-form" class="space-y-4 max-w-2xl">
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Target Batch</label>
+            <select id="batch-select" required class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-garud-primary/20 focus:border-garud-primary transition-colors">
+              <option value="" disabled selected>Loading batches...</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Title</label>
+            <input type="text" id="announcement-title" required class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-garud-primary/20 focus:border-garud-primary transition-colors" placeholder="e.g. Class Postponed">
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-700 mb-1">Message</label>
+            <textarea id="announcement-message" required rows="4" class="w-full bg-gray-50 border border-gray-200 text-gray-900 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-garud-primary/20 focus:border-garud-primary transition-colors" placeholder="Enter the announcement message..."></textarea>
+          </div>
+
+          <button type="submit" id="submit-btn" class="inline-flex items-center justify-center gap-2 px-6 py-3 bg-garud-primary hover:bg-garud-primaryDark text-white font-semibold rounded-xl transition-all w-full md:w-auto mt-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>
+            Send Notification
+          </button>
+        </form>
+      </div>
+
+      <div class="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 fade-up-2">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">Past Announcements</h2>
+        <div id="announcements-list" class="space-y-4">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('../partials/toast') %>
+  <script src="/js/api.js"></script>
+  <script src="/js/toast.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      await loadBatches();
+      await loadAnnouncements();
+
+      document.getElementById('announcement-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('submit-btn');
+        const ogText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = 'Sending...';
+
+        try {
+          const payload = {
+            batchId: document.getElementById('batch-select').value,
+            title: document.getElementById('announcement-title').value,
+            message: document.getElementById('announcement-message').value,
+          };
+
+          const res = await api.post('/admin/announcements', payload);
+          showToast('Success', `Announcement sent! Target devices: ${res.targetTokensCount}`, 'success');
+          e.target.reset();
+          await loadAnnouncements();
+        } catch (err) {
+          showToast('Error', err.message, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = ogText;
+        }
+      });
+    });
+
+    async function loadBatches() {
+      const select = document.getElementById('batch-select');
+      try {
+        const data = await api.get('/cohorts');
+        const batches = data.data || [];
+        select.innerHTML = '<option value="" disabled selected>Select a Batch</option>';
+        batches.forEach(b => {
+          select.innerHTML += `<option value="${b._id}">${b.name}</option>`;
+        });
+      } catch (err) {
+        select.innerHTML = '<option disabled>Error loading batches</option>';
+      }
+    }
+
+    async function loadAnnouncements() {
+      const list = document.getElementById('announcements-list');
+      try {
+        const anns = await api.get('/admin/announcements');
+        if (anns.length === 0) {
+          list.innerHTML = '<p class="text-sm text-gray-500">No past announcements.</p>';
+          return;
+        }
+        
+        list.innerHTML = anns.map(a => `
+          <div class="p-4 border border-gray-100 rounded-xl bg-gray-50">
+            <div class="flex justify-between items-start">
+              <div>
+                <h3 class="font-bold text-gray-900">${a.title}</h3>
+                <p class="text-sm text-garud-primary font-medium mb-2">${a.batchId?.name || 'Unknown Batch'}</p>
+                <p class="text-sm text-gray-700">${a.message}</p>
+              </div>
+              <span class="text-xs text-gray-400 whitespace-nowrap">${new Date(a.createdAt).toLocaleDateString()}</span>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        list.innerHTML = '<p class="text-sm text-red-500">Error loading announcements.</p>';
+      }
+    }
+  </script>
+</body>
+</html>

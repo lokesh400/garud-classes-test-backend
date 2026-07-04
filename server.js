@@ -177,6 +177,8 @@ app.use('/api/battlegrounds', require('./routes/student/battlegrounds'));
 app.use('/apistudy',        require('./routes/study'));
 app.use('/api/live-classes', require('./routes/liveClasses'));
 app.use('/api/cohorts',     require('./routes/cohorts'));
+app.use('/api/admin/announcements', require('./routes/admin/announcements'));
+app.use('/api/student/announcements', require('./routes/student/announcements'));
 
 app.get('/api/exams-targeted', (req, res) => {
   res.json([

@@ -443,6 +443,28 @@ router.get('/m/me', auth, (req, res) => {
   res.json(req.user);
 });
 
+// ── Push Token sync ───────────────────────────────────────────────
+router.post('/push-token', auth, async (req, res, next) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'Token required.' });
+    
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ message: 'User not found.' });
+
+    if (!user.expoPushTokens) user.expoPushTokens = [];
+    
+    if (!user.expoPushTokens.includes(token)) {
+      user.expoPushTokens.push(token);
+      await user.save();
+    }
+    
+    res.json({ message: 'Push token synced successfully.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ── Student profile update ────────────────────────────────────────
 router.put('/student/profile', auth, async (req, res, next) => {
   try {
