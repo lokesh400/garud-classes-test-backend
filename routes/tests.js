@@ -1182,9 +1182,28 @@ router.post('/:id/submit', auth, async (req, res) => {
   }
 });
 
+// Get all attempts for a student
+router.get('/my-attempts', auth, async (req, res) => {
+  try {
+    const attempts = await TestAttempt.find({ user: req.user._id, isSubmitted: true })
+      .populate('test', 'name')
+      .populate('batch', 'name')
+      .sort({ submittedAt: -1 })
+      .lean();
+    res.json(attempts);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // Get my result for a test
 router.get('/:id/my-result', auth, async (req, res) => {
   try {
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid test ID' });
+    }
+
     const attempt = await TestAttempt.findOne({
       user: req.user._id,
       test: req.params.id,
