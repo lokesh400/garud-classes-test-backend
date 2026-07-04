@@ -12,7 +12,7 @@ const announcementSchema = new mongoose.Schema({
   },
   batchId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Batch',
+    ref: 'Course',
     required: true,
   },
   authorId: {

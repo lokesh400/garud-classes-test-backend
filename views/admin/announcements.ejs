@@ -88,8 +88,7 @@
     async function loadBatches() {
       const select = document.getElementById('batch-select');
       try {
-        const data = await API.get('/cohorts');
-        const batches = data.data || [];
+        const batches = await API.get('/courses/admin/all');
         select.innerHTML = '<option value="" disabled selected>Select a Batch</option>';
         batches.forEach(b => {
           select.innerHTML += `<option value="${b._id}">${b.name}</option>`;
