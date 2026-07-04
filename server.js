@@ -19,7 +19,6 @@ connectDB();
 
 const app    = express();
 const server = http.createServer(app);
-const io     = socketIo(server);
 const isProd = process.env.NODE_ENV === 'production';
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
 const sessionCookieSameSite = (
@@ -33,6 +32,14 @@ const allowedOrigins = [
   'https://dashboard.garudclasses.com',
   'http://localhost:3030',
 ];
+
+const io     = socketIo(server, {
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 
 // ── Security headers (helmet) ──────────────────────────────────────────────────
