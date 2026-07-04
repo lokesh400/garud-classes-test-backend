@@ -72,7 +72,7 @@
             message: document.getElementById('announcement-message').value,
           };
 
-          const res = await api.post('/admin/announcements', payload);
+          const res = await API.post('/admin/announcements', payload);
           showToast('Success', `Announcement sent! Target devices: ${res.targetTokensCount}`, 'success');
           e.target.reset();
           await loadAnnouncements();
@@ -88,7 +88,7 @@
     async function loadBatches() {
       const select = document.getElementById('batch-select');
       try {
-        const data = await api.get('/cohorts');
+        const data = await API.get('/cohorts');
         const batches = data.data || [];
         select.innerHTML = '<option value="" disabled selected>Select a Batch</option>';
         batches.forEach(b => {
@@ -102,7 +102,7 @@
     async function loadAnnouncements() {
       const list = document.getElementById('announcements-list');
       try {
-        const anns = await api.get('/admin/announcements');
+        const anns = await API.get('/admin/announcements');
         if (anns.length === 0) {
           list.innerHTML = '<p class="text-sm text-gray-500">No past announcements.</p>';
           return;
