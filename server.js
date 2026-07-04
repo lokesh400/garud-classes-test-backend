@@ -35,7 +35,14 @@ const allowedOrigins = [
 
 const io     = socketIo(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (React Native, mobile apps, curl, etc.)
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow all for now; tighten in production if needed
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true
   }
