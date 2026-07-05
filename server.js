@@ -1,23 +1,23 @@
 // EJS route: Study page (purchased test series)
 require('dotenv').config();
-const express       = require('express');
-const http          = require('http');
-const socketIo      = require('socket.io');
-const cors          = require('cors');
-const session       = require('express-session');
-const MongoStore    = require('connect-mongo').MongoStore;
-const passport      = require('./config/passport'); // configures passport strategies
-const helmet        = require('helmet');
+const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
+const cors = require('cors');
+const session = require('express-session');
+const MongoStore = require('connect-mongo').MongoStore;
+const passport = require('./config/passport'); // configures passport strategies
+const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
-const connectDB     = require('./config/db');
-const axios         = require('axios');
+const connectDB = require('./config/db');
+const axios = require('axios');
 
 const { auth } = require('./middleware/auth')
 
 // Connect to database
 connectDB();
 
-const app    = express();
+const app = express();
 const server = http.createServer(app);
 const isProd = process.env.NODE_ENV === 'production';
 const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
@@ -33,7 +33,7 @@ const allowedOrigins = [
   'http://localhost:3030',
 ];
 
-const io     = socketIo(server, {
+const io = socketIo(server, {
   cors: {
     origin: (origin, callback) => {
       // Allow requests with no origin (React Native, mobile apps, curl, etc.)
@@ -53,7 +53,7 @@ const io     = socketIo(server, {
 // CSP is disabled here so existing inline scripts and Tailwind/Razorpay CDN
 // resources keep working. Enable & tighten with a nonce strategy when ready.
 app.use(helmet({
-  contentSecurityPolicy:    false, // configure separately when ready
+  contentSecurityPolicy: false, // configure separately when ready
   crossOriginEmbedderPolicy: false, // Razorpay iframe requires this off
 }));
 
@@ -77,20 +77,20 @@ const corsOptions = {
 };
 
 
-// app.use(cors());
-// app.use(session({
-//     secret: 'mysessionsecret',
-//     resave: false,
-//     saveUninitialized: false,
-//     store: MongoStore.create({
-//     mongoUrl:   mongoUri,
-//     ttl:        7 * 24 * 60 * 60,        // 7 days (seconds)
-//     autoRemove: 'native',
-//   }),
-// }));
+app.use(cors());
+app.use(session({
+  secret: 'mysessionsecret',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: mongoUri,
+    ttl: 7 * 24 * 60 * 60,        // 7 days (seconds)
+    autoRemove: 'native',
+  }),
+}));
 
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+// app.use(cors(corsOptions));
+// app.options('*', cors(corsOptions));
 
 
 // ── Body parsers ───────────────────────────────────────────────────────────
@@ -117,24 +117,24 @@ if (isProd) {
 }
 
 // ── Session ─────────────────────────────────────────────────────────────────
-app.use(session({
-  name:              'sid',              // don't leak framework name via cookie
-  secret:            process.env.SESSION_SECRET,
-  resave:            false,
-  saveUninitialized: false,
-  proxy:             isProd,
-  store: MongoStore.create({
-    mongoUrl:   mongoUri,
-    ttl:        7 * 24 * 60 * 60,        // 7 days (seconds)
-    autoRemove: 'native',
-  }),
-  cookie: {
-    httpOnly: true,                      // JS cannot read the cookie
-    secure:   sessionCookieSecure,       // HTTPS-only; required when SameSite=None
-    sameSite: sessionCookieSameSite,     // strict/lax/none (env configurable)
-    maxAge:   7 * 24 * 60 * 60 * 1000,  // 7 days (ms)
-  },
-}));
+// app.use(session({
+//   name:              'sid',              // don't leak framework name via cookie
+//   secret:            process.env.SESSION_SECRET,
+//   resave:            false,
+//   saveUninitialized: false,
+//   proxy:             isProd,
+//   store: MongoStore.create({
+//     mongoUrl:   mongoUri,
+//     ttl:        7 * 24 * 60 * 60,        // 7 days (seconds)
+//     autoRemove: 'native',
+//   }),
+//   cookie: {
+//     httpOnly: true,                      // JS cannot read the cookie
+//     secure:   sessionCookieSecure,       // HTTPS-only; required when SameSite=None
+//     sameSite: sessionCookieSameSite,     // strict/lax/none (env configurable)
+//     maxAge:   7 * 24 * 60 * 60 * 1000,  // 7 days (ms)
+//   },
+// }));
 
 // ── Passport ─────────────────────────────────────────────────────────────────
 app.use(passport.initialize());
@@ -166,24 +166,24 @@ app.use('/', require('./routes/admin/course-pages'));
 app.use('/', require('./routes/teacher/pages'));
 
 // ── API Routes ────────────────────────────────────────────────────────────────
-app.use('/api/auth',        require('./routes/auth'));
-app.use('/api/subjects',    require('./routes/subjects'));
-app.use('/api/chapters',    require('./routes/chapters'));
-app.use('/api/topics',      require('./routes/topics'));
-app.use('/api/questions',   require('./routes/questions'));
-app.use('/api/tests',       require('./routes/tests'));
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/subjects', require('./routes/subjects'));
+app.use('/api/chapters', require('./routes/chapters'));
+app.use('/api/topics', require('./routes/topics'));
+app.use('/api/questions', require('./routes/questions'));
+app.use('/api/tests', require('./routes/tests'));
 app.use('/api/test-series', require('./routes/testSeries'));
-app.use('/api/courses',     require('./routes/courses'));
-app.use('/api/reports',     require('./routes/reports'));
-app.use('/api/payments',    require('./routes/payments'));
-app.use('/api/purchase',    require('./routes/purchase'));
-app.use('/api/help',        require('./routes/helpsupport'));
-app.use('/api/study',       require('./routes/study'));
+app.use('/api/courses', require('./routes/courses'));
+app.use('/api/reports', require('./routes/reports'));
+app.use('/api/payments', require('./routes/payments'));
+app.use('/api/purchase', require('./routes/purchase'));
+app.use('/api/help', require('./routes/helpsupport'));
+app.use('/api/study', require('./routes/study'));
 app.use('/api/battlegrounds/admin', require('./routes/admin/battlegrounds'));
 app.use('/api/battlegrounds', require('./routes/student/battlegrounds'));
-app.use('/apistudy',        require('./routes/study'));
+app.use('/apistudy', require('./routes/study'));
 app.use('/api/live-classes', require('./routes/liveClasses'));
-app.use('/api/cohorts',     require('./routes/cohorts'));
+app.use('/api/cohorts', require('./routes/cohorts'));
 app.use('/api/admin/announcements', require('./routes/admin/announcements'));
 app.use('/api/student/announcements', require('./routes/student/announcements'));
 

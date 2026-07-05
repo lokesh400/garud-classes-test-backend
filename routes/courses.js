@@ -382,9 +382,10 @@ router.delete('/:id/lectures/:lectureId', auth, adminOnly, async (req, res) => {
 router.get('/published', auth, async (req, res) => {
   try {
     const minimal = req.query.minimal === 'true' || req.query.fields === 'basic';
+    const query = req.user && req.user.role === 'admin' ? {} : { isPublished: true };
 
     if (minimal) {
-      const courses = await Course.find({ isPublished: true })
+      const courses = await Course.find(query)
         .select('_id image name description price madeFor tags lectures subjects')
         .sort({ createdAt: -1 })
         .lean();
@@ -402,7 +403,7 @@ router.get('/published', auth, async (req, res) => {
       );
     }
 
-    const courses = await Course.find({ isPublished: true })
+    const courses = await Course.find(query)
       .sort({ createdAt: -1 })
       .lean();
 
@@ -425,15 +426,21 @@ router.get('/published', auth, async (req, res) => {
 
 router.get('/published/:id', auth, async (req, res) => {
   try {
-    const course = await Course.findOne({ _id: req.params.id, isPublished: true })
+    const query = { _id: req.params.id };
+    if (!req.user || req.user.role !== 'admin') {
+      query.isPublished = true;
+    }
+    const course = await Course.findOne(query)
       .populate('tests', 'name duration mode testType scheduledAt syllabus')
       .lean();
     if (!course) return res.status(404).json({ message: 'Course not found' });
 
     // Allow opening a course only after successful purchase/enrollment.
-    const purchased = await ensureCoursePurchasedByUser(course._id, req.user._id);
-    if (!purchased) {
-      return res.status(403).json({ message: 'Purchase this course to open it' });
+    if (!req.user || req.user.role !== 'admin') {
+      const purchased = await ensureCoursePurchasedByUser(course._id, req.user._id);
+      if (!purchased) {
+        return res.status(403).json({ message: 'Purchase this course to open it' });
+      }
     }
 
     res.json({
@@ -454,12 +461,18 @@ router.get('/published/:id', auth, async (req, res) => {
 // Generate a obfuscated YouTube playback token and status for a lecture video.
 router.get('/published/:id/lectures/:lectureId/playback', auth, async (req, res) => {
   try {
-    const course = await Course.findOne({ _id: req.params.id, isPublished: true }).lean();
+    const query = { _id: req.params.id };
+    if (!req.user || req.user.role !== 'admin') {
+      query.isPublished = true;
+    }
+    const course = await Course.findOne(query).lean();
     if (!course) return res.status(404).json({ message: 'Course not found' });
 
-    const purchased = await ensureCoursePurchasedByUser(course._id, req.user._id);
-    if (!purchased) {
-      return res.status(403).json({ message: 'Purchase this course to open lecture content' });
+    if (!req.user || req.user.role !== 'admin') {
+      const purchased = await ensureCoursePurchasedByUser(course._id, req.user._id);
+      if (!purchased) {
+        return res.status(403).json({ message: 'Purchase this course to open lecture content' });
+      }
     }
 
     let lectures = Array.isArray(course.lectures) ? [...course.lectures] : [];
@@ -532,9 +545,11 @@ router.get('/stream', auth, async (req, res) => {
       return res.status(400).json({ message: 'Video host is not allowed for streaming' });
     }
 
-    const purchased = await ensureCoursePurchasedByUser(payload.cid, req.user._id);
-    if (!purchased) {
-      return res.status(403).json({ message: 'Purchase required for playback' });
+    if (!req.user || req.user.role !== 'admin') {
+      const purchased = await ensureCoursePurchasedByUser(payload.cid, req.user._id);
+      if (!purchased) {
+        return res.status(403).json({ message: 'Purchase required for playback' });
+      }
     }
 
     const upstreamHeaders = {};

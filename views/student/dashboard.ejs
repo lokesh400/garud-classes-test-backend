@@ -1,423 +1,2780 @@
 <%- include('../partials/head', { title: 'Dashboard' }) %>
-<body class="min-h-screen bg-slate-50 text-slate-900">
-  <%- include('../partials/navbar') %>
-  <%- include('../partials/sidebar') %>
 
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
 
-    .dash-shell {
-      font-family: 'Outfit', sans-serif;
-      min-height: calc(100vh - 3.5rem);
-      background:
-        radial-gradient(circle at 15% 50%, rgba(99, 102, 241, 0.08), transparent 50%),
-        radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08), transparent 50%),
-        linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
-    }
+  <body class="min-h-screen">
 
-    .dash-main {
-      min-height: calc(100vh - 3.5rem);
-      display: flex;
-      flex-direction: column;
-    }
+    <%- include('../partials/navbar') %>
+      <%- include('../partials/sidebar') %>
 
-    .dash-content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-    .dash-title {
-      font-family: 'Sora', sans-serif;
-      letter-spacing: -0.03em;
-    }
+          :root {
+            --primary: #6D28D9;
+            --primary-dark: #4C1D95;
+            --primary-medium: #7C3AED;
+            --primary-light: #EDE9FE;
+            --primary-soft: #F5F3FF;
 
-    .dash-hero {
-      border-radius: 1.6rem;
-      background: linear-gradient(132deg, #0f172a 0%, #1e293b 57%, #334155 100%);
-      box-shadow: 0 22px 55px rgba(15, 23, 42, 0.24);
-      position: relative;
-      overflow: hidden;
-    }
+            --background: #F8F7FC;
+            --surface: #FFFFFF;
 
-    .dash-hero::before {
-      content: '';
-      position: absolute;
-      width: 320px;
-      height: 320px;
-      border-radius: 999px;
-      right: -95px;
-      top: -170px;
-      background: rgba(251, 191, 36, 0.32);
-    }
+            --text: #171717;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
 
-    .dash-hero::after {
-      content: '';
-      position: absolute;
-      width: 260px;
-      height: 260px;
-      border-radius: 999px;
-      left: -90px;
-      bottom: -140px;
-      background: rgba(34, 211, 238, 0.2);
-    }
+            --border: #E8E5EF;
 
-    .dash-card {
-      border: 1px solid #e8eef6;
-      background: linear-gradient(180deg, #ffffff 0%, #fffdf8 100%);
-      border-radius: 1.2rem;
-    }
+            --green: #16A34A;
+            --green-soft: #DCFCE7;
 
-    .dash-action {
-      border: 1px solid #ecf0f7;
-      background: #fff;
-      border-radius: 1rem;
-      transition: transform 0.22s ease, box-shadow 0.24s ease, border-color 0.22s ease;
-    }
+            --red: #DC2626;
+            --red-soft: #FEE2E2;
 
-    .dash-action:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 18px 32px rgba(14, 23, 38, 0.1);
-      border-color: #cfd9e6;
-    }
+            --blue: #2563EB;
+            --blue-soft: #DBEAFE;
 
-    @media (max-width: 768px) {
-      .dash-hero {
-        border-radius: 1.15rem;
-      }
-    }
-    .schedule-tab.active {
-      border-color: #f97316;
-      color: #ea580c;
-    }
-    .pulse-live {
-      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-      animation: pulse 1.6s infinite;
-    }
-    @keyframes pulse {
-      0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
-      }
-      70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
-      }
-      100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
-      }
-    }
-  
-    .hide-scrollbar::-webkit-scrollbar {
-      display: none;
-    }
-    .hide-scrollbar {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-  </style>
-
-  <div class="md:ml-60 pt-14 page-body dash-shell dash-main">
-    <div class="max-w-7xl w-full mx-auto px-4 md:px-8 py-6 md:py-8 dash-content">      <!-- Cohort Selector -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6 mt-6 fade-up-1">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h2 class="dash-title text-lg font-bold text-slate-800 flex items-center gap-2">
-              <span class="text-xl">🎓</span> Selected Cohort
-            </h2>
-            <p class="text-xs text-slate-500 mt-0.5">Toggle between your purchased courses to view live schedules and subject-wise lectures.</p>
-          </div>
-          <div>
-            <label for="cohort-selector" class="sr-only">Choose Course Cohort</label>
-            <select id="cohort-selector" class="w-full sm:w-auto px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 bg-white shadow-sm focus:outline-none focus:border-slate-300">
-              <option value="">Loading your cohorts...</option>
-            </select>
-          </div>
-        </div>
-      </section>
-
-      <!-- Interactive Subject-Wise Schedule -->
-      <div class="mt-6 fade-up-1">
-        <div id="cohort-empty-state" class="hidden py-12 text-center bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
-          <div class="text-4xl mb-3">📚</div>
-          <p class="text-sm font-semibold text-slate-600">No active cohorts found</p>
-          <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">You have not purchased any courses yet. Unlock a course to view scheduled lectures and interactive feeds.</p>
-          <a href="/student/purchase-courses" class="inline-block mt-4 px-4 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-900 transition">Browse Courses</a>
-        </div>
-
-        
-        <div id="cohort-schedule-content" class="hidden flex flex-col gap-6">
-          <!-- Ongoing / Live -->
-          <div id="section-ongoing" class="hidden space-y-4 bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
-            <h3 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-red-500 pulse-live"></span> Live / Ongoing
-            </h3>
-            <div id="container-ongoing" class="flex overflow-x-auto pb-4 gap-4 snap-x scrollbar-hide hide-scrollbar"></div>
-          </div>
-
-          <!-- Upcoming -->
-          <div id="section-upcoming" class="hidden space-y-4 bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
-            <h3 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2">
-              <span class="text-xl">📅</span> Upcoming
-            </h3>
-            <div id="container-upcoming" class="flex overflow-x-auto pb-4 gap-4 snap-x scrollbar-hide hide-scrollbar"></div>
-          </div>
-
-          <!-- Completed -->
-          <div id="section-completed" class="hidden space-y-4 bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
-            <h3 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2">
-              <span class="text-xl">✅</span> Completed
-            </h3>
-            <div id="container-completed" class="flex overflow-x-auto pb-4 gap-4 snap-x scrollbar-hide hide-scrollbar"></div>
-          </div>
-
-          <!-- Cancelled -->
-          <div id="section-cancelled" class="hidden space-y-4 bg-white rounded-2xl shadow-sm border border-slate-100 p-5 md:p-6">
-            <h3 class="font-bold text-slate-800 text-base md:text-lg flex items-center gap-2">
-              <span class="text-xl">❌</span> Cancelled
-            </h3>
-            <div id="container-cancelled" class="flex overflow-x-auto pb-4 gap-4 snap-x scrollbar-hide hide-scrollbar"></div>
-          </div>
-        </div>
-      </div>
-
-      <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-6 fade-up-1">
-        <a href="/student/study" class="dash-action p-4 md:p-5 flex flex-col gap-2.5">
-          <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-700 text-xl">&#128218;</div>
-          <p class="text-base font-semibold text-slate-800">Study Hub</p>
-          <p class="text-sm text-slate-500">Access your lectures and revision flow.</p>
-        </a>
-        <a href="/student/purchase-series" class="dash-action p-4 md:p-5 flex flex-col gap-2.5">
-          <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700 text-xl">&#128722;</div>
-          <p class="text-base font-semibold text-slate-800">Buy Series</p>
-          <p class="text-sm text-slate-500">Unlock new tests and challenges.</p>
-        </a>
-        <a href="/student/tests" class="dash-action p-4 md:p-5 flex flex-col gap-2.5">
-          <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center text-violet-700 text-xl">&#128221;</div>
-          <p class="text-base font-semibold text-slate-800">My Tests</p>
-          <p class="text-sm text-slate-500">Attempt and review your test history.</p>
-        </a>
-        <a href="/student/purchases" class="dash-action p-4 md:p-5 flex flex-col gap-2.5">
-          <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-700 text-xl">&#128179;</div>
-          <p class="text-base font-semibold text-slate-800">Purchases</p>
-          <p class="text-sm text-slate-500">Track all your course and series orders.</p>
-        </a>
-      </section>
-      </div>
-    </div>
-  </div>
-
-  <%- include('../partials/toast') %>
-  <script src="/js/api.js"></script>
-  <script src="/js/toast.js"></script>
-  <script src="/js/auth-guard.js"></script>
-  <script src="/js/sidebar.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-      requireAuth('student');
-      const user = getUser();
-      if (user) {
-        const el = document.getElementById('welcome-title');
-        if (el) el.textContent = 'Welcome back, ' + user.name.split(' ')[0] + '!';
-      }
-
-      // Cohort Schedule System
-      const cohortSelector = document.getElementById('cohort-selector');
-      const cohortEmptyState = document.getElementById('cohort-empty-state');
-      const cohortScheduleContent = document.getElementById('cohort-schedule-content');
-      
-      const sectionOngoing = document.getElementById('section-ongoing');
-      const sectionUpcoming = document.getElementById('section-upcoming');
-      const sectionCompleted = document.getElementById('section-completed');
-      const sectionCancelled = document.getElementById('section-cancelled');
-      
-      const containerOngoing = document.getElementById('container-ongoing');
-      const containerUpcoming = document.getElementById('container-upcoming');
-      const containerCompleted = document.getElementById('container-completed');
-      const containerCancelled = document.getElementById('container-cancelled');
-
-      let activeCourse = null;
-
-      try {
-        const purchases = await API.get('/purchase/my?itemType=Course');
-        if (!purchases || purchases.length === 0) {
-          cohortSelector.innerHTML = '<option value="">No courses purchased</option>';
-          cohortEmptyState.classList.remove('hidden');
-          cohortScheduleContent.classList.add('hidden');
-          return;
-        }
-
-        cohortSelector.innerHTML = purchases.map((p, idx) => {
-          const course = p.course || p.itemId;
-          if (!course) return '';
-          return `<option value="${course._id}" ${idx === 0 ? 'selected' : ''}>${escapeHtml(course.name)}</option>`;
-        }).join('');
-
-        const firstCourse = purchases[0].course || purchases[0].itemId;
-        if (firstCourse) {
-          await loadCohortDetails(firstCourse._id);
-        }
-
-        cohortSelector.addEventListener('change', async (e) => {
-          const courseId = e.target.value;
-          if (courseId) {
-            await loadCohortDetails(courseId);
+            --orange: #EA580C;
+            --orange-soft: #FFEDD5;
           }
-        });
-      } catch (err) {
-        console.error(err);
-        cohortSelector.innerHTML = '<option value="">Error loading courses</option>';
-      }
 
-      async function loadCohortDetails(courseId) {
-        try {
-          const course = await API.get(`/courses/published/${courseId}`);
-          activeCourse = course;
-          renderSchedule();
-        } catch (err) {
-          console.error('Error loading schedule:', err);
-        }
-      }
+          * {
+            box-sizing: border-box;
+          }
 
-      function renderSchedule() {
-        if (!activeCourse) return;
+          html,
+          body {
+            margin: 0;
+            min-height: 100%;
 
-        cohortEmptyState.classList.add('hidden');
-        cohortScheduleContent.classList.remove('hidden');
+            background: var(--background);
 
-        const ongoingList = [];
-        const upcomingList = [];
-        const completedList = [];
-        const cancelledList = [];
+            color: var(--text);
 
-        if (Array.isArray(activeCourse.subjects)) {
-          activeCourse.subjects.forEach(subject => {
-            if (!subject || !Array.isArray(subject.chapters)) return;
-            subject.chapters.forEach(chapter => {
-              if (!chapter || !Array.isArray(chapter.lectures)) return;
-              chapter.lectures.forEach(lecture => {
-                const lecData = {
-                  ...lecture,
-                  subjectName: subject.name,
-                  chapterName: chapter.name
-                };
-                if (lecture.status === 'live') {
-                  ongoingList.push(lecData);
-                } else if (lecture.status === 'scheduled') {
-                  upcomingList.push(lecData);
-                } else if (lecture.status === 'cancelled') {
-                  cancelledList.push(lecData);
-                } else {
-                  if (lecture.scheduledAt) {
-                    const today = new Date();
-                    const lecDate = new Date(lecture.scheduledAt);
-                    if (lecDate.getFullYear() === today.getFullYear() &&
-                        lecDate.getMonth() === today.getMonth() &&
-                        lecDate.getDate() === today.getDate()) {
-                      completedList.push(lecData);
-                    }
+            font-family: 'Inter', sans-serif;
+          }
+
+          button,
+          select,
+          input {
+            font-family: inherit;
+          }
+
+          .hidden {
+            display: none !important;
+          }
+
+
+          /* =========================================================
+   DASHBOARD
+========================================================= */
+
+          .dashboard-shell {
+            min-height: calc(100vh - 3.5rem);
+
+            background:
+              radial-gradient(circle at 8% 5%,
+                rgba(109, 40, 217, 0.07),
+                transparent 26%),
+              radial-gradient(circle at 95% 40%,
+                rgba(139, 92, 246, 0.05),
+                transparent 24%),
+              var(--background);
+          }
+
+          .dashboard-container {
+            width: 100%;
+            max-width: 1500px;
+
+            margin: 0 auto;
+
+            padding: 24px 28px 45px;
+          }
+
+
+          /* =========================================================
+   HERO
+========================================================= */
+
+          .dashboard-hero {
+            position: relative;
+
+            min-height: 225px;
+
+            padding: 34px 38px;
+
+            overflow: hidden;
+
+            border-radius: 26px;
+
+            background:
+              linear-gradient(125deg,
+                #4C1D95 0%,
+                #6D28D9 52%,
+                #8B5CF6 100%);
+
+            box-shadow:
+              0 8px 20px rgba(76, 29, 149, 0.12),
+              0 24px 55px rgba(109, 40, 217, 0.18);
+          }
+
+          .dashboard-hero::before {
+            content: '';
+
+            position: absolute;
+
+            width: 380px;
+            height: 380px;
+
+            top: -230px;
+            right: -70px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, 0.11);
+          }
+
+          .dashboard-hero::after {
+            content: '';
+
+            position: absolute;
+
+            width: 270px;
+            height: 270px;
+
+            bottom: -190px;
+            left: 38%;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, 0.07);
+          }
+
+          .hero-grid {
+            position: relative;
+
+            z-index: 2;
+
+            min-height: 157px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 35px;
+          }
+
+          .hero-content {
+            max-width: 650px;
+          }
+
+          .hero-label {
+            display: inline-flex;
+            align-items: center;
+
+            gap: 8px;
+
+            margin-bottom: 15px;
+
+            padding: 7px 12px;
+
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+
+            background: rgba(255, 255, 255, 0.11);
+
+            color: rgba(255, 255, 255, 0.92);
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+          }
+
+          .hero-label-dot {
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: #86EFAC;
+
+            box-shadow:
+              0 0 0 5px rgba(134, 239, 172, 0.15);
+          }
+
+          .hero-title {
+            margin: 0;
+
+            color: #FFFFFF;
+
+            font-size: clamp(26px, 3vw, 42px);
+            font-weight: 900;
+
+            letter-spacing: -0.045em;
+
+            line-height: 1.08;
+          }
+
+          .hero-description {
+            max-width: 540px;
+
+            margin: 13px 0 0;
+
+            color: rgba(255, 255, 255, 0.72);
+
+            font-size: 13px;
+            font-weight: 500;
+
+            line-height: 21px;
+          }
+
+          .hero-visual {
+            position: relative;
+
+            width: 240px;
+            height: 150px;
+
+            flex-shrink: 0;
+          }
+
+          .hero-card {
+            position: absolute;
+
+            width: 170px;
+
+            padding: 16px;
+
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 20px;
+
+            background: rgba(255, 255, 255, 0.13);
+
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+
+            box-shadow:
+              0 15px 35px rgba(31, 15, 71, 0.18);
+          }
+
+          .hero-card-one {
+            top: 0;
+            right: 5px;
+
+            transform: rotate(4deg);
+          }
+
+          .hero-card-two {
+            bottom: 0;
+            left: 0;
+
+            transform: rotate(-5deg);
+          }
+
+          .hero-card-icon {
+            width: 40px;
+            height: 40px;
+
+            margin-bottom: 12px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 13px;
+
+            background: rgba(255, 255, 255, 0.17);
+
+            color: #FFFFFF;
+
+            font-size: 17px;
+          }
+
+          .hero-card-label {
+            color: rgba(255, 255, 255, 0.65);
+
+            font-size: 9px;
+            font-weight: 700;
+
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+          }
+
+          .hero-card-value {
+            margin-top: 4px;
+
+            color: #FFFFFF;
+
+            font-size: 14px;
+            font-weight: 800;
+          }
+
+
+          /* =========================================================
+   COHORT CARD
+========================================================= */
+
+          .cohort-card {
+            margin-top: 22px;
+
+            padding: 20px 22px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+
+            border: 1px solid var(--border);
+            border-radius: 20px;
+
+            background: rgba(255, 255, 255, 0.94);
+
+            box-shadow:
+              0 3px 8px rgba(15, 23, 42, 0.025),
+              0 12px 30px rgba(15, 23, 42, 0.04);
+          }
+
+          .cohort-info {
+            display: flex;
+            align-items: center;
+
+            gap: 14px;
+          }
+
+          .cohort-icon {
+            width: 48px;
+            height: 48px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 15px;
+
+            background: var(--primary-soft);
+
+            color: var(--primary);
+
+            font-size: 19px;
+          }
+
+          .cohort-title {
+            margin: 0;
+
+            color: var(--text);
+
+            font-size: 15px;
+            font-weight: 800;
+
+            letter-spacing: -0.02em;
+          }
+
+          .cohort-description {
+            margin: 5px 0 0;
+
+            color: var(--text-muted);
+
+            font-size: 10px;
+            font-weight: 500;
+          }
+
+          .cohort-select-wrapper {
+            position: relative;
+
+            min-width: 260px;
+          }
+
+          .cohort-select-icon {
+            position: absolute;
+
+            top: 50%;
+            left: 14px;
+
+            z-index: 2;
+
+            transform: translateY(-50%);
+
+            color: var(--primary);
+
+            font-size: 13px;
+
+            pointer-events: none;
+          }
+
+          #cohort-selector {
+            width: 100%;
+            height: 46px;
+
+            padding: 0 40px 0 40px;
+
+            appearance: none;
+            -webkit-appearance: none;
+
+            outline: none;
+
+            border: 1px solid var(--border);
+            border-radius: 14px;
+
+            background: var(--primary-soft);
+
+            color: var(--text);
+
+            font-size: 11px;
+            font-weight: 700;
+
+            cursor: pointer;
+
+            transition: 0.2s ease;
+          }
+
+          #cohort-selector:hover,
+          #cohort-selector:focus {
+            border-color: #C4B5FD;
+
+            background: #FFFFFF;
+
+            box-shadow:
+              0 0 0 4px rgba(109, 40, 217, 0.07);
+          }
+
+          .cohort-chevron {
+            position: absolute;
+
+            top: 50%;
+            right: 15px;
+
+            transform: translateY(-50%);
+
+            color: var(--text-muted);
+
+            font-size: 10px;
+
+            pointer-events: none;
+          }
+
+
+          /* =========================================================
+   EMPTY STATE
+========================================================= */
+
+          .empty-state {
+            margin-top: 22px;
+
+            padding: 60px 25px;
+
+            text-align: center;
+
+            border: 1px solid var(--border);
+            border-radius: 22px;
+
+            background: #FFFFFF;
+          }
+
+          .empty-state-icon {
+            width: 66px;
+            height: 66px;
+
+            margin: 0 auto 17px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 21px;
+
+            background: var(--primary-soft);
+
+            color: var(--primary);
+
+            font-size: 25px;
+          }
+
+          .empty-state-title {
+            margin: 0;
+
+            color: var(--text);
+
+            font-size: 17px;
+            font-weight: 800;
+          }
+
+          .empty-state-description {
+            max-width: 430px;
+
+            margin: 8px auto 0;
+
+            color: var(--text-muted);
+
+            font-size: 11px;
+            font-weight: 500;
+
+            line-height: 18px;
+          }
+
+          .empty-state-button {
+            margin-top: 20px;
+
+            padding: 11px 18px;
+
+            display: inline-flex;
+            align-items: center;
+
+            gap: 8px;
+
+            border-radius: 12px;
+
+            background: var(--primary);
+
+            color: #FFFFFF;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            text-decoration: none;
+
+            transition: 0.2s ease;
+          }
+
+          .empty-state-button:hover {
+            background: var(--primary-dark);
+
+            transform: translateY(-2px);
+
+            box-shadow:
+              0 10px 22px rgba(109, 40, 217, 0.22);
+          }
+
+
+          /* =========================================================
+   SCHEDULE
+========================================================= */
+
+          .schedule-content {
+            margin-top: 22px;
+
+            display: flex;
+            flex-direction: column;
+
+            gap: 18px;
+          }
+
+          .schedule-section {
+            padding: 21px;
+
+            overflow: hidden;
+
+            border: 1px solid var(--border);
+            border-radius: 20px;
+
+            background: #FFFFFF;
+
+            box-shadow:
+              0 3px 8px rgba(15, 23, 42, 0.02),
+              0 12px 28px rgba(15, 23, 42, 0.035);
+          }
+
+          .schedule-heading {
+            margin-bottom: 18px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 15px;
+          }
+
+          .schedule-heading-left {
+            display: flex;
+            align-items: center;
+
+            gap: 12px;
+          }
+
+          .schedule-icon {
+            width: 42px;
+            height: 42px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 13px;
+
+            font-size: 16px;
+          }
+
+          .schedule-icon-live {
+            background: var(--red-soft);
+
+            color: var(--red);
+          }
+
+          .schedule-icon-upcoming {
+            background: var(--blue-soft);
+
+            color: var(--blue);
+          }
+
+          .schedule-icon-completed {
+            background: var(--green-soft);
+
+            color: var(--green);
+          }
+
+          .schedule-icon-cancelled {
+            background: #F1F5F9;
+
+            color: #64748B;
+          }
+
+          .schedule-title {
+            margin: 0;
+
+            color: var(--text);
+
+            font-size: 15px;
+            font-weight: 800;
+
+            letter-spacing: -0.02em;
+          }
+
+          .schedule-subtitle {
+            margin: 4px 0 0;
+
+            color: var(--text-muted);
+
+            font-size: 9px;
+            font-weight: 500;
+          }
+
+          .live-indicator {
+            display: inline-flex;
+            align-items: center;
+
+            gap: 7px;
+
+            padding: 7px 11px;
+
+            border-radius: 999px;
+
+            background: var(--red-soft);
+
+            color: var(--red);
+
+            font-size: 9px;
+            font-weight: 800;
+
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+          }
+
+          .live-dot {
+            width: 7px;
+            height: 7px;
+
+            border-radius: 50%;
+
+            background: var(--red);
+
+            animation: livePulse 1.5s infinite;
+          }
+
+          @keyframes livePulse {
+            0% {
+              box-shadow:
+                0 0 0 0 rgba(220, 38, 38, 0.5);
+            }
+
+            70% {
+              box-shadow:
+                0 0 0 7px rgba(220, 38, 38, 0);
+            }
+
+            100% {
+              box-shadow:
+                0 0 0 0 rgba(220, 38, 38, 0);
+            }
+          }
+
+          .schedule-list {
+            display: flex;
+
+            gap: 13px;
+
+            padding: 2px 2px 6px;
+
+            overflow-x: auto;
+
+            scroll-snap-type: x mandatory;
+
+            scrollbar-width: none;
+          }
+
+          .schedule-list::-webkit-scrollbar {
+            display: none;
+          }
+
+
+          /* =========================================================
+   LECTURE CARDS
+========================================================= */
+
+          .lecture-card {
+            position: relative;
+
+            min-width: 275px;
+            width: 275px;
+
+            padding: 18px;
+
+            overflow: hidden;
+
+            flex-shrink: 0;
+
+            scroll-snap-align: start;
+
+            border: 1px solid var(--border);
+            border-radius: 17px;
+
+            background:
+              linear-gradient(180deg,
+                #FFFFFF 0%,
+                #FCFBFF 100%);
+
+            transition:
+              transform 0.22s ease,
+              border-color 0.22s ease,
+              box-shadow 0.22s ease;
+          }
+
+          .lecture-card:hover {
+            transform: translateY(-4px);
+
+            border-color: #D8D1E8;
+
+            box-shadow:
+              0 15px 32px rgba(76, 29, 149, 0.09);
+          }
+
+          .lecture-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+
+            gap: 10px;
+          }
+
+          .lecture-type-icon {
+            width: 40px;
+            height: 40px;
+
+            flex-shrink: 0;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 13px;
+
+            font-size: 15px;
+          }
+
+          .lecture-card.live .lecture-type-icon {
+            background: var(--red-soft);
+
+            color: var(--red);
+          }
+
+          .lecture-card.scheduled .lecture-type-icon {
+            background: var(--blue-soft);
+
+            color: var(--blue);
+          }
+
+          .lecture-card.completed .lecture-type-icon {
+            background: var(--green-soft);
+
+            color: var(--green);
+          }
+
+          .lecture-card.cancelled .lecture-type-icon {
+            background: #F1F5F9;
+
+            color: #64748B;
+          }
+
+          .lecture-badge {
+            padding: 6px 9px;
+
+            border-radius: 999px;
+
+            font-size: 8px;
+            font-weight: 800;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+          }
+
+          .lecture-badge.live {
+            background: var(--red-soft);
+
+            color: var(--red);
+          }
+
+          .lecture-badge.scheduled {
+            background: var(--blue-soft);
+
+            color: var(--blue);
+          }
+
+          .lecture-badge.completed {
+            background: var(--green-soft);
+
+            color: var(--green);
+          }
+
+          .lecture-badge.cancelled {
+            background: #F1F5F9;
+
+            color: #64748B;
+          }
+
+          .lecture-subject {
+            margin: 17px 0 0;
+
+            color: var(--primary);
+
+            font-size: 9px;
+            font-weight: 800;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          .lecture-title {
+            min-height: 40px;
+
+            margin: 7px 0 0;
+
+            color: var(--text);
+
+            font-size: 14px;
+            font-weight: 800;
+
+            line-height: 20px;
+
+            letter-spacing: -0.02em;
+
+            display: -webkit-box;
+
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+
+            overflow: hidden;
+          }
+
+          .lecture-action-area {
+            margin-top: 17px;
+            padding-top: 14px;
+
+            border-top: 1px solid #F0EDF5;
+          }
+
+          .lecture-button {
+            width: 100%;
+            min-height: 41px;
+
+            padding: 0 14px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 8px;
+
+            border-radius: 12px;
+
+            font-size: 10px;
+            font-weight: 800;
+
+            text-decoration: none;
+
+            transition: 0.2s ease;
+          }
+
+          .lecture-button-live {
+            background: var(--red);
+
+            color: #FFFFFF;
+          }
+
+          .lecture-button-live:hover {
+            background: #B91C1C;
+
+            transform: translateY(-1px);
+
+            box-shadow:
+              0 8px 18px rgba(220, 38, 38, 0.2);
+          }
+
+          .lecture-button-completed {
+            background: var(--primary-soft);
+
+            color: var(--primary);
+          }
+
+          .lecture-button-completed:hover {
+            background: var(--primary);
+
+            color: #FFFFFF;
+          }
+
+          .lecture-info-button {
+            width: 100%;
+            min-height: 41px;
+
+            padding: 0 12px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            gap: 7px;
+
+            border-radius: 12px;
+
+            font-size: 10px;
+            font-weight: 700;
+          }
+
+          .lecture-info-upcoming {
+            background: #EFF6FF;
+
+            color: var(--blue);
+
+            border: 1px solid #DBEAFE;
+          }
+
+          .lecture-info-cancelled {
+            background: #F8FAFC;
+
+            color: #94A3B8;
+
+            border: 1px solid #E2E8F0;
+          }
+
+          .schedule-empty {
+            width: 100%;
+
+            padding: 35px 20px;
+
+            text-align: center;
+
+            border: 1px dashed #D8D3E3;
+            border-radius: 15px;
+
+            background: #FCFBFF;
+
+            color: var(--text-muted);
+
+            font-size: 10px;
+            font-weight: 600;
+          }
+
+
+          /* =========================================================
+   QUICK ACTIONS
+========================================================= */
+
+          .quick-section {
+            margin-top: 25px;
+          }
+
+          .quick-heading {
+            margin-bottom: 14px;
+
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+
+            gap: 15px;
+          }
+
+          .quick-title {
+            margin: 0;
+
+            color: var(--text);
+
+            font-size: 18px;
+            font-weight: 900;
+
+            letter-spacing: -0.035em;
+          }
+
+          .quick-subtitle {
+            margin: 5px 0 0;
+
+            color: var(--text-muted);
+
+            font-size: 10px;
+            font-weight: 500;
+          }
+
+          .quick-grid {
+            display: grid;
+
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+
+            gap: 14px;
+          }
+
+          .quick-card {
+            position: relative;
+
+            min-height: 165px;
+
+            padding: 20px;
+
+            overflow: hidden;
+
+            border: 1px solid var(--border);
+            border-radius: 19px;
+
+            background: #FFFFFF;
+
+            color: inherit;
+
+            text-decoration: none;
+
+            transition:
+              transform 0.22s ease,
+              box-shadow 0.22s ease,
+              border-color 0.22s ease;
+          }
+
+          .quick-card::after {
+            content: '';
+
+            position: absolute;
+
+            width: 100px;
+            height: 100px;
+
+            right: -55px;
+            bottom: -55px;
+
+            border-radius: 50%;
+
+            background: var(--primary-soft);
+
+            transition: 0.25s ease;
+          }
+
+          .quick-card:hover {
+            transform: translateY(-5px);
+
+            border-color: #D8D1E8;
+
+            box-shadow:
+              0 18px 38px rgba(76, 29, 149, 0.09);
+          }
+
+          .quick-card:hover::after {
+            width: 150px;
+            height: 150px;
+
+            right: -70px;
+            bottom: -70px;
+          }
+
+          .quick-icon {
+            position: relative;
+
+            z-index: 2;
+
+            width: 46px;
+            height: 46px;
+
+            margin-bottom: 18px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 15px;
+
+            font-size: 18px;
+          }
+
+          .quick-icon-purple {
+            background: var(--primary-soft);
+
+            color: var(--primary);
+          }
+
+          .quick-icon-green {
+            background: var(--green-soft);
+
+            color: var(--green);
+          }
+
+          .quick-icon-blue {
+            background: var(--blue-soft);
+
+            color: var(--blue);
+          }
+
+          .quick-icon-orange {
+            background: var(--orange-soft);
+
+            color: var(--orange);
+          }
+
+          .quick-card-title {
+            position: relative;
+
+            z-index: 2;
+
+            margin: 0;
+
+            color: var(--text);
+
+            font-size: 14px;
+            font-weight: 800;
+          }
+
+          .quick-card-description {
+            position: relative;
+
+            z-index: 2;
+
+            max-width: 210px;
+
+            margin: 7px 0 0;
+
+            color: var(--text-muted);
+
+            font-size: 10px;
+            font-weight: 500;
+
+            line-height: 17px;
+          }
+
+          .quick-arrow {
+            position: absolute;
+
+            z-index: 3;
+
+            right: 18px;
+            bottom: 18px;
+
+            width: 31px;
+            height: 31px;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            border-radius: 10px;
+
+            background: #FFFFFF;
+
+            color: var(--primary);
+
+            font-size: 11px;
+
+            box-shadow:
+              0 4px 12px rgba(15, 23, 42, 0.08);
+
+            transition: 0.2s ease;
+          }
+
+          .quick-card:hover .quick-arrow {
+            transform: translateX(3px);
+          }
+
+
+          /* =========================================================
+   RESPONSIVE
+========================================================= */
+
+          @media (max-width: 1024px) {
+            .quick-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .hero-visual {
+              display: none;
+            }
+          }
+
+
+          @media (max-width: 768px) {
+            .dashboard-container {
+              padding: 14px 12px 35px;
+            }
+
+            .dashboard-hero {
+              min-height: auto;
+
+              padding: 27px 23px;
+
+              border-radius: 21px;
+            }
+
+            .hero-grid {
+              min-height: auto;
+            }
+
+            .hero-title {
+              font-size: 27px;
+            }
+
+            .hero-description {
+              font-size: 11px;
+
+              line-height: 18px;
+            }
+
+            .cohort-card {
+              padding: 16px;
+
+              flex-direction: column;
+              align-items: stretch;
+
+              border-radius: 18px;
+            }
+
+            .cohort-select-wrapper {
+              min-width: 0;
+              width: 100%;
+            }
+
+            .schedule-section {
+              padding: 16px;
+
+              border-radius: 18px;
+            }
+
+            .lecture-card {
+              min-width: 245px;
+              width: 245px;
+            }
+
+            .quick-grid {
+              gap: 10px;
+            }
+
+            .quick-card {
+              min-height: 155px;
+
+              padding: 16px;
+
+              border-radius: 17px;
+            }
+
+            .quick-card-description {
+              font-size: 9px;
+
+              line-height: 15px;
+            }
+          }
+
+
+          @media (max-width: 480px) {
+            .dashboard-container {
+              padding-left: 10px;
+              padding-right: 10px;
+            }
+
+            .dashboard-hero {
+              padding: 24px 20px;
+            }
+
+            .hero-label {
+              font-size: 8px;
+            }
+
+            .hero-title {
+              font-size: 25px;
+            }
+
+            .quick-grid {
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .quick-card {
+              min-height: 160px;
+            }
+
+            .quick-icon {
+              width: 42px;
+              height: 42px;
+
+              margin-bottom: 14px;
+            }
+
+            .quick-card-title {
+              font-size: 12px;
+            }
+
+            .quick-arrow {
+              width: 28px;
+              height: 28px;
+
+              right: 13px;
+              bottom: 13px;
+            }
+          }
+        </style>
+
+
+        <div class="md:ml-60 pt-14 dashboard-shell">
+
+          <main class="dashboard-container">
+
+
+            <!-- =====================================================
+         HERO
+    ====================================================== -->
+
+            <section class="dashboard-hero">
+
+              <div class="hero-grid">
+
+                <div class="hero-content">
+
+                  <div class="hero-label">
+
+                    <span class="hero-label-dot"></span>
+
+                    Student Learning Dashboard
+
+                  </div>
+
+
+                  <h1 id="welcome-title" class="hero-title">
+
+                    Welcome back!
+
+                  </h1>
+
+
+                  <p class="hero-description">
+
+                    Continue your learning journey, join live classes,
+                    revise completed lectures and stay focused on your
+                    preparation.
+
+                  </p>
+
+                </div>
+
+
+                <div class="hero-visual">
+
+
+                  <div class="hero-card hero-card-one">
+
+                    <div class="hero-card-icon">
+
+                      <i class="fas fa-play"></i>
+
+                    </div>
+
+                    <div class="hero-card-label">
+
+                      Learning
+
+                    </div>
+
+                    <div class="hero-card-value">
+
+                      Continue Lectures
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="hero-card hero-card-two">
+
+                    <div class="hero-card-icon">
+
+                      <i class="fas fa-bolt"></i>
+
+                    </div>
+
+                    <div class="hero-card-label">
+
+                      Preparation
+
+                    </div>
+
+                    <div class="hero-card-value">
+
+                      Stay Consistent
+
+                    </div>
+
+                  </div>
+
+
+                </div>
+
+              </div>
+
+            </section>
+
+
+
+            <!-- =====================================================
+         COHORT
+    ====================================================== -->
+
+            <section class="cohort-card">
+
+              <div class="cohort-info">
+
+                <div class="cohort-icon">
+
+                  <i class="fas fa-graduation-cap"></i>
+
+                </div>
+
+
+                <div>
+
+                  <h2 class="cohort-title">
+
+                    Selected Cohort
+
+                  </h2>
+
+
+                  <p class="cohort-description">
+
+                    Switch between your purchased courses and explore
+                    the complete lecture schedule.
+
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div class="cohort-select-wrapper">
+
+                <i class="fas fa-layer-group cohort-select-icon"></i>
+
+
+                <select id="cohort-selector">
+
+                  <option value="">
+
+                    Loading your cohorts...
+
+                  </option>
+
+                </select>
+
+
+                <i class="fas fa-chevron-down cohort-chevron"></i>
+
+              </div>
+
+            </section>
+
+
+
+            <!-- =====================================================
+         EMPTY STATE
+    ====================================================== -->
+
+            <div id="cohort-empty-state" class="hidden empty-state">
+
+              <div class="empty-state-icon">
+
+                <i class="fas fa-book-open"></i>
+
+              </div>
+
+
+              <h3 class="empty-state-title">
+
+                Your learning space is waiting
+
+              </h3>
+
+
+              <p class="empty-state-description">
+
+                You have not purchased any active course yet.
+                Explore available courses and start your preparation.
+
+              </p>
+
+
+              <a href="/student/purchase-courses" class="empty-state-button">
+
+                <i class="fas fa-compass"></i>
+
+                Explore Courses
+
+              </a>
+
+            </div>
+
+
+
+            <!-- =====================================================
+         SCHEDULE
+    ====================================================== -->
+
+            <div id="cohort-schedule-content" class="hidden schedule-content">
+
+
+              <!-- LIVE -->
+
+              <section id="section-ongoing" class="hidden schedule-section">
+
+                <div class="schedule-heading">
+
+                  <div class="schedule-heading-left">
+
+                    <div class="
+                schedule-icon
+                schedule-icon-live
+              ">
+
+                      <i class="fas fa-video"></i>
+
+                    </div>
+
+
+                    <div>
+
+                      <h3 class="schedule-title">
+
+                        Live Classes
+
+                      </h3>
+
+
+                      <p class="schedule-subtitle">
+
+                        Classes currently in progress
+
+                      </p>
+
+                    </div>
+
+                  </div>
+
+
+                  <div class="live-indicator">
+
+                    <span class="live-dot"></span>
+
+                    Live Now
+
+                  </div>
+
+                </div>
+
+
+                <div id="container-ongoing" class="schedule-list"></div>
+
+              </section>
+
+
+
+              <!-- UPCOMING -->
+
+              <section id="section-upcoming" class="hidden schedule-section">
+
+                <div class="schedule-heading">
+
+                  <div class="schedule-heading-left">
+
+                    <div class="
+                schedule-icon
+                schedule-icon-upcoming
+              ">
+
+                      <i class="far fa-calendar"></i>
+
+                    </div>
+
+
+                    <div>
+
+                      <h3 class="schedule-title">
+
+                        Upcoming Classes
+
+                      </h3>
+
+
+                      <p class="schedule-subtitle">
+
+                        Your scheduled learning sessions
+
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                <div id="container-upcoming" class="schedule-list"></div>
+
+              </section>
+
+
+
+              <!-- COMPLETED -->
+
+              <section id="section-completed" class="hidden schedule-section">
+
+                <div class="schedule-heading">
+
+                  <div class="schedule-heading-left">
+
+                    <div class="
+                schedule-icon
+                schedule-icon-completed
+              ">
+
+                      <i class="fas fa-circle-check"></i>
+
+                    </div>
+
+
+                    <div>
+
+                      <h3 class="schedule-title">
+
+                        Completed Today
+
+                      </h3>
+
+
+                      <p class="schedule-subtitle">
+
+                        Rewatch today's completed lectures
+
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                <div id="container-completed" class="schedule-list"></div>
+
+              </section>
+
+
+
+              <!-- CANCELLED -->
+
+              <section id="section-cancelled" class="hidden schedule-section">
+
+                <div class="schedule-heading">
+
+                  <div class="schedule-heading-left">
+
+                    <div class="
+                schedule-icon
+                schedule-icon-cancelled
+              ">
+
+                      <i class="fas fa-calendar-xmark"></i>
+
+                    </div>
+
+
+                    <div>
+
+                      <h3 class="schedule-title">
+
+                        Cancelled Classes
+
+                      </h3>
+
+
+                      <p class="schedule-subtitle">
+
+                        Recently cancelled learning sessions
+
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </div>
+
+
+                <div id="container-cancelled" class="schedule-list"></div>
+
+              </section>
+
+
+            </div>
+
+
+
+            <!-- =====================================================
+         QUICK ACTIONS
+    ====================================================== -->
+
+            <section class="quick-section">
+
+
+              <div class="quick-heading">
+
+                <div>
+
+                  <h2 class="quick-title">
+
+                    Learning Tools
+
+                  </h2>
+
+
+                  <p class="quick-subtitle">
+
+                    Everything you need for your preparation.
+
+                  </p>
+
+                </div>
+
+              </div>
+
+
+              <div class="quick-grid">
+
+
+                <a href="/student/study" class="quick-card">
+
+                  <div class="
+              quick-icon
+              quick-icon-purple
+            ">
+
+                    <i class="fas fa-book-open"></i>
+
+                  </div>
+
+
+                  <h3 class="quick-card-title">
+
+                    Study Hub
+
+                  </h3>
+
+
+                  <p class="quick-card-description">
+
+                    Access subjects, chapters, lectures and revision
+                    material.
+
+                  </p>
+
+
+                  <span class="quick-arrow">
+
+                    <i class="fas fa-arrow-right"></i>
+
+                  </span>
+
+                </a>
+
+
+
+                <a href="/student/purchase-series" class="quick-card">
+
+                  <div class="
+              quick-icon
+              quick-icon-green
+            ">
+
+                    <i class="fas fa-bag-shopping"></i>
+
+                  </div>
+
+
+                  <h3 class="quick-card-title">
+
+                    Buy Test Series
+
+                  </h3>
+
+
+                  <p class="quick-card-description">
+
+                    Unlock test series and challenge your preparation.
+
+                  </p>
+
+
+                  <span class="quick-arrow">
+
+                    <i class="fas fa-arrow-right"></i>
+
+                  </span>
+
+                </a>
+
+
+
+                <a href="/student/tests" class="quick-card">
+
+                  <div class="
+              quick-icon
+              quick-icon-blue
+            ">
+
+                    <i class="fas fa-file-pen"></i>
+
+                  </div>
+
+
+                  <h3 class="quick-card-title">
+
+                    My Tests
+
+                  </h3>
+
+
+                  <p class="quick-card-description">
+
+                    Attempt available tests and review your performance.
+
+                  </p>
+
+
+                  <span class="quick-arrow">
+
+                    <i class="fas fa-arrow-right"></i>
+
+                  </span>
+
+                </a>
+
+
+
+                <a href="/student/purchases" class="quick-card">
+
+                  <div class="
+              quick-icon
+              quick-icon-orange
+            ">
+
+                    <i class="fas fa-receipt"></i>
+
+                  </div>
+
+
+                  <h3 class="quick-card-title">
+
+                    My Purchases
+
+                  </h3>
+
+
+                  <p class="quick-card-description">
+
+                    View your courses, test series and purchase history.
+
+                  </p>
+
+
+                  <span class="quick-arrow">
+
+                    <i class="fas fa-arrow-right"></i>
+
+                  </span>
+
+                </a>
+
+
+              </div>
+
+            </section>
+
+
+          </main>
+
+        </div>
+
+
+        <%- include('../partials/toast') %>
+
+
+          <script src="/js/api.js"></script>
+
+          <script src="/js/toast.js"></script>
+
+          <script src="/js/auth-guard.js"></script>
+
+          <script src="/js/sidebar.js"></script>
+
+
+          <script>
+            document.addEventListener(
+              'DOMContentLoaded',
+              async () => {
+
+                requireAuth('student');
+
+
+                const user = getUser();
+
+
+                if (user) {
+
+                  const welcomeTitle =
+                    document.getElementById(
+                      'welcome-title'
+                    );
+
+
+                  if (welcomeTitle) {
+
+                    const firstName =
+                      String(user.name || 'Student')
+                        .split(' ')[0];
+
+
+                    welcomeTitle.textContent =
+                      `Welcome back, ${firstName}!`;
+
                   }
+
                 }
-              });
-            });
-          });
-        }
 
-        renderHorizontalList(ongoingList, sectionOngoing, containerOngoing, 'No ongoing classes.');
-        renderHorizontalList(upcomingList, sectionUpcoming, containerUpcoming, 'No upcoming classes.');
-        renderHorizontalList(completedList, sectionCompleted, containerCompleted, 'No completed lectures.');
-        renderHorizontalList(cancelledList, sectionCancelled, containerCancelled, 'No cancelled classes.');
-      }
 
-      function renderHorizontalList(list, sectionEl, containerEl, emptyMsg) {
-        sectionEl.classList.remove('hidden');
-        if (!list || list.length === 0) {
-          containerEl.innerHTML = `
-            <div class="w-full text-center py-8 text-slate-400 text-sm italic border border-dashed border-slate-200 rounded-xl">
-              ${emptyMsg}
-            </div>
-          `;
-          return;
-        }
-        
-        containerEl.innerHTML = list.map(lecture => {
-          let actionHtml = '';
-          let badgeHtml = '';
-          
-          if (lecture.status === 'live') {
-            badgeHtml = `<span class="px-2 py-0.5 bg-red-100 text-red-600 rounded-md text-[9px] font-black tracking-widest uppercase mb-2 inline-block">LIVE NOW</span>`;
-            actionHtml = `
-              <a href="/student/course/${activeCourse._id}/player?lectureId=${lecture._id}" class="mt-3 w-full block text-center px-4 py-2.5 rounded-xl bg-red-500 text-white text-xs font-bold hover:bg-red-600 transition shadow-sm">
-                Join Class
-              </a>
-            `;
-          } else if (lecture.status === 'scheduled') {
-            const formattedDate = formatScheduledDate(lecture.scheduledAt);
-            badgeHtml = `<span class="px-2 py-0.5 bg-blue-100 text-blue-600 rounded-md text-[9px] font-black tracking-widest uppercase mb-2 inline-block">UPCOMING</span>`;
-            actionHtml = `
-              <div class="mt-3 w-full text-center px-4 py-2.5 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-100">
-                📅 ${formattedDate}
-              </div>
-            `;
-          } else if (lecture.status === 'cancelled') {
-            badgeHtml = `<span class="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md text-[9px] font-black tracking-widest uppercase mb-2 inline-block">CANCELLED</span>`;
-            actionHtml = `
-              <div class="mt-3 w-full text-center px-4 py-2.5 bg-slate-50 text-slate-400 text-xs font-bold rounded-xl border border-slate-100">
-                🚫 Class Cancelled
-              </div>
-            `;
-          } else {
-            badgeHtml = `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-600 rounded-md text-[9px] font-black tracking-widest uppercase mb-2 inline-block">COMPLETED</span>`;
-            actionHtml = `
-              <a href="/student/course/${activeCourse._id}/player?lectureId=${lecture._id}" class="mt-3 w-full block text-center px-4 py-2.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold hover:bg-slate-200 transition shadow-sm">
-                Watch Recording
-              </a>
-            `;
-          }
 
-          return `
-            <div class="min-w-[260px] md:min-w-[280px] w-[260px] md:w-[280px] shrink-0 snap-center bg-white border border-slate-200 hover:border-slate-300 rounded-2xl p-5 flex flex-col justify-between shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group relative overflow-hidden">
-              <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-slate-200 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              <div>
-                ${badgeHtml}
-                <p class="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-500 truncate" title="${escapeHtml(lecture.subjectName)} - ${escapeHtml(lecture.chapterName)}">
-                  ${escapeHtml(lecture.subjectName)} • ${escapeHtml(lecture.chapterName)}
+                const cohortSelector =
+                  document.getElementById(
+                    'cohort-selector'
+                  );
+
+
+                const cohortEmptyState =
+                  document.getElementById(
+                    'cohort-empty-state'
+                  );
+
+
+                const cohortScheduleContent =
+                  document.getElementById(
+                    'cohort-schedule-content'
+                  );
+
+
+                const sectionOngoing =
+                  document.getElementById(
+                    'section-ongoing'
+                  );
+
+
+                const sectionUpcoming =
+                  document.getElementById(
+                    'section-upcoming'
+                  );
+
+
+                const sectionCompleted =
+                  document.getElementById(
+                    'section-completed'
+                  );
+
+
+                const sectionCancelled =
+                  document.getElementById(
+                    'section-cancelled'
+                  );
+
+
+                const containerOngoing =
+                  document.getElementById(
+                    'container-ongoing'
+                  );
+
+
+                const containerUpcoming =
+                  document.getElementById(
+                    'container-upcoming'
+                  );
+
+
+                const containerCompleted =
+                  document.getElementById(
+                    'container-completed'
+                  );
+
+
+                const containerCancelled =
+                  document.getElementById(
+                    'container-cancelled'
+                  );
+
+
+                let activeCourse = null;
+
+
+
+                try {
+
+                  const purchases = await API.get(
+                    '/purchase/my?itemType=Course'
+                  );
+
+
+                  if (
+                    !purchases ||
+                    purchases.length === 0
+                  ) {
+
+                    cohortSelector.innerHTML = `
+          <option value="">
+            No courses purchased
+          </option>
+        `;
+
+
+                    cohortEmptyState.classList.remove(
+                      'hidden'
+                    );
+
+
+                    cohortScheduleContent.classList.add(
+                      'hidden'
+                    );
+
+
+                    return;
+
+                  }
+
+
+
+                  cohortSelector.innerHTML =
+                    purchases
+                      .map((purchase, index) => {
+
+                        const course =
+                          purchase.course ||
+                          purchase.itemId;
+
+
+                        if (!course) {
+
+                          return '';
+
+                        }
+
+
+                        return `
+              <option
+                value="${course._id}"
+                ${index === 0
+                            ? 'selected'
+                            : ''}
+              >
+                ${escapeHtml(course.name)}
+              </option>
+            `;
+
+                      })
+                      .join('');
+
+
+
+                  const firstCourse =
+                    purchases[0].course ||
+                    purchases[0].itemId;
+
+
+                  if (firstCourse) {
+
+                    await loadCohortDetails(
+                      firstCourse._id
+                    );
+
+                  }
+
+
+
+                  cohortSelector.addEventListener(
+                    'change',
+                    async event => {
+
+                      const courseId =
+                        event.target.value;
+
+
+                      if (courseId) {
+
+                        await loadCohortDetails(
+                          courseId
+                        );
+
+                      }
+
+                    }
+                  );
+
+
+                } catch (error) {
+
+                  console.error(error);
+
+
+                  cohortSelector.innerHTML = `
+        <option value="">
+          Error loading courses
+        </option>
+      `;
+
+                }
+
+
+
+                async function loadCohortDetails(
+                  courseId
+                ) {
+
+                  try {
+
+                    const course = await API.get(
+                      `/courses/published/${courseId}`
+                    );
+
+
+                    activeCourse = course;
+
+
+                    renderSchedule();
+
+
+                  } catch (error) {
+
+                    console.error(
+                      'Error loading schedule:',
+                      error
+                    );
+
+                  }
+
+                }
+
+
+
+                function renderSchedule() {
+
+                  if (!activeCourse) {
+
+                    return;
+
+                  }
+
+
+                  cohortEmptyState.classList.add(
+                    'hidden'
+                  );
+
+
+                  cohortScheduleContent.classList.remove(
+                    'hidden'
+                  );
+
+
+                  const ongoingList = [];
+
+                  const upcomingList = [];
+
+                  const completedList = [];
+
+                  const cancelledList = [];
+
+
+
+                  if (
+                    Array.isArray(
+                      activeCourse.subjects
+                    )
+                  ) {
+
+                    activeCourse.subjects.forEach(
+                      subject => {
+
+                        if (
+                          !subject ||
+                          !Array.isArray(
+                            subject.chapters
+                          )
+                        ) {
+
+                          return;
+
+                        }
+
+
+                        subject.chapters.forEach(
+                          chapter => {
+
+                            if (
+                              !chapter ||
+                              !Array.isArray(
+                                chapter.lectures
+                              )
+                            ) {
+
+                              return;
+
+                            }
+
+
+                            chapter.lectures.forEach(
+                              lecture => {
+
+                                const lectureData = {
+
+                                  ...lecture,
+
+                                  subjectName:
+                                    subject.name,
+
+                                  chapterName:
+                                    chapter.name
+
+                                };
+
+
+                                if (
+                                  lecture.status === 'live'
+                                ) {
+
+                                  ongoingList.push(
+                                    lectureData
+                                  );
+
+                                }
+
+                                else if (
+                                  lecture.status ===
+                                  'scheduled'
+                                ) {
+
+                                  upcomingList.push(
+                                    lectureData
+                                  );
+
+                                }
+
+                                else if (
+                                  lecture.status ===
+                                  'cancelled'
+                                ) {
+
+                                  cancelledList.push(
+                                    lectureData
+                                  );
+
+                                }
+
+                                else if (
+                                  lecture.scheduledAt
+                                ) {
+
+                                  const today =
+                                    new Date();
+
+
+                                  const lectureDate =
+                                    new Date(
+                                      lecture.scheduledAt
+                                    );
+
+
+                                  if (
+                                    lectureDate.getFullYear() ===
+                                    today.getFullYear() &&
+
+                                    lectureDate.getMonth() ===
+                                    today.getMonth() &&
+
+                                    lectureDate.getDate() ===
+                                    today.getDate()
+                                  ) {
+
+                                    completedList.push(
+                                      lectureData
+                                    );
+
+                                  }
+
+                                }
+
+                              }
+                            );
+
+                          }
+                        );
+
+                      }
+                    );
+
+                  }
+
+
+
+                  renderHorizontalList(
+                    ongoingList,
+                    sectionOngoing,
+                    containerOngoing,
+                    'No live classes right now.'
+                  );
+
+
+                  renderHorizontalList(
+                    upcomingList,
+                    sectionUpcoming,
+                    containerUpcoming,
+                    'No upcoming classes scheduled.'
+                  );
+
+
+                  renderHorizontalList(
+                    completedList,
+                    sectionCompleted,
+                    containerCompleted,
+                    'No lectures completed today.'
+                  );
+
+
+                  renderHorizontalList(
+                    cancelledList,
+                    sectionCancelled,
+                    containerCancelled,
+                    'No cancelled classes.'
+                  );
+
+                }
+
+
+
+                function renderHorizontalList(
+                  list,
+                  sectionElement,
+                  containerElement,
+                  emptyMessage
+                ) {
+
+                  sectionElement.classList.remove(
+                    'hidden'
+                  );
+
+
+                  if (
+                    !list ||
+                    list.length === 0
+                  ) {
+
+                    containerElement.innerHTML = `
+
+          <div class="schedule-empty">
+
+            <i
+              class="far fa-calendar"
+              style="
+                display:block;
+                margin-bottom:9px;
+                font-size:20px;
+              "
+            ></i>
+
+            ${emptyMessage}
+
+          </div>
+
+        `;
+
+
+                    return;
+
+                  }
+
+
+
+                  containerElement.innerHTML =
+                    list
+                      .map(lecture => {
+
+
+                        let type = 'completed';
+
+                        let icon = 'fa-play';
+
+                        let badge = 'Completed';
+
+                        let actionHtml = '';
+
+
+
+                        if (
+                          lecture.status === 'live'
+                        ) {
+
+                          type = 'live';
+
+                          icon = 'fa-video';
+
+                          badge = 'Live Now';
+
+
+                          actionHtml = `
+
+                <a
+
+                  href="
+                    /student/course/
+                    ${activeCourse._id}
+                    /player?lectureId=
+                    ${lecture._id}
+                  "
+
+                  class="
+                    lecture-button
+                    lecture-button-live
+                  "
+
+                >
+
+                  <i class="fas fa-play"></i>
+
+                  Join Live Class
+
+                </a>
+
+              `.replace(/\s+/g, ' ');
+
+                        }
+
+
+                        else if (
+                          lecture.status ===
+                          'scheduled'
+                        ) {
+
+                          type = 'scheduled';
+
+                          icon = 'fa-calendar';
+
+                          badge = 'Upcoming';
+
+
+                          actionHtml = `
+
+                <div
+                  class="
+                    lecture-info-button
+                    lecture-info-upcoming
+                  "
+                >
+
+                  <i class="far fa-clock"></i>
+
+                  ${formatScheduledDate(
+                            lecture.scheduledAt
+                          )}
+
+                </div>
+
+              `;
+
+                        }
+
+
+                        else if (
+                          lecture.status ===
+                          'cancelled'
+                        ) {
+
+                          type = 'cancelled';
+
+                          icon = 'fa-calendar-xmark';
+
+                          badge = 'Cancelled';
+
+
+                          actionHtml = `
+
+                <div
+                  class="
+                    lecture-info-button
+                    lecture-info-cancelled
+                  "
+                >
+
+                  <i
+                    class="
+                      fas
+                      fa-circle-xmark
+                    "
+                  ></i>
+
+                  Class Cancelled
+
+                </div>
+
+              `;
+
+                        }
+
+
+                        else {
+
+                          actionHtml = `
+
+                <a
+
+                  href="
+                    /student/course/
+                    ${activeCourse._id}
+                    /player?lectureId=
+                    ${lecture._id}
+                  "
+
+                  class="
+                    lecture-button
+                    lecture-button-completed
+                  "
+
+                >
+
+                  <i class="fas fa-play"></i>
+
+                  Watch Recording
+
+                </a>
+
+              `.replace(/\s+/g, ' ');
+
+                        }
+
+
+
+                        return `
+
+              <article
+                class="
+                  lecture-card
+                  ${type}
+                "
+              >
+
+
+                <div class="lecture-card-top">
+
+
+                  <div class="lecture-type-icon">
+
+                    <i
+                      class="
+                        fas
+                        ${icon}
+                      "
+                    ></i>
+
+                  </div>
+
+
+                  <span
+                    class="
+                      lecture-badge
+                      ${type}
+                    "
+                  >
+
+                    ${badge}
+
+                  </span>
+
+
+                </div>
+
+
+
+                <p
+                  class="lecture-subject"
+
+                  title="
+                    ${escapeHtml(
+                          lecture.subjectName
+                        )}
+                    -
+                    ${escapeHtml(
+                          lecture.chapterName
+                        )}
+                  "
+                >
+
+                  ${escapeHtml(
+                          lecture.subjectName
+                        )}
+
+                  ·
+
+                  ${escapeHtml(
+                          lecture.chapterName
+                        )}
+
                 </p>
-                <h5 class="text-[15px] font-bold text-slate-900 mt-1.5 line-clamp-2 leading-tight group-hover:text-blue-700 transition-colors">${escapeHtml(lecture.title)}</h5>
-              </div>
-              <div class="mt-4 pt-4 border-t border-slate-50 border-dashed">
-                ${actionHtml}
-              </div>
-            </div>
-          `;
-        }).join('');
-      }
 
 
-      function formatScheduledDate(dateString) {
-        if (!dateString) return 'TBD';
-        const d = new Date(dateString);
-        if (isNaN(d.getTime())) return 'TBD';
-        return d.toLocaleDateString('en-IN', {
-          day: '2-digit',
-          month: 'short',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-      }
 
-      function escapeHtml(str) {
-        if (str === null || str === undefined) return '';
-        return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
-      }
-    });
-  </script>
-</body>
-</html>
+                <h4 class="lecture-title">
+
+                  ${escapeHtml(
+                          lecture.title
+                        )}
+
+                </h4>
+
+
+
+                <div class="lecture-action-area">
+
+                  ${actionHtml}
+
+                </div>
+
+
+              </article>
+
+            `;
+
+                      })
+                      .join('');
+
+                }
+
+
+
+                function formatScheduledDate(
+                  dateString
+                ) {
+
+                  if (!dateString) {
+
+                    return 'Schedule TBD';
+
+                  }
+
+
+                  const date =
+                    new Date(dateString);
+
+
+                  if (
+                    Number.isNaN(
+                      date.getTime()
+                    )
+                  ) {
+
+                    return 'Schedule TBD';
+
+                  }
+
+
+                  return date.toLocaleDateString(
+                    'en-IN',
+                    {
+
+                      day: '2-digit',
+
+                      month: 'short',
+
+                      hour: '2-digit',
+
+                      minute: '2-digit',
+
+                      hour12: true
+
+                    }
+                  );
+
+                }
+
+
+
+                function escapeHtml(value) {
+
+                  if (
+                    value === null ||
+                    value === undefined
+                  ) {
+
+                    return '';
+
+                  }
+
+
+                  return String(value)
+
+                    .replace(
+                      /&/g,
+                      '&amp;'
+                    )
+
+                    .replace(
+                      /</g,
+                      '&lt;'
+                    )
+
+                    .replace(
+                      />/g,
+                      '&gt;'
+                    )
+
+                    .replace(
+                      /"/g,
+                      '&quot;'
+                    )
+
+                    .replace(
+                      /'/g,
+                      '&#039;'
+                    );
+
+                }
+
+              }
+            );
+          </script>
+
+
+  </body>
+
+  </html>

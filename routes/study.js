@@ -117,7 +117,8 @@ router.get('/my-courses', auth, async (req, res) => {
 // Returns only minimal fields for published courses.
 router.get('/explore-courses', auth, async (req, res) => {
   try {
-    const courses = await Course.find({ isPublished: true })
+    const query = req.user && req.user.role === 'admin' ? {} : { isPublished: true };
+    const courses = await Course.find(query)
       .select('_id name price madeFor')
       .sort({ createdAt: -1 })
       .lean();
@@ -147,16 +148,22 @@ router.get(['/published/:id', '/courses/published/:courseId'], auth, async (req,
       return res.status(400).json({ message: 'course id is required' });
     }
 
-    const course = await Course.findOne({ _id: courseId, isPublished: true })
+    const query = { _id: courseId };
+    if (!req.user || req.user.role !== 'admin') {
+      query.isPublished = true;
+    }
+    const course = await Course.findOne(query)
       .populate('tests', 'name duration mode testType scheduledAt syllabus')
       .lean();
     if (!course) {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    const purchased = await ensureCoursePurchasedByUser(course._id, req.user._id);
-    if (!purchased) {
-      return res.status(403).json({ message: 'Purchase this course to open it' });
+    if (!req.user || req.user.role !== 'admin') {
+      const purchased = await ensureCoursePurchasedByUser(course._id, req.user._id);
+      if (!purchased) {
+        return res.status(403).json({ message: 'Purchase this course to open it' });
+      }
     }
 
     res.json({
@@ -176,7 +183,11 @@ router.get(['/published/:id', '/courses/published/:courseId'], auth, async (req,
 router.get('/courses/:courseId', auth, async (req, res) => {
   try {
     const { courseId } = req.params;
-    const course = await Course.findOne({ _id: courseId, isPublished: true })
+    const query = { _id: courseId };
+    if (!req.user || req.user.role !== 'admin') {
+      query.isPublished = true;
+    }
+    const course = await Course.findOne(query)
       .select('_id name lectures')
       .lean();
 
@@ -202,7 +213,11 @@ router.get('/courses/:courseId/videos/:videoId/url', auth, async (req, res) => {
   try {
     const { courseId, videoId } = req.params;
 
-    const course = await Course.findOne({ _id: courseId, isPublished: true })
+    const query = { _id: courseId };
+    if (!req.user || req.user.role !== 'admin') {
+      query.isPublished = true;
+    }
+    const course = await Course.findOne(query)
       .select('_id price lectures')
       .lean();
 
@@ -221,17 +236,19 @@ router.get('/courses/:courseId/videos/:videoId/url', auth, async (req, res) => {
     }
 
     // Paid courses require a successful purchase.
-    if ((course.price || 0) > 0) {
-      const purchase = await Purchase.findOne({
-        user: req.user._id,
-        itemType: 'Course',
-        itemId: courseId,
-        status: 'success',
-      }).lean();
+    if (!req.user || req.user.role !== 'admin') {
+      if ((course.price || 0) > 0) {
+        const purchase = await Purchase.findOne({
+          user: req.user._id,
+          itemType: 'Course',
+          itemId: courseId,
+          status: 'success',
+        }).lean();
 
-      if (!purchase) {
-        console.warn(`Unauthorized video access attempt: userId=${req.user._id}, courseId=${courseId}, videoId=${videoId}`);
-        return res.status(403).json({ message: 'Purchase required to access this video' });
+        if (!purchase) {
+          console.warn(`Unauthorized video access attempt: userId=${req.user._id}, courseId=${courseId}, videoId=${videoId}`);
+          return res.status(403).json({ message: 'Purchase required to access this video' });
+        }
       }
     }
 
