@@ -50,33 +50,90 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // ── Filename parser ───────────────────────────────────────────────
-  // Format: "{qNum}-{answer}.ext"
-  //   answer = A/B/C/D             → MCQ        (e.g. 1-A.jpg)
-  //   answer = A,B  or  A,B,C …  → MSQ        (e.g. 2-A,B,C.jpg)
-  //   answer = number              → Numerical  (e.g. 3-120.jpg)
+  // Supports:
+  //   MCQ:       "a.jpg", "A.png", "b (2).jpg", "b(2).png", "1-A.jpg"
+  //   MSQ:       "a,b,c.jpg", "A,B.png", "a,b,c (2).jpg", "2-A,B,C.jpg"
+  //   Numerical: "10.jpg", "10.00.jpg", "10.2.png", "10 (2).jpg", "4-4.jpg", "3-120.jpg"
   function parseFilename(filename) {
-    const base    = filename.replace(/\.[^/.]+$/, '').trim(); // strip extension
-    const dashIdx = base.indexOf('-');
-    if (dashIdx === -1) return null;
-    const qNum   = base.slice(0, dashIdx).trim();
-    const answer = base.slice(dashIdx + 1).trim();
-    if (!answer) return null;
+    if (!filename || typeof filename !== 'string') return null;
 
-    // MSQ: two or more comma-separated option letters, e.g. "A,B" or "A,B,C"
-    if (/^[A-Da-d](,[A-Da-d])+$/.test(answer)) {
-      const opts = answer.split(',').map(o => o.toUpperCase());
-      return { qNum, type: 'msq', correctOptions: opts };
+    // 1. Strip file extension (e.g. .jpg, .png, .jpeg, .webp)
+    let base = filename.replace(/\.[^/.]+$/, '').trim();
+
+    // 2. Clean OS duplicate / copy suffixes repeatedly:
+    // e.g. " (2)", "(2)", " [2]", "[2]", " - Copy", " - Copy (2)", "_copy"
+    let prev;
+    do {
+      prev = base;
+      base = base
+        .replace(/\s*-\s*copy(\s*\(\d+\))?$/i, '')
+        .replace(/[\s_]*\(\s*\d+\s*\)$/, '')
+        .replace(/[\s_]*\[\s*\d+\s*\]$/, '')
+        .trim();
+    } while (base !== prev);
+
+    if (!base) return null;
+
+    function matchAnswer(str) {
+      if (!str) return null;
+      const s = str.trim();
+
+      // MSQ: Comma/space/hyphen/underscore-separated options or contiguous A-D letters (at least 2 letters)
+      if (/^[A-Da-d]([\s,]+[A-Da-d])+$/.test(s)) {
+        const parts = s.split(/[\s,]+/).map(o => o.trim().toUpperCase()).filter(Boolean);
+        const unique = Array.from(new Set(parts)).sort();
+        if (unique.length >= 2) return { type: 'msq', correctOptions: unique };
+        if (unique.length === 1) return { type: 'mcq', correctOption: unique[0] };
+      }
+
+      if (/^[A-Da-d]{2,4}$/.test(s)) {
+        const parts = s.toUpperCase().split('');
+        const unique = Array.from(new Set(parts)).sort();
+        if (unique.length === parts.length && unique.length >= 2) {
+          return { type: 'msq', correctOptions: unique };
+        }
+      }
+
+      // MCQ: Single letter A, B, C, or D (also handle if followed by underscore duplicate e.g. "b_2")
+      const mcqMatch = s.match(/^([A-Da-d])(?:_\d+)?$/);
+      if (mcqMatch) {
+        return { type: 'mcq', correctOption: mcqMatch[1].toUpperCase() };
+      }
+
+      // Numerical: integer or floating point number (supports positive/negative, e.g. "10", "10.00", "10.2", "-5.5", "0.45", ".5")
+      if (/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(s)) {
+        const num = parseFloat(s);
+        if (!isNaN(num)) {
+          return { type: 'numerical', correctNumericalAnswer: num };
+        }
+      }
+
+      return null;
     }
-    // MCQ: single letter
-    if (/^[A-Da-d]$/.test(answer)) {
-      return { qNum, type: 'mcq', correctOption: answer.toUpperCase() };
+
+    // First try direct match on the cleaned filename (no question prefix needed)
+    const direct = matchAnswer(base);
+    if (direct) return direct;
+
+    // Next try extracting answer after question prefix (e.g. 1-A, Q1: A, 4-4, 1. A)
+    const prefixMatch = base.match(/^(?:q(?:uestion)?\s*\d+|\d+)\s*[-_:]\s*(.+)$/i) ||
+                        base.match(/^(?:q(?:uestion)?\s*\d+|\d+)\.\s+(.+)$/i) ||
+                        base.match(/^(?:q(?:uestion)?\s*\d+)\s+(.+)$/i);
+    if (prefixMatch && prefixMatch[1]) {
+      let candidate = prefixMatch[1].trim().replace(/[\s_]*\(\s*\d+\s*\)$/, '').trim();
+      const parsed = matchAnswer(candidate);
+      if (parsed) return parsed;
     }
-    // Numerical
-    const num = parseFloat(answer);
-    if (!isNaN(num)) {
-      return { qNum, type: 'numerical', correctNumericalAnswer: num };
+
+    // Fallback: any dash separator (legacy "1-A" support)
+    const dashIdx = base.indexOf('-');
+    if (dashIdx !== -1) {
+      const candidate = base.slice(dashIdx + 1).trim().replace(/[\s_]*\(\s*\d+\s*\)$/, '').trim();
+      const parsed = matchAnswer(candidate);
+      if (parsed) return parsed;
     }
-    return null; // unrecognised format
+
+    return null;
   }
 
   // ── Badge helper (reused by file-list preview and live upload rows) ─
@@ -284,7 +341,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const files      = Array.from(document.getElementById('question-image').files);
     const validFiles = files.map(f => ({ file: f, parsed: parseFilename(f.name) })).filter(x => x.parsed);
 
-    if (!validFiles.length) return toast.error('No valid files. Check filename format (e.g. 1-A.jpg or 1-120.jpg)');
+    if (!validFiles.length) return toast.error('No valid files. Check filename format (e.g. A.jpg, a,b,c.jpg, 10.jpg, b (2).png or 1-A.jpg)');
 
     btn.disabled = true;
     let done = 0, failed = 0;
