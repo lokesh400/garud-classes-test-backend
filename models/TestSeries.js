@@ -42,6 +42,11 @@ const testSeriesSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  visibility: {
+    type: String,
+    enum: ['all', 'admin_only', 'purchased_students_only'],
+    default: 'all',
+  },
   // Admin who created this series
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,

@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   window.toggleMemberStatus = async function(id, currentActive) {
     const action = currentActive ? 'deactivate' : 'activate';
-    if (!confirm(`Are you sure you want to ${action} this member?`)) return;
+    if (!await toast.confirmDelete(`Are you sure you want to ${action} this member?`)) return;
 
     try {
       await API.patch(`/auth/team/${id}/status`, { isActive: !currentActive });
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.deleteMember = async function(id, name) {
-    if (!confirm(`Are you sure you want to permanently delete member "${name}"? This action cannot be undone.`)) return;
+    if (!await toast.confirmDelete(`Are you sure you want to permanently delete member "${name}"? This action cannot be undone.`)) return;
 
     try {
       await API.delete(`/auth/team/${id}`);

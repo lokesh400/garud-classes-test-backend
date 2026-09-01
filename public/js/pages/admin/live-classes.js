@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach end button listeners
     listEl.querySelectorAll('.end-live-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
-        if (!confirm('Are you sure you want to end this live class? This will mark the lecture status as "Ended".')) return;
+        if (!await toast.confirmDelete('Are you sure you want to end this live class? This will mark the lecture status as "Ended".')) return;
         
         const btnEl = e.currentTarget;
         const cId = btnEl.getAttribute('data-course');

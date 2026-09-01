@@ -69,6 +69,9 @@ router.post('/create-order', auth, async (req, res) => {
     if (item.price === 0) {
       return res.status(400).json({ message: `${itemType} is free` });
     }
+    if (item.visibility && item.visibility !== 'all') {
+      return res.status(403).json({ message: 'This item is not available for public purchase. Please contact administration.' });
+    }
 
     const existing = await Purchase.findOne({
       user: req.user._id,
@@ -80,10 +83,9 @@ router.post('/create-order', auth, async (req, res) => {
       return res.status(200).json({ success: true, purchaseId: existing._id, alreadyPurchased: true });
     }
 
-    // Razorpay receipt must be <= 40 chars
     const shortReceipt = `${itemType.toLowerCase()}_${itemId}`.slice(0, 30) + `_${Date.now()}`.slice(0, 10);
     const order = await razorpay.orders.create({
-      amount: item.price * 100, // INR paise
+      amount: item.price * 100,
       currency: 'INR',
       receipt: shortReceipt,
       payment_capture: 1,
@@ -145,15 +147,15 @@ router.post('/verify', auth, async (req, res) => {
     }
 
     const purchase = await Purchase.create({
-      user:               req.user._id,
+      user: req.user._id,
       itemType,
       itemId,
-      amount:             item.price,
-      method:             'online',
-      status:             'success',
-      razorpayOrderId:    orderId,
-      razorpayPaymentId:  paymentId,
-      razorpaySignature:  signature,
+      amount: item.price,
+      method: 'online',
+      status: 'success',
+      razorpayOrderId: orderId,
+      razorpayPaymentId: paymentId,
+      razorpaySignature: signature,
     });
     await syncOwnership(itemType, itemId, req.user._id);
     console.log('[VERIFY] Purchase created:', purchase._id);
@@ -180,6 +182,9 @@ router.post('/free-access', auth, async (req, res) => {
     if (item.price !== 0) {
       return res.status(400).json({ message: `${itemType} is not free` });
     }
+    if (item.visibility && item.visibility !== 'all') {
+      return res.status(403).json({ message: 'This item is not available for public purchase. Please contact administration.' });
+    }
 
     const existing = await Purchase.findOne({ user: req.user._id, itemType, itemId, status: 'success' });
     if (existing) {
@@ -187,12 +192,12 @@ router.post('/free-access', auth, async (req, res) => {
     }
 
     const purchase = await Purchase.create({
-      user:      req.user._id,
+      user: req.user._id,
       itemType,
       itemId,
-      amount:    0,
-      method:    'free',
-      status:    'success',
+      amount: 0,
+      method: 'free',
+      status: 'success',
     });
     await syncOwnership(itemType, itemId, req.user._id);
     console.log('[FREE ACCESS] Purchase created:', purchase._id);

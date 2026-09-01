@@ -77,4 +77,81 @@ const toast = {
   success: (msg) => showToast(msg, 'success'),
   error:   (msg) => showToast(msg, 'error'),
   info:    (msg) => showToast(msg, 'info'),
+  
+  confirmDelete: (msg) => {
+    return new Promise((resolve) => {
+      const container = document.getElementById('toast-container');
+      if (!container) return resolve(false);
+
+      let clickCount = 3;
+      const el = document.createElement('div');
+      el.className = 'modern-toast toast-error';
+      
+      const iconSvg = `
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+          <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+      `;
+
+      el.innerHTML = `
+        ${iconSvg}
+        <div style="flex: 1; font-family: sans-serif; display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 14px; font-weight: 600; color: rgba(255, 255, 255, 0.95); line-height: 1.4;">
+            ${msg}
+          </div>
+          <button class="confirm-btn" style="align-self: flex-start; padding: 6px 12px; font-size: 13px; font-weight: bold; color: white; background: #e11d48; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s;">
+            Confirm Delete (${clickCount})
+          </button>
+        </div>
+        <button class="cancel-btn" style="background: none; border: none; cursor: pointer; color: rgba(255, 255, 255, 0.3); transition: color 0.15s; margin-left: 4px; flex-shrink: 0; display: flex; align-items: flex-start; justify-content: center; padding: 4px; align-self: stretch;">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      `;
+
+      container.appendChild(el);
+
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          el.classList.add('show');
+        }, 10);
+      });
+
+      function dismissToast(result) {
+        el.classList.remove('show');
+        setTimeout(() => {
+          el.remove();
+          resolve(result);
+        }, 350);
+      }
+
+      // Auto cancel after 10s of inactivity
+      let autoCancelTimeout = setTimeout(() => {
+        dismissToast(false);
+      }, 10000);
+
+      const confirmBtn = el.querySelector('.confirm-btn');
+      confirmBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        clearTimeout(autoCancelTimeout);
+        clickCount--;
+        
+        if (clickCount > 0) {
+          confirmBtn.textContent = `Confirm Delete (${clickCount})`;
+          autoCancelTimeout = setTimeout(() => {
+            dismissToast(false);
+          }, 10000);
+        } else {
+          dismissToast(true);
+        }
+      });
+
+      el.querySelector('.cancel-btn').addEventListener('click', (e) => {
+        e.preventDefault();
+        clearTimeout(autoCancelTimeout);
+        dismissToast(false);
+      });
+    });
+  }
 };

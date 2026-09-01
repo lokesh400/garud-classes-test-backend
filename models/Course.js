@@ -112,6 +112,11 @@ const courseSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    visibility: {
+      type: String,
+      enum: ['all', 'admin_only', 'purchased_students_only'],
+      default: 'all',
+    },
     subjects: {
       type: [subjectSchema],
       default: [],

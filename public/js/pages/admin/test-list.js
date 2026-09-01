@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.deleteTest = async function(id) {
-    if (!confirm('Delete this test? All student attempts will also be deleted.')) return;
+    if (!await toast.confirmDelete('Delete this test? All student attempts will also be deleted.')) return;
     try {
       await API.delete(`/tests/${id}`);
       toast.success('Test deleted');

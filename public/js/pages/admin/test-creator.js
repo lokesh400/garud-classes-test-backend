@@ -233,7 +233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.removeSection = async function(sectionId) {
-    if (!confirm('Remove this section?')) return;
+    if (!await toast.confirmDelete('Remove this section?')) return;
     try {
       test = await API.delete(`/tests/${testId}/sections/${sectionId}`);
       renderTest();

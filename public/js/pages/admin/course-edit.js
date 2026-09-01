@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
 
           card.querySelector('.delete-subject-btn').addEventListener('click', async (e) => {
-            if (window.confirm(`Delete subject "${subject.name || 'Untitled'}" and all of its contents?`)) {
+            if (await toast.confirmDelete(`Delete subject "${subject.name || 'Untitled'}" and all of its contents?`)) {
               const btn = e.currentTarget;
               btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i>';
               try {
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
 
           card.querySelector('.delete-chapter-btn').addEventListener('click', async (e) => {
-            if (window.confirm(`Delete chapter "${chapter.name || 'Untitled'}" and all of its lectures?`)) {
+            if (await toast.confirmDelete(`Delete chapter "${chapter.name || 'Untitled'}" and all of its lectures?`)) {
               const btn = e.currentTarget;
               btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i>';
               try {
@@ -650,7 +650,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           });
 
           card.querySelector('.delete-lecture-btn').addEventListener('click', async (e) => {
-            if (window.confirm(`Delete lecture "${lecture.title || 'Untitled'}"?`)) {
+            if (await toast.confirmDelete(`Delete lecture "${lecture.title || 'Untitled'}"?`)) {
               const btn = e.currentTarget;
               btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin text-[10px]"></i>';
               try {
@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   deleteBtn.addEventListener('click', async () => {
     if (!currentCourse) return;
 
-    const confirmed = window.confirm(`Delete ${currentCourse.name}? This will remove all syllabus subjects and lectures.`);
+    const confirmed = await toast.confirmDelete(`Delete ${currentCourse.name}? This will remove all syllabus subjects and lectures.`);
     if (!confirmed) return;
 
     try {
@@ -892,10 +892,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     `).join('');
 
     courseTestsList.querySelectorAll('.remove-test-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
+      btn.addEventListener('click', async (e) => {
         const index = parseInt(e.currentTarget.getAttribute('data-index'), 10);
         const testName = tests[index].name;
-        if (window.confirm(`Remove test "${testName}" from this course?`)) {
+        if (await toast.confirmDelete(`Remove test "${testName}" from this course?`)) {
           tests.splice(index, 1);
           renderCourseTests();
           toast.success('Test removed (Make sure to click Update Course)');

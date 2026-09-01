@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.deleteSubject = async function(id) {
-    if (!confirm('Delete this subject? This may affect related chapters and topics.')) return;
+    if (!await toast.confirmDelete('Delete this subject? This may affect related chapters and topics.')) return;
     try {
       await API.delete(`/subjects/${id}`);
       delete countsCache.subjects[id];
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.deleteChapter = async function(id) {
-    if (!confirm('Delete this chapter?')) return;
+    if (!await toast.confirmDelete('Delete this chapter?')) return;
     try {
       await API.delete(`/chapters/${id}`);
       delete countsCache.chapters[id];
@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.deleteTopic = async function(id) {
-    if (!confirm('Delete this topic?')) return;
+    if (!await toast.confirmDelete('Delete this topic?')) return;
     try {
       await API.delete(`/topics/${id}`);
       delete countsCache.topics[id];

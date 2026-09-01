@@ -1,6 +1,8 @@
 const express = require('express');
 const TestSeries = require('../models/TestSeries');
 const TestAttempt = require('../models/TestAttempt');
+const Purchase = require('../models/Purchase');
+const User = require('../models/User');
 const { auth, adminOnly } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 const { uploadToSubjectCloud } = require('../config/cloudinary');
@@ -68,10 +70,42 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
   }
 });
 
+router.post('/admin/:id/add-student', auth, adminOnly, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const series = await TestSeries.findById(req.params.id);
+    if (!series) return res.status(404).json({ message: 'Test series not found' });
+
+    const existing = await Purchase.findOne({ user: user._id, itemType: 'TestSeries', itemId: series._id, status: 'success' });
+    if (existing) return res.status(400).json({ message: 'User is already enrolled in this test series' });
+
+    await Purchase.create({
+      user: user._id,
+      itemType: 'TestSeries',
+      itemId: series._id,
+      amount: 0,
+      method: 'manual',
+      status: 'success'
+    });
+
+    await TestSeries.findByIdAndUpdate(series._id, { $addToSet: { purchasedBy: user._id } });
+    await User.findByIdAndUpdate(user._id, { $addToSet: { purchasedSeries: series._id } });
+
+    res.json({ message: 'Student enrolled successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Create test series (admin)
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, price, tags, madeFor, image } = req.body;
+    const { name, description, price, tags, madeFor, image, visibility } = req.body;
     const series = new TestSeries({
       name,
       description,
@@ -79,6 +113,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
       tags: tags ? (Array.isArray(tags) ? tags : tags.split(',').map(t => t.trim())) : [],
       madeFor: madeFor || 'other',
       image: image || '',
+      visibility: visibility || 'all',
       tests: [],
       createdBy: req.user._id,
     });
@@ -92,11 +127,12 @@ router.post('/', auth, adminOnly, async (req, res) => {
 // Update test series (admin)
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, isPublished } = req.body;
+    const { name, description, isPublished, visibility } = req.body;
     const update = {};
     if (name !== undefined) update.name = name;
     if (description !== undefined) update.description = description;
     if (isPublished !== undefined) update.isPublished = isPublished;
+    if (visibility !== undefined) update.visibility = visibility;
 
     const series = await TestSeries.findByIdAndUpdate(req.params.id, update, { new: true })
       .populate('createdBy', 'name')
@@ -179,9 +215,23 @@ router.delete('/:id/tests/:testId', auth, adminOnly, async (req, res) => {
 router.get('/published', auth, async (req, res) => {
   try {
     const minimal = req.query.minimal === 'true' || req.query.fields === 'basic';
+    let query = {};
+    if (req.user && req.user.role === 'admin') {
+      // admin sees all
+    } else if (req.user) {
+      query = {
+        isPublished: true,
+        $or: [
+          { visibility: 'all' },
+          { visibility: { $ne: 'admin_only' }, purchasedBy: req.user._id }
+        ]
+      };
+    } else {
+      query = { isPublished: true, visibility: 'all' };
+    }
 
     if (minimal) {
-      const basicSeries = await TestSeries.find({ isPublished: true })
+      const basicSeries = await TestSeries.find(query)
         .select('_id image name description')
         .sort({ createdAt: -1 })
         .lean();
@@ -189,7 +239,7 @@ router.get('/published', auth, async (req, res) => {
       return res.json(basicSeries);
     }
 
-    const seriesList = await TestSeries.find({ isPublished: true })
+    const seriesList = await TestSeries.find(query)
       .populate({
         path: 'tests',
         match: { isPublished: true },
@@ -252,7 +302,12 @@ router.get('/published', auth, async (req, res) => {
 router.get('/published/:id', auth, async (req, res) => {
   console.log('Fetching test series for student:', req.params.id);
   try {
-    const series = await TestSeries.findOne({ _id: req.params.id, isPublished: true })
+    let query = { _id: req.params.id };
+    if (!req.user || req.user.role !== 'admin') {
+      query.isPublished = true;
+      query.visibility = { $ne: 'admin_only' };
+    }
+    const series = await TestSeries.findOne(query)
       .populate({
         path: 'tests',
         match: { isPublished: true },

@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.deleteDpp = async function(id) {
-    if (!confirm('Delete this DPP? All student submissions will also be deleted.')) return;
+    if (!await toast.confirmDelete('Delete this DPP? All student submissions will also be deleted.')) return;
     try {
       await API.delete(`/tests/${id}`);
       toast.success('DPP deleted successfully');

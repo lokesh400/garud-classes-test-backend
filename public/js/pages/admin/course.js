@@ -78,11 +78,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           </div>
         </div>
         
-        <div class="flex items-center gap-2 shrink-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+        <div class="flex items-center gap-2 shrink-0 transition-opacity">
           <button type="button" data-delete-id="${course._id}" class="w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 hover:bg-red-50 flex items-center justify-center transition shadow-sm" title="Delete Course">
             <i class="fas fa-trash-alt text-xs"></i>
           </button>
-          <button type="button" data-edit-id="${course._id}" class="px-4 py-2 rounded-xl bg-blue-50 border border-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white text-xs font-bold transition shadow-sm">
+          <button type="button" data-edit-id="${course._id}" class="px-4 py-2 rounded-xl bg-garud-highlight text-white border border-transparent hover:opacity-90 text-xs font-bold transition shadow-sm">
             Edit Course
           </button>
         </div>
@@ -95,7 +95,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function deleteCourse(courseId) {
     const course = courses.find((item) => item._id === courseId);
     const title = course?.name || 'this course';
-    if (!window.confirm(`Delete ${title}? This will remove all lectures in it.`)) return;
+    const confirmed = await toast.confirmDelete(`Delete ${title}? This will remove all lectures in it.`);
+    if (!confirmed) return;
 
     try {
       await API.delete(`/courses/${courseId}`);

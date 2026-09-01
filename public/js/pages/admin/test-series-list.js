@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   window.deleteSeries = async function(id) {
-    if (!confirm('Delete this test series? This cannot be undone.')) return;
+    if (!await toast.confirmDelete('Delete this test series? This cannot be undone.')) return;
     try {
       await API.delete(`/test-series/${id}`);
       toast.success('Series deleted');

@@ -223,7 +223,7 @@ async function updateClassStatus(classId, status) {
 window.updateClassStatus = updateClassStatus;
 
 async function deleteClass(classId) {
-  if (!confirm('Are you sure you want to delete this scheduled class? This is irreversible.')) {
+  if (!await toast.confirmDelete('Are you sure you want to delete this scheduled class? This is irreversible.')) {
     return;
   }
   try {

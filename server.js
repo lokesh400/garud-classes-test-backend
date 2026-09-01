@@ -1,4 +1,3 @@
-// EJS route: Study page (purchased test series)
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
@@ -6,7 +5,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const session = require('express-session');
 const MongoStore = require('connect-mongo').MongoStore;
-const passport = require('./config/passport'); // configures passport strategies
+const passport = require('./config/passport');
 const helmet = require('helmet');
 const mongoSanitize = require('express-mongo-sanitize');
 const connectDB = require('./config/db');
@@ -14,7 +13,6 @@ const axios = require('axios');
 
 const { auth } = require('./middleware/auth')
 
-// Connect to database
 connectDB();
 
 const app = express();
@@ -36,11 +34,10 @@ const allowedOrigins = [
 const io = socketIo(server, {
   cors: {
     origin: (origin, callback) => {
-      // Allow requests with no origin (React Native, mobile apps, curl, etc.)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
-        callback(null, true); // Allow all for now; tighten in production if needed
+        callback(null, true);
       }
     },
     methods: ["GET", "POST"],
@@ -48,21 +45,15 @@ const io = socketIo(server, {
   }
 });
 
-
-// ── Security headers (helmet) ──────────────────────────────────────────────────
-// CSP is disabled here so existing inline scripts and Tailwind/Razorpay CDN
-// resources keep working. Enable & tighten with a nonce strategy when ready.
 app.use(helmet({
-  contentSecurityPolicy: false, // configure separately when ready
-  crossOriginEmbedderPolicy: false, // Razorpay iframe requires this off
+  contentSecurityPolicy: false,
+  crossOriginEmbedderPolicy: false,
 }));
 
-// ── View engine ─────────────────────────────────────────────────────────────
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 app.use(express.static(__dirname + '/public'));
 
-// ── CORS ─────────────────────────────────────────────────────────────────
 const corsOptions = {
   origin(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
@@ -76,32 +67,27 @@ const corsOptions = {
   optionsSuccessStatus: 204,
 };
 
+// app.use(cors());
+// app.use(session({
+//   secret: 'mysessionsecret',
+//   resave: false,
+//   saveUninitialized: false,
+//   store: MongoStore.create({
+//     mongoUrl: mongoUri,
+//     ttl: 7 * 24 * 60 * 60,
+//     autoRemove: 'native',
+//   }),
+// }));
 
-app.use(cors());
-app.use(session({
-  secret: 'mysessionsecret',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: mongoUri,
-    ttl: 7 * 24 * 60 * 60,        // 7 days (seconds)
-    autoRemove: 'native',
-  }),
-}));
-
-// app.use(cors(corsOptions));
-// app.options('*', cors(corsOptions));
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 
-// ── Body parsers ───────────────────────────────────────────────────────────
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// ── NoSQL injection sanitizer ─────────────────────────────────────────────────────
-// Strips $ and . from req.body, req.params, req.query
 app.use(mongoSanitize());
 
-// ── Startup env guard ─────────────────────────────────────────────────────
 if (!process.env.SESSION_SECRET) {
   console.error('FATAL: SESSION_SECRET env variable is not set.');
   process.exit(1);
@@ -111,36 +97,34 @@ if (!mongoUri) {
   process.exit(1);
 }
 
-// Render sits behind a reverse proxy; trust it so secure cookies are set correctly.
 if (isProd) {
   app.set('trust proxy', 1);
 }
 
 // ── Session ─────────────────────────────────────────────────────────────────
-// app.use(session({
-//   name:              'sid',              // don't leak framework name via cookie
-//   secret:            process.env.SESSION_SECRET,
-//   resave:            false,
-//   saveUninitialized: false,
-//   proxy:             isProd,
-//   store: MongoStore.create({
-//     mongoUrl:   mongoUri,
-//     ttl:        7 * 24 * 60 * 60,        // 7 days (seconds)
-//     autoRemove: 'native',
-//   }),
-//   cookie: {
-//     httpOnly: true,                      // JS cannot read the cookie
-//     secure:   sessionCookieSecure,       // HTTPS-only; required when SameSite=None
-//     sameSite: sessionCookieSameSite,     // strict/lax/none (env configurable)
-//     maxAge:   7 * 24 * 60 * 60 * 1000,  // 7 days (ms)
-//   },
-// }));
+app.use(session({
+  name: 'sid',              // don't leak framework name via cookie
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  proxy: isProd,
+  store: MongoStore.create({
+    mongoUrl: mongoUri,
+    ttl: 7 * 24 * 60 * 60,        // 7 days (seconds)
+    autoRemove: 'native',
+  }),
+  cookie: {
+    httpOnly: true,                      // JS cannot read the cookie
+    secure: sessionCookieSecure,       // HTTPS-only; required when SameSite=None
+    sameSite: sessionCookieSameSite,     // strict/lax/none (env configurable)
+    maxAge: 7 * 24 * 60 * 60 * 1000,  // 7 days (ms)
+  },
+}));
 
-// ── Passport ─────────────────────────────────────────────────────────────────
+
 app.use(passport.initialize());
 app.use(passport.session());
 
-// ── Razorpay sensor permissions & clickjack protection ─────────────────────
 app.use((req, res, next) => {
   res.setHeader(
     'Permissions-Policy',
@@ -150,7 +134,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// ── Inject canonical page URL into every EJS template ───────────────────────
 app.use((req, res, next) => {
   res.locals.pageUrl = 'https://dashboard.garudclasses.com' + req.path;
   next();
@@ -158,14 +141,12 @@ app.use((req, res, next) => {
 
 app.get('/account/delete', (req, res) => res.render('account-delete', { title: 'Account Deletion Policy' }));
 
-// ── Page routes (EJS views) ────────────────────────────────────────────────────
 app.use('/', require('./routes/public/pages'));
 app.use('/', require('./routes/admin/pages'));
 app.use('/', require('./routes/student/pages'));
 app.use('/', require('./routes/admin/course-pages'));
 app.use('/', require('./routes/teacher/pages'));
 
-// ── API Routes ────────────────────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/subjects', require('./routes/subjects'));
 app.use('/api/chapters', require('./routes/chapters'));
@@ -191,7 +172,9 @@ app.get('/api/exams-targeted', (req, res) => {
   res.json([
     { name: 'JEE Main', value: 'jee-main' },
     { name: 'JEE Advanced', value: 'jee-advanced' },
-    { name: 'NEET', value: 'neet' }
+    { name: 'NEET', value: 'neet' },
+    { name: 'NDA', value: 'nda' },
+    { name: ' FOUNDATION', value: 'foundation' }
   ]);
 })
 
@@ -212,15 +195,12 @@ app.post('/api/test', (req, res) => {
   res.json({ message: 'Test endpoint is working!' });
 });
 
-// ── Custom 404 page ───────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).render('404', { title: 'Page Not Found' });
 });
 
-// ChatMessage model
 const ChatMessage = require('./models/ChatMessage');
 
-// ── Socket.io Event Handling ───────────────────────────────────────────────────
 io.on('connection', (socket) => {
   let currentRoom = null;
   let currentUser = null;

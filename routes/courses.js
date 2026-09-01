@@ -3,6 +3,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
+const User = require('../models/User');
 // const { getSignedR2Url } = require('../config/r2');
 const { auth, adminOnly } = require('../middleware/auth');
 
@@ -222,9 +223,41 @@ router.get('/admin/:id', auth, adminOnly, async (req, res) => {
   }
 });
 
+router.post('/admin/:id/add-student', auth, adminOnly, async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const course = await Course.findById(req.params.id);
+    if (!course) return res.status(404).json({ message: 'Course not found' });
+
+    const existing = await Purchase.findOne({ user: user._id, itemType: 'Course', itemId: course._id, status: 'success' });
+    if (existing) return res.status(400).json({ message: 'User is already enrolled in this course' });
+
+    await Purchase.create({
+      user: user._id,
+      itemType: 'Course',
+      itemId: course._id,
+      amount: 0,
+      method: 'manual',
+      status: 'success'
+    });
+
+    await Course.findByIdAndUpdate(course._id, { $addToSet: { purchasedBy: user._id } });
+    await User.findByIdAndUpdate(user._id, { $addToSet: { purchasedCourses: course._id } });
+
+    res.json({ message: 'Student enrolled successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, price, tags, madeFor, image, isPublished, lectures } = req.body;
+    const { name, description, price, tags, madeFor, image, isPublished, visibility, lectures } = req.body;
 
     const course = new Course({
       name,
@@ -234,6 +267,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
       madeFor: madeFor || 'other',
       image: image || '',
       isPublished: !!isPublished,
+      visibility: visibility || 'all',
       lectures: Array.isArray(lectures)
         ? lectures.map(sanitizeLecture).filter((l) => l.title)
         : [],
@@ -252,7 +286,7 @@ router.post('/', auth, adminOnly, async (req, res) => {
 
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { name, description, price, tags, madeFor, image, isPublished } = req.body;
+    const { name, description, price, tags, madeFor, image, isPublished, visibility } = req.body;
     const update = {};
 
     if (name !== undefined) update.name = name;
@@ -266,6 +300,7 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     if (madeFor !== undefined) update.madeFor = madeFor;
     if (image !== undefined) update.image = image;
     if (isPublished !== undefined) update.isPublished = !!isPublished;
+    if (visibility !== undefined) update.visibility = visibility;
     if (req.body.tests !== undefined) {
       update.tests = Array.isArray(req.body.tests) ? req.body.tests : [];
     }
@@ -382,7 +417,20 @@ router.delete('/:id/lectures/:lectureId', auth, adminOnly, async (req, res) => {
 router.get('/published', auth, async (req, res) => {
   try {
     const minimal = req.query.minimal === 'true' || req.query.fields === 'basic';
-    const query = req.user && req.user.role === 'admin' ? {} : { isPublished: true };
+    let query = {};
+    if (req.user && req.user.role === 'admin') {
+      // admin sees all
+    } else if (req.user) {
+      query = {
+        isPublished: true,
+        $or: [
+          { visibility: 'all' },
+          { visibility: { $ne: 'admin_only' }, purchasedBy: req.user._id }
+        ]
+      };
+    } else {
+      query = { isPublished: true, visibility: 'all' };
+    }
 
     if (minimal) {
       const courses = await Course.find(query)
@@ -429,6 +477,7 @@ router.get('/published/:id', auth, async (req, res) => {
     const query = { _id: req.params.id };
     if (!req.user || req.user.role !== 'admin') {
       query.isPublished = true;
+      query.visibility = { $ne: 'admin_only' };
     }
     const course = await Course.findOne(query)
       .populate('tests', 'name duration mode testType scheduledAt syllabus')
@@ -464,6 +513,7 @@ router.get('/published/:id/lectures/:lectureId/playback', auth, async (req, res)
     const query = { _id: req.params.id };
     if (!req.user || req.user.role !== 'admin') {
       query.isPublished = true;
+      query.visibility = { $ne: 'admin_only' };
     }
     const course = await Course.findOne(query).lean();
     if (!course) return res.status(404).json({ message: 'Course not found' });
