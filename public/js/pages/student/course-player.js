@@ -231,6 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           'rel': 0,
           'showinfo': 0,
           'iv_load_policy': 3,
+          'cc_load_policy': 0,
           'autohide': 1,
           'playsinline': 1,
           'origin': window.location.origin
