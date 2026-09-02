@@ -222,12 +222,19 @@ router.get('/published', auth, async (req, res) => {
       query = {
         isPublished: true,
         $or: [
-          { visibility: 'all' },
+          { visibility: { $in: ['all', null, ''] } },
+          { visibility: { $exists: false } },
           { visibility: { $ne: 'admin_only' }, purchasedBy: req.user._id }
         ]
       };
     } else {
-      query = { isPublished: true, visibility: 'all' };
+      query = {
+        isPublished: true,
+        $or: [
+          { visibility: { $in: ['all', null, ''] } },
+          { visibility: { $exists: false } }
+        ]
+      };
     }
 
     if (minimal) {

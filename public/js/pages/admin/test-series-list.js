@@ -176,6 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         price:       parseFloat(document.getElementById('series-price').value) || 0,
         tags,
         image:       imageUrl,
+        visibility:  document.getElementById('series-visibility').value,
       });
 
       toast.success('Series created!');

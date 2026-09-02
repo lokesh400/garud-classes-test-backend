@@ -115,24 +115,28 @@ document.addEventListener('DOMContentLoaded', async () => {
       const tags = Array.isArray(s.tags) ? s.tags.map((tag) => escapeHtml(tag)).join(', ') : '';
       const price = Number(s.price || 0);
       return `
-        <article class="series-card h-full">
-          <div class="h-2 bg-gradient-to-r from-orange-500 via-amber-500 to-cyan-500"></div>
-          <div class="p-5 md:p-6 flex flex-col justify-between h-full">
+        <article class="bg-white/80 backdrop-blur-md border border-gray-100 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative group h-full">
+          <div class="absolute inset-0 bg-gradient-to-br from-garud-accent/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="h-1.5 w-full bg-gradient-to-r from-orange-500 via-amber-500 to-cyan-500"></div>
+          <div class="p-5 md:p-6 flex flex-col justify-between h-full relative z-10">
             <div>
-              ${imageUrl ? `<img src="${imageUrl}" alt="${safeName}" class="w-full h-40 object-cover rounded-xl mb-3 bg-slate-100"/>` : '<div class="w-full h-40 rounded-xl mb-3 bg-gradient-to-br from-orange-100 to-cyan-100"></div>'}
-              <div class="flex flex-wrap items-center gap-2 mb-2.5">
-                ${madeFor ? `<span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-1 rounded-full">${madeFor}</span>` : ''}
-                ${tags ? `<span class="text-xs text-slate-500">${tags}</span>` : ''}
+              ${imageUrl ? `<img src="${imageUrl}" alt="${safeName}" class="w-full h-40 object-cover rounded-xl mb-4 shadow-sm group-hover:shadow-md transition-shadow duration-300"/>` : '<div class="w-full h-40 rounded-xl mb-4 bg-gradient-to-br from-orange-100 to-cyan-100 flex items-center justify-center text-orange-300"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg></div>'}
+              <div class="flex flex-wrap items-center gap-2 mb-3">
+                ${madeFor ? `<span class="text-[10px] font-extrabold tracking-wider bg-blue-50 text-blue-600 border border-blue-100 px-2 py-1 rounded-md uppercase">${madeFor}</span>` : ''}
+                ${tags ? `<span class="text-xs font-semibold text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">${tags}</span>` : ''}
               </div>
-              <h3 class="text-xl font-bold text-slate-900 mb-1.5">${safeName}</h3>
-              ${safeDesc ? `<p class="text-sm text-slate-500 mb-3 line-clamp-3">${safeDesc}</p>` : ''}
+              <h3 class="text-xl font-extrabold text-slate-800 mb-2 leading-tight group-hover:text-orange-500 transition-colors duration-300">${safeName}</h3>
+              ${safeDesc ? `<p class="text-sm text-slate-500 mb-4 line-clamp-2">${safeDesc}</p>` : ''}
             </div>
-            <div class="mt-5 flex items-center justify-between gap-2">
-              <span class="text-2xl font-bold text-orange-600">₹${price}</span>
+            <div class="mt-2 flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
+              <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Price</span>
+                <span class="text-2xl font-black text-slate-800">₹${price}</span>
+              </div>
               ${purchased
-                ? `<span class="px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-semibold">Purchased</span>`
+                ? `<span class="px-5 py-2.5 bg-emerald-50 text-emerald-600 border border-emerald-100 rounded-xl text-sm font-bold flex items-center gap-2"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Purchased</span>`
                 : `<button data-buy-id="${s._id}"
-                          class="btn-buy px-4 py-2 bg-orange-500 text-white rounded-xl text-sm font-semibold hover:bg-orange-600 transition">
+                          class="btn-buy px-6 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg hover:opacity-90 transition-all duration-300">
                     Buy Now
                   </button>`}
             </div>

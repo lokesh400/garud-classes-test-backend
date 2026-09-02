@@ -77,7 +77,7 @@ router.get('/my-courses', auth, async (req, res) => {
 
     const courseIds = purchases.map((purchase) => purchase.itemId);
     const courses = courseIds.length
-      ? await Course.find({ _id: { $in: courseIds } })
+      ? await Course.find({ _id: { $in: courseIds }, visibility: { $ne: 'admin_only' } })
           .select('_id name price madeFor lectures')
           .lean()
       : [];

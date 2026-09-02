@@ -47,24 +47,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     grid.innerHTML = list.map((course) => {
       const purchased = purchasedIds.includes(course._id);
       return `
-        <div class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition">
-          <div class="h-2 bg-gradient-to-r from-garud-accent via-blue-500 to-garud-highlight"></div>
-          <div class="p-6 flex flex-col justify-between h-full">
+        <div class="bg-white/80 backdrop-blur-md border border-gray-100 rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col relative group">
+          <div class="absolute inset-0 bg-gradient-to-br from-garud-accent/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          <div class="h-1.5 w-full bg-gradient-to-r from-garud-accent via-purple-500 to-blue-500"></div>
+          <div class="p-6 flex flex-col justify-between h-full relative z-10">
             <div>
-              ${course.image ? `<img src="${course.image}" alt="${escapeHtml(course.name)}" class="w-full h-36 object-cover rounded-lg mb-3 bg-gray-100"/>` : ''}
-              <div class="flex items-center gap-2 mb-2">
-                ${course.madeFor ? `<span class="text-xs font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded">${course.madeFor.toUpperCase()}</span>` : ''}
-                <span class="text-xs text-gray-500">${course.lectureCount || 0} lectures</span>
+              ${course.image ? `<img src="${course.image}" alt="${escapeHtml(course.name)}" class="w-full h-40 object-cover rounded-xl mb-4 shadow-sm group-hover:shadow-md transition-shadow duration-300"/>` : `<div class="w-full h-40 bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl mb-4 flex items-center justify-center text-gray-400"><svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg></div>`}
+              <div class="flex items-center gap-2 mb-3">
+                ${course.madeFor ? `<span class="text-[10px] font-extrabold tracking-wider bg-blue-50 text-blue-600 border border-blue-100 px-2 py-1 rounded-md uppercase">${course.madeFor}</span>` : ''}
+                <span class="text-xs font-semibold text-gray-500 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">${course.lectureCount || 0} lectures</span>
               </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-1">${escapeHtml(course.name)}</h3>
-              ${course.description ? `<p class="text-sm text-gray-500 mb-3">${escapeHtml(course.description)}</p>` : ''}
+              <h3 class="text-xl font-extrabold text-slate-800 mb-2 leading-tight group-hover:text-garud-accent transition-colors duration-300">${escapeHtml(course.name)}</h3>
+              ${course.description ? `<p class="text-sm text-slate-500 mb-4 line-clamp-2">${escapeHtml(course.description)}</p>` : ''}
             </div>
-            <div class="mt-4 flex items-center justify-between gap-2">
-              <span class="text-xl font-bold text-garud-highlight">Rs ${course.price || 0}</span>
+            <div class="mt-2 flex items-center justify-between gap-3 pt-4 border-t border-gray-100">
+              <div class="flex flex-col">
+                <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mb-0.5">Price</span>
+                <span class="text-2xl font-black text-slate-800">₹${course.price || 0}</span>
+              </div>
               <div class="flex gap-2">
                 ${purchased
-                  ? `<a href="/student/course/${course._id}" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-100 transition">View</a>`
-                  : `<button data-buy-id="${course._id}" class="btn-buy px-4 py-2 bg-transparent border border-garud-highlight text-garud-highlight rounded-lg text-sm font-semibold hover:bg-gray-100 transition">Buy</button>`}
+                  ? `<a href="/student/course/${course._id}" class="px-5 py-2.5 bg-slate-800 text-white rounded-xl text-sm font-bold shadow-md hover:bg-slate-700 hover:shadow-lg transition-all duration-300 flex items-center gap-2">View Course <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></a>`
+                  : `<button data-buy-id="${course._id}" class="btn-buy px-6 py-2.5 bg-gradient-to-r from-garud-accent to-purple-600 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-lg hover:opacity-90 transition-all duration-300">Enroll Now</button>`}
               </div>
             </div>
           </div>

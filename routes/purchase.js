@@ -52,28 +52,30 @@ router.get('/my', auth, async (req, res) => {
       .map((p) => p.itemId);
 
     const [seriesDocs, courseDocs] = await Promise.all([
-      testSeriesIds.length ? TestSeries.find({ _id: { $in: testSeriesIds } }).lean() : [],
-      courseIds.length ? Course.find({ _id: { $in: courseIds } }).lean() : [],
+      testSeriesIds.length ? TestSeries.find({ _id: { $in: testSeriesIds }, visibility: { $ne: 'admin_only' } }).lean() : [],
+      courseIds.length ? Course.find({ _id: { $in: courseIds }, visibility: { $ne: 'admin_only' } }).lean() : [],
     ]);
 
     const seriesMap = new Map(seriesDocs.map((doc) => [String(doc._id), doc]));
     const courseMap = new Map(courseDocs.map((doc) => [String(doc._id), doc]));
 
-    const enriched = purchases.map((purchase) => {
-      const itemKey = String(purchase.itemId);
-      const item = purchase.itemType === 'Course'
-        ? (courseMap.get(itemKey) || null)
-        : (seriesMap.get(itemKey) || null);
+    const enriched = purchases
+      .map((purchase) => {
+        const itemKey = String(purchase.itemId);
+        const item = purchase.itemType === 'Course'
+          ? (courseMap.get(itemKey) || null)
+          : (seriesMap.get(itemKey) || null);
 
-      // Backward compatibility: keep itemId as populated object if available.
-      const result = { ...purchase, itemId: item || purchase.itemId };
+        if (!item) return null;
 
-      // Explicit typed payload for frontend convenience.
-      if (purchase.itemType === 'Course') result.course = item;
-      if (purchase.itemType === 'TestSeries') result.testSeries = item;
+        const result = { ...purchase, itemId: item };
 
-      return result;
-    });
+        if (purchase.itemType === 'Course') result.course = item;
+        if (purchase.itemType === 'TestSeries') result.testSeries = item;
+
+        return result;
+      })
+      .filter(Boolean);
 
     res.json(enriched);
   } catch (error) {

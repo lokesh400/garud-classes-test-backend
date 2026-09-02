@@ -42,6 +42,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     btn.textContent = series.isPublished ? 'Unpublish' : 'Publish';
     btn.className   = `px-4 py-2 rounded-lg font-medium transition ${series.isPublished ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`;
 
+    const visSelect = document.getElementById('series-visibility');
+    if (visSelect) {
+      visSelect.value = series.visibility || 'all';
+    }
+
+    window.updateVisibility = async (val) => {
+      try {
+        await API.put(`/test-series/${series._id}`, { visibility: val });
+        toast.success('Visibility updated');
+        series.visibility = val;
+      } catch (e) {
+        toast.error('Failed to update visibility');
+        visSelect.value = series.visibility || 'all';
+      }
+    };
+
     document.getElementById('enrolled-btn').onclick = () =>
       window.location.href = `/admin/test-series/${series._id}/enrolled`;
 

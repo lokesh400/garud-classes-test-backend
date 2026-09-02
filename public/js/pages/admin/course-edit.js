@@ -697,6 +697,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     imageInput.value = course.image || '';
     tagsInput.value = Array.isArray(course.tags) ? course.tags.join(', ') : '';
     publishedInput.checked = !!course.isPublished;
+    const visibilitySelect = document.getElementById('course-visibility');
+    if (visibilitySelect) {
+      visibilitySelect.value = course.visibility || 'all';
+    }
 
     // Load curriculum subjects
     subjects = Array.isArray(course.subjects) ? JSON.parse(JSON.stringify(course.subjects)) : [];
@@ -765,6 +769,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         image: imageInput.value.trim(),
         tags: tagsInput.value.trim(),
         isPublished: publishedInput.checked,
+        visibility: document.getElementById('course-visibility')?.value || 'all',
         tests: (currentCourse.tests || []).map(t => t._id)
       };
 

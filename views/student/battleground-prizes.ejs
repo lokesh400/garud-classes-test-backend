@@ -4,16 +4,21 @@
   <%- include('../partials/sidebar') %>
 
   <div class="md:ml-60 pt-14 min-h-screen page-body">
-    <div class="page-header px-6 md:px-8 py-7 fade-up relative overflow-hidden">
-      <div class="absolute -top-12 -right-8 w-44 h-44 rounded-full bg-amber-300/20 blur-2xl pointer-events-none"></div>
-      <div class="absolute -bottom-14 left-10 w-52 h-52 rounded-full bg-emerald-300/20 blur-2xl pointer-events-none"></div>
-
-      <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-1">Student Portal</p>
-      <h1 class="text-2xl md:text-3xl font-bold text-white">Battleground Prize Roadmap</h1>
-      <p class="text-white/70 text-sm mt-1">Keep your streak alive to unlock Garud Classes rewards.</p>
-      <a href="/student/battleground" class="inline-flex items-center gap-2 mt-4 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/20 text-white text-xs font-semibold transition">
-        Back to Battleground
-      </a>
+    <div class="bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 px-6 md:px-10 py-10 shadow-xl fade-up relative overflow-hidden border-b border-indigo-500/30">
+      <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPjxyZWN0IHdpZHRoPSI0IiBoZWlnaHQ9IjQiIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSIvPjwvc3ZnPg==')] opacity-30"></div>
+      <div class="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-emerald-500 opacity-20 rounded-full blur-3xl"></div>
+      <div class="absolute bottom-0 left-0 -ml-20 -mb-20 w-64 h-64 bg-amber-500 opacity-20 rounded-full blur-3xl"></div>
+      <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <p class="text-indigo-300 text-xs font-bold uppercase tracking-widest mb-2">Student Portal</p>
+          <h1 class="text-3xl md:text-4xl font-extrabold text-white mb-2 drop-shadow-md">Prize Roadmap</h1>
+          <p class="text-indigo-200 text-sm md:text-base font-medium">Keep your streak alive to unlock exclusive rewards.</p>
+        </div>
+        <a href="/student/battleground"
+           class="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-indigo-400/30 rounded-xl text-sm font-bold transition-all duration-300 shadow-lg hover:shadow-indigo-500/20 hover:-translate-y-0.5">
+          <svg class="w-4 h-4 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg> Back to Battleground
+        </a>
+      </div>
     </div>
 
     <div class="p-6 md:p-8 space-y-6">

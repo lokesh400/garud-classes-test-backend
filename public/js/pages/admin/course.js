@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         image: imageInput.value.trim(),
         tags: tagsInput.value.trim(),
         isPublished: publishedInput.checked,
+        visibility: document.getElementById('course-visibility').value,
       };
 
       await API.post('/courses', payload);

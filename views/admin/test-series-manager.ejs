@@ -24,6 +24,11 @@
             </div>
           </div>
           <div class="flex gap-2 flex-wrap">
+            <select id="series-visibility" onchange="updateVisibility(this.value)" class="px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white hover:bg-white/20 transition focus:outline-none appearance-none cursor-pointer">
+              <option value="all" class="text-gray-900">Visibility: All</option>
+              <option value="admin_only" class="text-gray-900">Visibility: Admin</option>
+              <option value="purchased_students_only" class="text-gray-900">Visibility: Purchased</option>
+            </select>
             <button id="publish-btn" onclick="togglePublish()"
                     class="px-4 py-2 rounded-xl font-medium transition"></button>
             <button onclick="togglePicker()"
