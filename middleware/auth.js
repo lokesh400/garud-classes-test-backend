@@ -9,6 +9,15 @@ const auth = (req, res, next) => {
     if (req.user.isActive === false) {
       return res.status(403).json({ message: 'Your account has been deactivated. Please contact the administrator.' });
     }
+    // Enforce single device login for students
+    if (req.user.role === 'student' && req.user.activeSessionId && req.user.activeSessionId !== req.sessionID) {
+      return req.logout((err) => {
+        req.session.destroy(() => {
+          res.clearCookie('sid'); // Assuming default session cookie name or as set in logout
+          return res.status(401).json({ message: 'You have been logged out because your account was accessed from another device.' });
+        });
+      });
+    }
     return next();
   }
   res.status(401).json({ message: 'Not authenticated. Please log in.' });

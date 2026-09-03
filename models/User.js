@@ -80,6 +80,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
   }],
+  activeSessionId: {
+    type: String,
+    default: null,
+  },
 }, { timestamps: true });
 
 userSchema.plugin(passportLocalMongoose, {

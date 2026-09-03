@@ -345,8 +345,14 @@ router.post('/register', authLimiter, async (req, res, next) => {
     await User.register(user, password);
 
     // Auto-login after registration
-    req.login(user, (err) => {
+    req.login(user, async (err) => {
       if (err) return next(err);
+      try {
+        user.activeSessionId = req.sessionID;
+        await user.save();
+      } catch (e) {
+        console.error('Failed to save activeSessionId', e);
+      }
       return res.status(201).json({
         user: { id: user._id, name: user.name, email: user.email, role: user.role },
       });
@@ -373,8 +379,14 @@ router.post('/login', authLimiter, (req, res, next) => {
     // Regenerate session ID before storing auth to prevent session-fixation attacks
     req.session.regenerate((err) => {
       if (err) return next(err);
-      req.login(user, (err) => {
+      req.login(user, async (err) => {
         if (err) return next(err);
+        try {
+          user.activeSessionId = req.sessionID;
+          await user.save();
+        } catch (e) {
+          console.error('Failed to save activeSessionId', e);
+        }
         return res.json({
           user: { id: user._id, name: user.name, email: user.email, role: user.role },
         });
@@ -397,15 +409,21 @@ router.post('/m/login', authLimiter, (req, res, next) => {
 
     // Regenerate session ID before storing auth to prevent session-fixation attacks
     req.session.regenerate((err) => {
-      req.login(user, (err) => {
-      if (err) return next(err);
-  const rawCookie = res.getHeader('set-cookie');
-  const cookieValue = (Array.isArray(rawCookie) ? rawCookie[0] : rawCookie)?.split(';')[0] ?? null;
-  return res.status(201).json({
-    cookie: cookieValue,                                          // ← add this
-    user: { id: user._id, name: user.name, email: user.email, role: user.role },
-  });
-});
+      req.login(user, async (err) => {
+        if (err) return next(err);
+        try {
+          user.activeSessionId = req.sessionID;
+          await user.save();
+        } catch (e) {
+          console.error('Failed to save activeSessionId', e);
+        }
+        const rawCookie = res.getHeader('set-cookie');
+        const cookieValue = (Array.isArray(rawCookie) ? rawCookie[0] : rawCookie)?.split(';')[0] ?? null;
+        return res.status(201).json({
+          cookie: cookieValue,
+          user: { id: user._id, name: user.name, email: user.email, role: user.role },
+        });
+      });
     });
   })(req, res, next);
 });
