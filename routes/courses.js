@@ -4,6 +4,7 @@ const axios = require('axios');
 const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
 const User = require('../models/User');
+const TestAttempt = require('../models/TestAttempt');
 // const { getSignedR2Url } = require('../config/r2');
 const { auth, adminOnly } = require('../middleware/auth');
 
@@ -499,8 +500,27 @@ router.get('/published/:id', auth, async (req, res) => {
       }
     }
 
+    const testsWithInfo = await Promise.all(
+      (course.tests || []).map(async (test) => {
+        let submittedAttempt = null;
+        if (req.user && req.user.role !== 'admin') {
+          submittedAttempt = await TestAttempt.findOne({
+            user: req.user._id,
+            test: test._id,
+            isSubmitted: true,
+          }).lean();
+        }
+        return {
+          ...test,
+          attempted: !!submittedAttempt,
+          isSubmitted: submittedAttempt?.isSubmitted || false,
+        };
+      })
+    );
+
     res.json({
       ...course,
+      tests: testsWithInfo,
       subjects: Array.isArray(course.subjects)
         ? course.subjects.map(mapSubjectForStudent)
         : [],

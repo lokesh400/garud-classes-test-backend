@@ -226,9 +226,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
           </div>
           <div class="mt-5">
-            <a href="/student/${attemptBase}/${courseId}/${test._id}" class="w-full block text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition shadow-sm">
-              Attempt Test
-            </a>
+            ${test.isSubmitted 
+              ? `<a href="/student/results/${test._id}" class="w-full block text-center px-4 py-2.5 bg-green-50 text-green-700 hover:bg-green-100 font-bold text-xs rounded-lg transition shadow-sm border border-green-200">
+                  Show Results
+                 </a>`
+              : `<a href="/student/${attemptBase}/${courseId}/${test._id}" class="w-full block text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                  Attempt Test
+                 </a>`
+            }
           </div>
         </div>
       `;
