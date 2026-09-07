@@ -17,6 +17,7 @@ const ADMIN_LINKS = [
   { href: '/admin/manage-team',  label: 'Manage Team',   icon: iconUsers() },
   { href: '/admin/manage-students', label: 'Manage Students', icon: iconAcademic() },
   { href: '/admin/live-classes', label: 'Live Classes', icon: iconVideo() },
+  { href: '/admin/saarthi',      label: 'Doubt Saarthi', icon: iconUsers() },
 ];
 
 const STUDENT_LINKS = [
@@ -27,6 +28,7 @@ const STUDENT_LINKS = [
   { href: '/student/battleground',   label: 'Battleground',    icon: iconFlag() },
   { href: '/student/battleground-prizes', label: 'Battleground Prizes', icon: iconTrophy() },
   { href: '/student/purchases',      label: 'My Purchases',    icon: iconFile() },
+  { href: '/student/saarthi',        label: 'Doubt Saarthi',   icon: iconUsers() },
   // { href: '/student/tests',          label: 'My Tests',        icon: iconBook() },
 ];
 

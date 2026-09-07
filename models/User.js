@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
   }],
   role: {
     type: String,
-    enum: ['admin', 'student', 'teacher', 'coordinator'],
+    enum: ['admin', 'student', 'teacher', 'coordinator', 'sme'],
     default: 'student',
   },
   isActive: {
@@ -71,6 +71,10 @@ const userSchema = new mongoose.Schema({
   purchasedCourses: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Course',
+  }],
+  purchasedSaarthi: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'SaarthiBatch',
   }],
   batches: [{
     type: mongoose.Schema.Types.ObjectId,

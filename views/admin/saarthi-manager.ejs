@@ -1,0 +1,247 @@
+<%- include('../partials/head', { title: 'Manage Saarthi Batches' }) %>
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+<body class="min-h-screen bg-gray-50 flex">
+  <!-- Reusing sidebar or simple nav -->
+  <%- include('../partials/sidebar') %>
+  <%- include('../partials/navbar') %>
+
+  <main class="flex-grow pt-20 p-6 md:ml-[260px]">
+    <div class="max-w-7xl mx-auto">
+      <div class="flex justify-between items-center mb-8">
+        <div>
+          <h1 class="text-3xl font-bold text-slate-800">Manage Saarthi Batches</h1>
+          <p class="text-slate-500 mt-2">Create batches, assign SMEs, and enroll students.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Create Batch -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 class="text-xl font-bold mb-4">Create New Saarthi Batch</h2>
+          <form action="/api/admin/saarthi" method="POST" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input type="text" name="title" required class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+                <input type="text" name="subject" required placeholder="e.g. Mathematics" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea name="description" rows="2" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                <input type="number" name="price" required min="0" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Validity (Days)</label>
+                <input type="number" name="validity" required min="1" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Assign SMEs</label>
+              <select name="assignedSmes" multiple class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 h-24">
+                <% smes.forEach(sme => { %>
+                  <option value="<%= sme._id %>"><%= sme.name %> (<%= sme.email %>)</option>
+                <% }) %>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple SMEs.</p>
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Create Batch</button>
+          </form>
+        </div>
+
+        <!-- Manual Enrollment -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h2 class="text-xl font-bold mb-4">Manual Enrollment</h2>
+          <form action="/api/admin/saarthi/enroll" method="POST" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Select Student</label>
+              <select name="studentId" required class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <% students.forEach(student => { %>
+                  <option value="<%= student._id %>"><%= student.name %> (<%= student.email %>)</option>
+                <% }) %>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Select Batch</label>
+              <select name="batchId" required class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+                <% batches.forEach(batch => { %>
+                  <option value="<%= batch._id %>"><%= batch.title %></option>
+                <% }) %>
+              </select>
+            </div>
+            <button type="submit" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700">Enroll Student</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Existing Batches -->
+      <div class="mt-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 class="text-xl font-bold mb-4">All Saarthi Batches</h2>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Batch</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price/Validity</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SMEs</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+              <% batches.forEach(batch => { %>
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="font-bold text-gray-900"><%= batch.title %></div>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <%= batch.isMeetActive ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' %>">
+                      <%= batch.isMeetActive ? 'Live Meet' : 'Offline' %>
+                    </span>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    ₹<%= batch.price %> / <%= batch.validity %>d
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-500">
+                    <% batch.assignedSmes.forEach(sme => { %>
+                      <div class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded inline-block mb-1"><%= sme.name %></div>
+                    <% }) %>
+                  </td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button onclick='openEditModal(<%- JSON.stringify(batch) %>)' class="text-blue-600 hover:text-blue-900 bg-blue-50 px-2 py-1 rounded-md mr-2"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteBatch('<%= batch._id %>')" class="text-red-600 hover:text-red-900 bg-red-50 px-2 py-1 rounded-md mr-2"><i class="fas fa-trash"></i></button>
+                    <a href="/sme/saarthi/<%= batch._id %>" class="text-indigo-600 hover:text-indigo-900 bg-indigo-50 px-3 py-1 rounded-md">View Chat</a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+      <!-- Edit Batch Modal -->
+      <div id="edit-batch-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg">
+          <h3 class="font-bold text-gray-800 mb-4 text-xl">Edit Saarthi Batch</h3>
+          <form id="edit-batch-form" class="space-y-4">
+            <input type="hidden" id="edit-batch-id">
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                <input type="text" id="edit-title" required class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Subject Name</label>
+                <input type="text" id="edit-subject" required class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+              <textarea id="edit-description" rows="2" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                <input type="number" id="edit-price" required min="0" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Validity (Days)</label>
+                <input type="number" id="edit-validity" required min="1" class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500">
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Assign SMEs</label>
+              <select id="edit-assignedSmes" multiple class="w-full px-4 py-2 border rounded-lg focus:ring-indigo-500 focus:border-indigo-500 h-24">
+                <% smes.forEach(sme => { %>
+                  <option value="<%= sme._id %>"><%= sme.name %> (<%= sme.email %>)</option>
+                <% }) %>
+              </select>
+              <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple SMEs.</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+              <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Save Changes</button>
+              <button type="button" onclick="closeEditModal()" class="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+      
+    </div>
+  </main>
+  
+  <script>
+    let createSmeSelect = new TomSelect('select[name="assignedSmes"]', { plugins: ['remove_button'], placeholder: 'Select SMEs...' });
+    let editSmeSelect = new TomSelect('#edit-assignedSmes', { plugins: ['remove_button'], placeholder: 'Select SMEs...' });
+
+    const editModal = document.getElementById('edit-batch-modal');
+    const editForm = document.getElementById('edit-batch-form');
+
+    function openEditModal(batch) {
+      document.getElementById('edit-batch-id').value = batch._id;
+      document.getElementById('edit-title').value = batch.title;
+      document.getElementById('edit-subject').value = batch.subject || '';
+      document.getElementById('edit-description').value = batch.description || '';
+      document.getElementById('edit-price').value = batch.price;
+      document.getElementById('edit-validity').value = batch.validity;
+      
+      const assignedIds = batch.assignedSmes.map(sme => typeof sme === 'object' ? sme._id : sme);
+      editSmeSelect.setValue(assignedIds);
+      
+      editModal.classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      editModal.classList.add('hidden');
+    }
+
+    editForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('edit-batch-id').value;
+      const smeSelect = document.getElementById('edit-assignedSmes');
+      const assignedSmes = Array.from(smeSelect.selectedOptions).map(opt => opt.value);
+      
+      const data = {
+        title: document.getElementById('edit-title').value,
+        subject: document.getElementById('edit-subject').value,
+        description: document.getElementById('edit-description').value,
+        price: document.getElementById('edit-price').value,
+        validity: document.getElementById('edit-validity').value,
+        assignedSmes
+      };
+
+      try {
+        const res = await fetch(`/api/admin/saarthi/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        if (res.ok) window.location.reload();
+        else alert('Failed to update');
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+
+    async function deleteBatch(id) {
+      if (!confirm('Are you sure you want to delete this batch?')) return;
+      try {
+        const res = await fetch(`/api/admin/saarthi/${id}`, { method: 'DELETE' });
+        if (res.ok) window.location.reload();
+        else alert('Failed to delete');
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+  </script>
+</body>
+</html>

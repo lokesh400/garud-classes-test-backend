@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       cls = 'bg-red-100 text-red-700';
     } else if (role === 'coordinator') {
       cls = 'bg-purple-100 text-purple-700';
+    } else if (role === 'sme') {
+      cls = 'bg-indigo-100 text-indigo-700';
     }
     return `<span class="px-2 py-0.5 rounded-full text-xs font-semibold ${cls}">${role}</span>`;
   }
@@ -85,6 +87,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
+  let tsAddSubjects = null;
+  let tsEditSubjects = null;
+
   async function loadSubjects() {
     try {
       allSubjects = await API.get('/subjects');
@@ -93,6 +98,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       ).join('');
       subjectsSelect.innerHTML = optionsHtml;
       editSubjectsSelect.innerHTML = optionsHtml;
+
+      if (!tsAddSubjects) {
+        tsAddSubjects = new TomSelect('#member-subjects', { plugins: ['remove_button'], placeholder: 'Select subjects...' });
+      } else {
+        tsAddSubjects.sync();
+      }
+      
+      if (!tsEditSubjects) {
+        tsEditSubjects = new TomSelect('#edit-member-subjects', { plugins: ['remove_button'], placeholder: 'Select subjects...' });
+      } else {
+        tsEditSubjects.sync();
+      }
     } catch (err) {
       toast.error('Failed to load subjects: ' + (err.message || ''));
     }
@@ -108,7 +125,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.closeAddMemberModal = function() {
     addMemberModal.classList.add('hidden');
     addMemberForm.reset();
-    Array.from(subjectsSelect.options).forEach((o) => { o.selected = false; });
+    if (tsAddSubjects) tsAddSubjects.clear();
   };
 
   addMemberForm.addEventListener('submit', async (e) => {
@@ -147,9 +164,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       ? member.subjects.map(s => typeof s === 'object' ? s._id : s)
       : [];
 
-    Array.from(editSubjectsSelect.options).forEach((opt) => {
-      opt.selected = selectedIds.includes(opt.value);
-    });
+    if (tsEditSubjects) {
+      tsEditSubjects.setValue(selectedIds);
+    }
 
     editMemberModal.classList.remove('hidden');
   };
@@ -157,7 +174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.closeEditMemberModal = function() {
     editMemberModal.classList.add('hidden');
     editMemberForm.reset();
-    Array.from(editSubjectsSelect.options).forEach((o) => { o.selected = false; });
+    if (tsEditSubjects) tsEditSubjects.clear();
   };
 
   editMemberForm.addEventListener('submit', async (e) => {

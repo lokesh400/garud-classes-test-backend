@@ -68,16 +68,16 @@ const corsOptions = {
 };
 
 app.use(cors());
-app.use(session({
-  secret: 'mysessionsecret',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: mongoUri,
-    ttl: 7 * 24 * 60 * 60,
-    autoRemove: 'native',
-  }),
-}));
+// app.use(session({
+//   secret: 'mysessionsecret',
+//   resave: false,
+//   saveUninitialized: false,
+//   store: MongoStore.create({
+//     mongoUrl: mongoUri,
+//     ttl: 7 * 24 * 60 * 60,
+//     autoRemove: 'native',
+//   }),
+// }));
 
 // app.use(cors(corsOptions));
 // app.options('*', cors(corsOptions));
@@ -101,26 +101,24 @@ if (isProd) {
   app.set('trust proxy', 1);
 }
 
-// ── Session ─────────────────────────────────────────────────────────────────
-// app.use(session({
-//   name: 'sid',              // don't leak framework name via cookie
-//   secret: process.env.SESSION_SECRET,
-//   resave: false,
-//   saveUninitialized: false,
-//   proxy: isProd,
-//   store: MongoStore.create({
-//     mongoUrl: mongoUri,
-//     ttl: 7 * 24 * 60 * 60,        // 7 days (seconds)
-//     autoRemove: 'native',
-//   }),
-//   cookie: {
-//     httpOnly: true,                      // JS cannot read the cookie
-//     secure: sessionCookieSecure,       // HTTPS-only; required when SameSite=None
-//     sameSite: sessionCookieSameSite,     // strict/lax/none (env configurable)
-//     maxAge: 7 * 24 * 60 * 60 * 1000,  // 7 days (ms)
-//   },
-// }));
-
+app.use(session({
+  name: 'sid',
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  proxy: isProd,
+  store: MongoStore.create({
+    mongoUrl: mongoUri,
+    ttl: 7 * 24 * 60 * 60,
+    autoRemove: 'native',
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: sessionCookieSecure,
+    sameSite: sessionCookieSameSite,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  },
+}));
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -135,6 +133,7 @@ app.use((req, res, next) => {
 });
 
 app.use((req, res, next) => {
+  res.locals.user = req.user || null;
   res.locals.pageUrl = 'https://dashboard.garudclasses.com' + req.path;
   next();
 });
@@ -143,9 +142,11 @@ app.get('/account/delete', (req, res) => res.render('account-delete', { title: '
 
 app.use('/', require('./routes/public/pages'));
 app.use('/', require('./routes/admin/pages'));
+app.use('/', require('./routes/admin/saarthi'));
 app.use('/', require('./routes/student/pages'));
 app.use('/', require('./routes/admin/course-pages'));
 app.use('/', require('./routes/teacher/pages'));
+app.use('/sme', require('./routes/sme/pages'));
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/subjects', require('./routes/subjects'));
@@ -167,6 +168,7 @@ app.use('/api/live-classes', require('./routes/liveClasses'));
 app.use('/api/cohorts', require('./routes/cohorts'));
 app.use('/api/admin/announcements', require('./routes/admin/announcements'));
 app.use('/api/student/announcements', require('./routes/student/announcements'));
+app.use('/api/saarthi', require('./routes/saarthi'));
 
 app.get('/api/exams-targeted', (req, res) => {
   res.json([
@@ -200,6 +202,30 @@ app.use((req, res) => {
 });
 
 const ChatMessage = require('./models/ChatMessage');
+const SaarthiMessage = require('./models/SaarthiMessage');
+
+// --- SAARTHI SOCKET NAMESPACE ---
+const saarthiIo = io.of('/saarthi-chat');
+saarthiIo.on('connection', (socket) => {
+  let currentRoom = null;
+
+  socket.on('joinRoom', ({ batchId, studentId }) => {
+    if (currentRoom) {
+      socket.leave(currentRoom);
+    }
+    // Room is uniquely identified by batch and student
+    currentRoom = `saarthi_${batchId}_${studentId}`;
+    socket.join(currentRoom);
+  });
+
+  socket.on('disconnect', () => {
+    if (currentRoom) {
+      socket.leave(currentRoom);
+    }
+  });
+});
+// Attach saarthiIo to app so routes can broadcast messages
+app.set('saarthiIo', saarthiIo);
 
 io.on('connection', (socket) => {
   let currentRoom = null;

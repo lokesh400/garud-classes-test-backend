@@ -1,4 +1,6 @@
 <%- include('../partials/head', { title: 'Manage Team' }) %>
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 <body class="min-h-screen bg-slate-50 text-gray-900">
   <%- include('../partials/navbar') %>
   <%- include('../partials/sidebar') %>
@@ -58,6 +60,7 @@
             <option value="teacher" selected>Teacher</option>
             <option value="coordinator">Coordinator</option>
             <option value="admin">Admin</option>
+            <option value="sme">Subject Matter Expert</option>
           </select>
         </div>
         <div>
@@ -92,6 +95,7 @@
             <option value="teacher">Teacher</option>
             <option value="coordinator">Coordinator</option>
             <option value="admin">Admin</option>
+            <option value="sme">Subject Matter Expert</option>
           </select>
         </div>
         <div>

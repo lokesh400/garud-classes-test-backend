@@ -1,0 +1,266 @@
+<%- include('../partials/head', { title: 'SME Dashboard' }) %>
+
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+  <!-- Top Nav -->
+  <nav class="bg-indigo-700 text-white p-3 shadow-md flex justify-between items-center z-10 flex-shrink-0">
+    <div class="text-lg font-bold flex items-center gap-3">
+      <i class="fas fa-graduation-cap"></i> Doubt Saarthi - SME Portal
+    </div>
+    <div class="flex items-center gap-4 text-sm">
+      <span>Welcome, <%= user.name %></span>
+      <button onclick="handleLogout()" class="bg-indigo-800 px-3 py-1.5 rounded hover:bg-indigo-900 transition">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Workspace -->
+  <div class="flex flex-1 overflow-hidden">
+    
+    <!-- Left Sidebar -->
+    <div class="w-80 bg-white border-r border-gray-200 flex flex-col z-10 shadow-sm flex-shrink-0">
+      
+      <!-- Batches / Meet Controls -->
+      <div class="p-3 border-b border-gray-200 bg-gray-50 flex-shrink-0">
+        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">My Batches (Meet Controls)</h3>
+        <div class="space-y-2 max-h-32 overflow-y-auto pr-1">
+          <% batches.forEach(batch => { %>
+            <div class="flex items-center justify-between bg-white border border-gray-200 rounded p-2 text-xs">
+              <span class="font-semibold text-gray-700 truncate mr-2" title="<%= batch.title %>"><%= batch.title %></span>
+              <button 
+                onclick="toggleMeet('<%= batch._id %>', <%= !batch.isMeetActive %>)"
+                class="flex-shrink-0 px-2 py-1 rounded font-bold text-[10px] uppercase text-white transition <%= batch.isMeetActive ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600' %>">
+                <%= batch.isMeetActive ? 'Stop' : 'Start' %>
+              </button>
+            </div>
+          <% }) %>
+        </div>
+      </div>
+
+      <!-- Student List -->
+      <div class="p-3 bg-white border-b border-gray-100 flex items-center justify-between flex-shrink-0">
+        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Students (<%= studentList.length %>)</h3>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto bg-white" id="student-list">
+        <% if (studentList.length === 0) { %>
+          <div class="p-4 text-sm text-gray-500 text-center">No students assigned.</div>
+        <% } %>
+        <% studentList.forEach(s => { %>
+          <div class="student-item p-3 border-b border-gray-100 cursor-pointer hover:bg-indigo-50 transition flex flex-col gap-1"
+               onclick="selectStudent('<%= s.studentId %>', '<%= s.batchId %>', '<%= s.studentName %>', '<%= s.batchTitle %>')"
+               id="student-<%= s.studentId %>-<%= s.batchId %>">
+            <div class="font-bold text-sm text-gray-800"><%= s.studentName %></div>
+            <div class="text-[10px] font-semibold text-indigo-600 bg-indigo-50 inline-block px-1.5 py-0.5 rounded self-start truncate max-w-full">
+              <%= s.batchTitle %>
+            </div>
+          </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Right Chat Area -->
+    <div class="flex-1 bg-[url('https://i.pinimg.com/originals/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg')] bg-cover bg-center flex flex-col relative" id="chat-area">
+      <!-- Empty State -->
+      <div id="empty-state" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 z-20">
+        <div class="text-indigo-200 text-6xl mb-4"><i class="fas fa-comments"></i></div>
+        <h2 class="text-xl font-bold text-gray-600 mb-2">Select a student to start chatting</h2>
+        <p class="text-sm text-gray-400">1-on-1 private messaging with enrolled students.</p>
+      </div>
+
+      <!-- Active Chat Header -->
+      <div id="chat-header" class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between hidden shadow-sm z-10 flex-shrink-0">
+        <div>
+          <h2 id="chat-student-name" class="font-bold text-gray-800 text-lg">Student Name</h2>
+          <p id="chat-batch-title" class="text-xs text-indigo-600 font-semibold">Batch Name</p>
+        </div>
+      </div>
+
+      <!-- Messages Area -->
+      <div id="messages-container" class="flex-1 overflow-y-auto p-4 flex flex-col space-y-3 hidden">
+        <!-- Messages injected here -->
+      </div>
+
+      <!-- Input Area -->
+      <div id="input-area" class="bg-gray-100 p-3 flex items-center gap-2 border-t border-gray-300 hidden flex-shrink-0 z-10">
+        <input type="file" id="image-upload" accept="image/*" class="hidden" />
+        <button onclick="document.getElementById('image-upload').click()" class="text-gray-500 hover:text-indigo-600 p-2 rounded-full transition">
+          <i class="fas fa-paperclip text-xl"></i>
+        </button>
+        
+        <input type="text" id="message-input" placeholder="Type a message..." class="flex-grow rounded-full border-gray-300 px-4 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white" onkeypress="if(event.key === 'Enter') sendMessage()" />
+        
+        <button onclick="sendMessage()" id="send-btn" class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-indigo-700 transition flex-shrink-0">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    const user = requireAuthAny(['sme', 'admin']);
+    const socket = io('/saarthi-chat');
+
+    let currentStudentId = null;
+    let currentBatchId = null;
+
+    const emptyState = document.getElementById('empty-state');
+    const chatHeader = document.getElementById('chat-header');
+    const messagesContainer = document.getElementById('messages-container');
+    const inputArea = document.getElementById('input-area');
+    const chatStudentName = document.getElementById('chat-student-name');
+    const chatBatchTitle = document.getElementById('chat-batch-title');
+    
+    const messageInput = document.getElementById('message-input');
+    const imageUpload = document.getElementById('image-upload');
+    const sendBtn = document.getElementById('send-btn');
+
+    // Toggle Meet
+    async function toggleMeet(batchId, targetState) {
+      if (!confirm(`Are you sure you want to ${targetState ? 'start' : 'stop'} the meet?`)) return;
+
+      try {
+        const res = await fetch(`/api/saarthi/${batchId}/toggle-meet`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ isMeetActive: targetState })
+        });
+        
+        if (!res.ok) throw new Error('Failed to toggle meet');
+        window.location.reload();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // Select Student
+    async function selectStudent(studentId, batchId, studentName, batchTitle) {
+      // UI Updates
+      document.querySelectorAll('.student-item').forEach(el => el.classList.remove('bg-indigo-100'));
+      document.getElementById(`student-${studentId}-${batchId}`).classList.add('bg-indigo-100');
+      
+      emptyState.classList.add('hidden');
+      chatHeader.classList.remove('hidden');
+      messagesContainer.classList.remove('hidden');
+      inputArea.classList.remove('hidden');
+
+      chatStudentName.textContent = studentName;
+      chatBatchTitle.textContent = batchTitle;
+
+      // Socket Update
+      currentStudentId = studentId;
+      currentBatchId = batchId;
+
+      socket.emit('joinRoom', { batchId, studentId });
+
+      await loadMessages();
+    }
+
+    async function loadMessages() {
+      messagesContainer.innerHTML = '<div class="text-center text-gray-500 py-4"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+      try {
+        const res = await fetch(`/api/saarthi/${currentBatchId}/messages?studentId=${currentStudentId}`);
+        const messages = await res.json();
+        
+        messagesContainer.innerHTML = ''; // clear
+        messages.forEach(msg => appendMessage(msg));
+        scrollToBottom();
+      } catch (err) {
+        console.error('Failed to load messages', err);
+        messagesContainer.innerHTML = '<div class="text-center text-red-500 py-4">Failed to load messages.</div>';
+      }
+    }
+
+    socket.on('newMessage', (msg) => {
+      // only append if it belongs to current active chat
+      if (msg.batchId === currentBatchId && msg.studentId === currentStudentId) {
+        appendMessage(msg);
+        scrollToBottom();
+      }
+    });
+
+    socket.on('meetStatusChanged', (data) => {
+      // reload to show new meet status buttons
+      window.location.reload();
+    });
+
+    function appendMessage(msg) {
+      const isMine = msg.senderId === user._id || msg.senderId === user.id;
+      const isAdmin = msg.senderRole === 'admin' || msg.senderRole === 'sme';
+      
+      const div = document.createElement('div');
+      div.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+      
+      const bubbleClass = isMine 
+        ? 'bg-green-100 rounded-l-lg rounded-br-lg' 
+        : 'bg-white rounded-r-lg rounded-bl-lg';
+      
+      let contentHtml = '';
+      if (msg.messageType === 'image') {
+        contentHtml = `<img src="${msg.content}" class="max-w-[250px] rounded-md cursor-pointer" onclick="window.open('${msg.content}', '_blank')" />`;
+      } else {
+        contentHtml = `<p class="text-gray-800 break-words">${escapeHTML(msg.content)}</p>`;
+      }
+
+      div.innerHTML = `
+        <div class="max-w-[75%] px-3 py-2 shadow-sm relative ${bubbleClass}">
+          ${!isMine ? `<div class="text-[11px] font-bold ${isAdmin ? 'text-indigo-600' : 'text-blue-500'} mb-1">${escapeHTML(msg.senderName)} ${isAdmin ? '<i class="fas fa-check-circle text-[10px]"></i>' : ''}</div>` : ''}
+          ${contentHtml}
+          <div class="text-[10px] text-gray-500 text-right mt-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+      `;
+      messagesContainer.appendChild(div);
+    }
+
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    async function sendMessage() {
+      if (!currentBatchId || !currentStudentId) return;
+
+      const text = messageInput.value.trim();
+      const file = imageUpload.files[0];
+      
+      if (!text && !file) return;
+      
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+
+      const formData = new FormData();
+      if (text) formData.append('content', text);
+      if (file) formData.append('image', file);
+      formData.append('studentId', currentStudentId);
+
+      try {
+        await fetch(`/api/saarthi/${currentBatchId}/messages`, {
+          method: 'POST',
+          body: formData 
+        });
+        
+        messageInput.value = '';
+        imageUpload.value = '';
+      } catch (err) {
+        alert('Failed to send message');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      }
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag])
+      );
+    }
+  </script>
+</body>
+</html>

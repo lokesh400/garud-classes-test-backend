@@ -208,6 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     dynamicGridEl.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 xl:gap-5";
     dynamicGridEl.innerHTML = tests.map((test, index) => {
       const scheduledDate = test.scheduledAt ? dayjs(test.scheduledAt).format('MMM D, YYYY') : 'Available Now';
+      const attemptBase = test.testType === 'JEE_ADVANCED' ? 'jee-test' : 'test';
       
       return `
         <div class="test-card group bg-white border border-slate-200 rounded-xl p-5 shadow-sm flex flex-col justify-between h-full">
@@ -225,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             </div>
           </div>
           <div class="mt-5">
-            <a href="/student/test/${test._id}/instruction" class="w-full block text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition shadow-sm">
+            <a href="/student/${attemptBase}/${courseId}/${test._id}" class="w-full block text-center px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg transition shadow-sm">
               Attempt Test
             </a>
           </div>

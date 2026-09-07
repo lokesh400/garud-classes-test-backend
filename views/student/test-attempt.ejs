@@ -1,270 +1,277 @@
 <%- include('../partials/head', { title: 'Test' }) %>
-<body class="bg-[#f0f2f5] min-h-screen">
 
-  <!-- Loading -->
-  <div id="loading" class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-garud-dark to-garud-accent">
-    <div class="spinner mb-3"></div>
-    <p class="text-white/60 text-sm">Loading test…</p>
-  </div>
+  <body class="bg-[#f0f2f5] min-h-screen">
 
-  <!-- Start screen (shown after data loads, before fullscreen) -->
-  <div id="start-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center
+    <!-- Loading -->
+    <div id="loading"
+      class="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-garud-dark to-garud-accent">
+      <div class="spinner mb-3"></div>
+      <p class="text-white/60 text-sm">Loading test…</p>
+    </div>
+
+    <!-- Start screen (shown after data loads, before fullscreen) -->
+    <div id="start-screen" class="hidden fixed inset-0 z-50 flex flex-col items-center justify-center
        bg-gradient-to-br from-garud-dark via-garud-mid to-garud-accent">
-    <!-- Decorative blobs -->
-    <div class="absolute top-[-80px] left-[-80px] w-80 h-80 bg-garud-highlight/10 rounded-full blur-3xl pointer-events-none"></div>
-    <div class="absolute bottom-[-60px] right-[-60px] w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-    <div class="relative z-10 text-center px-6 max-w-lg w-full fade-up">
-      <!-- Brand -->
-      <div class="flex items-center justify-center gap-2.5 mb-8">
-        <div class="w-10 h-10 rounded-xl bg-garud-highlight flex items-center justify-center">
-          <span class="text-white font-black text-lg">G</span>
-        </div>
-        <span class="text-2xl font-black text-white">GARUD <span class="text-garud-highlight">Classes</span></span>
+      <!-- Decorative blobs -->
+      <div
+        class="absolute top-[-80px] left-[-80px] w-80 h-80 bg-garud-highlight/10 rounded-full blur-3xl pointer-events-none">
+      </div>
+      <div
+        class="absolute bottom-[-60px] right-[-60px] w-72 h-72 bg-blue-500/10 rounded-full blur-3xl pointer-events-none">
       </div>
 
-      <!-- Test card -->
-      <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-8 mb-6">
-        <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">Exam Ready</p>
-        <h1 id="start-test-name" class="text-2xl font-bold text-white mb-1"></h1>
-        <p id="start-test-meta" class="text-white/50 text-sm mb-6"></p>
-
-        <div class="grid grid-cols-3 gap-3 mb-6 text-center">
-          <div class="bg-white/10 rounded-xl p-3">
-            <p class="text-xl font-bold text-white" id="start-qs">—</p>
-            <p class="text-white/50 text-xs mt-0.5">Questions</p>
+      <div class="relative z-10 text-center px-6 max-w-lg w-full fade-up">
+        <!-- Brand -->
+        <div class="flex items-center justify-center gap-2.5 mb-8">
+          <div class="w-10 h-10 rounded-xl bg-garud-highlight flex items-center justify-center">
+            <span class="text-white font-black text-lg">G</span>
           </div>
-          <div class="bg-white/10 rounded-xl p-3">
-            <p class="text-xl font-bold text-white" id="start-duration">—</p>
-            <p class="text-white/50 text-xs mt-0.5">Minutes</p>
-          </div>
-          <div class="bg-white/10 rounded-xl p-3">
-            <p class="text-xl font-bold text-white" id="start-marks">—</p>
-            <p class="text-white/50 text-xs mt-0.5">Max Marks</p>
-          </div>
+          <span class="text-2xl font-black text-white">GARUD <span class="text-garud-highlight">Classes</span></span>
         </div>
 
-        <!-- Syllabus (populated by JS if set) -->
-        <div id="start-syllabus-wrap" class="hidden"></div>
+        <!-- Test card -->
+        <div class="bg-white/10 backdrop-blur-sm border border-white/15 rounded-3xl p-8 mb-6">
+          <p class="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">Exam Ready</p>
+          <h1 id="start-test-name" class="text-2xl font-bold text-white mb-1"></h1>
+          <p id="start-test-meta" class="text-white/50 text-sm mb-6"></p>
 
-        <div class="bg-yellow-500/15 border border-yellow-400/30 rounded-xl px-4 py-3 text-yellow-200 text-xs text-left mb-6">
-          <p class="font-semibold mb-1">&#9888; Before you begin:</p>
-          <ul class="space-y-0.5 text-yellow-200/80">
-            <li>• The exam will open in <strong>full screen</strong>. Do not exit.</li>
-            <li>• Ensure a stable internet connection.</li>
-            <li>• The timer starts immediately on clicking Start.</li>
-          </ul>
-        </div>
+          <div class="grid grid-cols-3 gap-3 mb-6 text-center">
+            <div class="bg-white/10 rounded-xl p-3">
+              <p class="text-xl font-bold text-white" id="start-qs">—</p>
+              <p class="text-white/50 text-xs mt-0.5">Questions</p>
+            </div>
+            <div class="bg-white/10 rounded-xl p-3">
+              <p class="text-xl font-bold text-white" id="start-duration">—</p>
+              <p class="text-white/50 text-xs mt-0.5">Minutes</p>
+            </div>
+            <div class="bg-white/10 rounded-xl p-3">
+              <p class="text-xl font-bold text-white" id="start-marks">—</p>
+              <p class="text-white/50 text-xs mt-0.5">Max Marks</p>
+            </div>
+          </div>
 
-        <button id="start-exam-btn"
-                class="w-full py-4 bg-garud-highlight text-white font-bold text-lg rounded-2xl
+          <!-- Syllabus (populated by JS if set) -->
+          <div id="start-syllabus-wrap" class="hidden"></div>
+
+          <div
+            class="bg-yellow-500/15 border border-yellow-400/30 rounded-xl px-4 py-3 text-yellow-200 text-xs text-left mb-6">
+            <p class="font-semibold mb-1">&#9888; Before you begin:</p>
+            <ul class="space-y-0.5 text-yellow-200/80">
+              <li>• The exam will open in <strong>full screen</strong>. Do not exit.</li>
+              <li>• Ensure a stable internet connection.</li>
+              <li>• The timer starts immediately on clicking Start.</li>
+            </ul>
+          </div>
+
+          <button id="start-exam-btn" class="w-full py-4 bg-garud-highlight text-white font-bold text-lg rounded-2xl
                        hover:opacity-90 active:scale-95 transition-all shadow-lg shadow-garud-highlight/30">
-          Start Exam &rarr;
-        </button>
-      </div>
-
-      <button onclick="window.history.back()"
-              class="text-white/40 hover:text-white/70 text-sm transition">
-        ← Go Back
-      </button>
-    </div>
-  </div>
-
-  <!-- Submit confirm modal -->
-  <div id="submit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
-      <h2 class="text-xl font-bold text-gray-800 mb-2">Submit Test?</h2>
-      <p class="text-gray-500 text-sm mb-5">Once submitted you cannot change your answers.</p>
-      <div id="submit-stats" class="grid grid-cols-2 gap-3 mb-6 text-sm"></div>
-      <div class="flex gap-3 justify-end">
-        <button onclick="closeSubmitModal()"
-                class="px-5 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition font-medium">
-          Cancel
-        </button>
-        <button onclick="confirmSubmit()"
-                class="px-6 py-2 bg-garud-highlight text-white rounded-lg font-bold hover:opacity-90 transition">
-          Yes, Submit
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Test UI (hidden until loaded) -->
-  <div id="test-ui" class="hidden flex flex-col h-screen overflow-hidden">
-
-    <!-- Top bar (fixed) -->
-    <div class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between z-20 shadow-sm flex-shrink-0">
-      <div class="flex items-center gap-3 min-w-0">
-        <div class="w-8 h-8 rounded-lg bg-garud-accent flex items-center justify-center flex-shrink-0">
-          <span class="text-white text-xs font-bold">G</span>
+            Start Exam &rarr;
+          </button>
         </div>
-        <h1 id="test-name" class="font-bold text-gray-800 text-sm truncate"></h1>
-      </div>
-      <div class="flex items-center gap-3">
-        <div id="timer"
-             class="font-mono font-bold text-base px-3 py-1 rounded-lg bg-blue-50 text-blue-800 min-w-[72px] text-center"></div>
-        <button onclick="togglePalette()"
-                class="md:hidden px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium">
-          ☰
-        </button>
-        <button onclick="handleSubmit()"
-                class="px-4 py-2 bg-garud-highlight text-white rounded-lg text-sm font-bold hover:opacity-90 transition">
-          Submit
+
+        <button onclick="window.history.back()" class="text-white/40 hover:text-white/70 text-sm transition">
+          ← Go Back
         </button>
       </div>
     </div>
 
-    <!-- Section tabs (fixed) -->
-    <div id="section-tabs"
-         class="bg-white border-b border-gray-200 px-4 flex gap-0 overflow-x-auto flex-shrink-0"></div>
+    <!-- Submit confirm modal -->
+    <div id="submit-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+        <h2 class="text-xl font-bold text-gray-800 mb-2">Submit Test?</h2>
+        <p class="text-gray-500 text-sm mb-5">Once submitted you cannot change your answers.</p>
+        <div id="submit-stats" class="grid grid-cols-2 gap-3 mb-6 text-sm"></div>
+        <div class="flex gap-3 justify-end">
+          <button onclick="closeSubmitModal()"
+            class="px-5 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition font-medium">
+            Cancel
+          </button>
+          <button onclick="confirmSubmit()"
+            class="px-6 py-2 bg-garud-highlight text-white rounded-lg font-bold hover:opacity-90 transition">
+            Yes, Submit
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <!-- Main layout -->
-    <div class="flex flex-1 overflow-hidden">
+    <!-- Test UI (hidden until loaded) -->
+    <div id="test-ui" class="hidden flex flex-col h-screen overflow-hidden">
 
-      <!-- Question area (only this scrolls) -->
-      <div class="flex-1 overflow-y-auto">
-        <div class="bg-white min-h-full p-5 md:p-8">
+      <!-- Top bar (fixed) -->
+      <div
+        class="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between z-20 shadow-sm flex-shrink-0">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-8 h-8 rounded-lg bg-garud-accent flex items-center justify-center flex-shrink-0">
+            <span class="text-white text-xs font-bold">G</span>
+          </div>
+          <h1 id="test-name" class="font-bold text-gray-800 text-sm truncate"></h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="timer"
+            class="font-mono font-bold text-base px-3 py-1 rounded-lg bg-blue-50 text-blue-800 min-w-[72px] text-center">
+          </div>
+          <button onclick="togglePalette()"
+            class="md:hidden px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium">
+            ☰
+          </button>
+          <button onclick="handleSubmit()"
+            class="px-4 py-2 bg-garud-highlight text-white rounded-lg text-sm font-bold hover:opacity-90 transition">
+            Submit
+          </button>
+        </div>
+      </div>
 
-          <!-- Q number + type + marks -->
-          <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
-            <div class="flex items-center gap-3">
-              <span id="q-number" class="text-sm font-semibold text-gray-500"></span>
-              <span id="q-type" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium"></span>
+      <!-- Section tabs (fixed) -->
+      <div id="section-tabs" class="bg-white border-b border-gray-200 px-4 flex gap-0 overflow-x-auto flex-shrink-0">
+      </div>
+
+      <!-- Main layout -->
+      <div class="flex flex-1 overflow-hidden">
+
+        <!-- Question area (only this scrolls) -->
+        <div class="flex-1 overflow-y-auto">
+          <div class="bg-white min-h-full p-5 md:p-8">
+
+            <!-- Q number + type + marks -->
+            <div class="flex items-center justify-between mb-5 flex-wrap gap-2">
+              <div class="flex items-center gap-3">
+                <span id="q-number" class="text-sm font-semibold text-gray-500"></span>
+                <span id="q-type" class="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-medium"></span>
+              </div>
+              <div id="q-marks" class="flex items-center gap-2 text-xs font-medium">
+                <!-- filled by JS -->
+              </div>
             </div>
-            <div id="q-marks" class="flex items-center gap-2 text-xs font-medium">
-              <!-- filled by JS -->
+
+            <!-- Question image -->
+            <div class="mb-6 overflow-hidden flex items-start">
+              <img id="q-image" alt="Question" class="w-[95vw] md:w-[30vw] h-auto mt-5"
+                onerror="this.parentElement.innerHTML='<span class=\'text-gray-400 text-sm p-4\'>Image unavailable</span>'" />
             </div>
-          </div>
 
-          <!-- Question image -->
-          <div class="mb-6 bg-gray-50 rounded-lg overflow-hidden border min-h-[140px] flex items-start">
-            <img id="q-image" alt="Question"
-                 class="max-h-[65vh] object-contain"
-                 onerror="this.parentElement.innerHTML='<span class=\'text-gray-400 text-sm p-4\'>Image unavailable</span>'"/>
-          </div>
+            <!-- MCQ options -->
+            <div id="mcq-options" class="mb-6 hidden">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Select answer:</p>
+              <div class="flex flex-col gap-3" id="option-buttons"></div>
+            </div>
 
-          <!-- MCQ options -->
-          <div id="mcq-options" class="mb-6 hidden">
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Select answer:</p>
-            <div class="flex flex-col gap-3" id="option-buttons"></div>
-          </div>
+            <!-- MSQ options (multiple select) -->
+            <div id="msq-options" class="mb-6 hidden">
+              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Select one or more correct
+                options:</p>
+              <p class="text-xs text-orange-600 mb-3">MSQ: +full marks (all correct, none wrong) · +1 per correct option
+                (no wrong) · −marks (any wrong option selected)</p>
+              <div class="flex flex-col gap-3" id="msq-option-buttons"></div>
+            </div>
 
-          <!-- MSQ options (multiple select) -->
-          <div id="msq-options" class="mb-6 hidden">
-            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Select one or more correct options:</p>
-            <p class="text-xs text-orange-600 mb-3">MSQ: +full marks (all correct, none wrong) · +1 per correct option (no wrong) · −marks (any wrong option selected)</p>
-            <div class="flex flex-col gap-3" id="msq-option-buttons"></div>
-          </div>
+            <!-- Numerical input -->
+            <div id="num-input" class="mb-6 hidden">
+              <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                Enter numerical answer:
+              </label>
+              <input id="numerical-answer" type="number" step="any" class="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-lg text-lg font-mono
+                          focus:border-blue-500 outline-none" placeholder="Type your answer" />
+            </div>
 
-          <!-- Numerical input -->
-          <div id="num-input" class="mb-6 hidden">
-            <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-              Enter numerical answer:
-            </label>
-            <input id="numerical-answer" type="number" step="any"
-                   class="w-full md:w-64 px-4 py-3 border-2 border-gray-300 rounded-lg text-lg font-mono
-                          focus:border-blue-500 outline-none"
-                   placeholder="Type your answer"/>
-          </div>
-
-          <!-- Action buttons (NTA-style) -->
-          <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
-            <button onclick="handleSaveAndNext()"
-                    class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition">
-              Save &amp; Next
-            </button>
-            <button onclick="handleMarkAndNext()"
-                    class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition">
-              Mark &amp; Next
-            </button>
-            <button onclick="handleClearAnswer()"
-                    class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
-              Clear
-            </button>
-            <button onclick="openReportModal()"
-                    class="px-4 py-2 border border-red-200 text-red-500 rounded-lg font-medium text-sm hover:bg-red-50 transition">
-              🚩 Report
-            </button>
-            <div class="ml-auto flex gap-2">
-              <button onclick="handlePrev()"
-                      class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
-                ← Prev
+            <!-- Action buttons (NTA-style) -->
+            <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+              <button onclick="handleSaveAndNext()"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 transition">
+                Save &amp; Next
               </button>
-              <button onclick="handleNext()"
-                      class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
-                Next →
+              <button onclick="handleMarkAndNext()"
+                class="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium text-sm hover:bg-purple-700 transition">
+                Mark &amp; Next
               </button>
+              <button onclick="handleClearAnswer()"
+                class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
+                Clear
+              </button>
+              <button onclick="openReportModal()"
+                class="px-4 py-2 border border-red-200 text-red-500 rounded-lg font-medium text-sm hover:bg-red-50 transition">
+                🚩 Report
+              </button>
+              <div class="ml-auto flex gap-2">
+                <button onclick="handlePrev()"
+                  class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
+                  ← Prev
+                </button>
+                <button onclick="handleNext()"
+                  class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg font-medium text-sm hover:bg-gray-50 transition">
+                  Next →
+                </button>
+              </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Right: Question palette (desktop) -->
+        <div id="palette-panel"
+          class="w-64 xl:w-72 bg-white border-l border-gray-200 flex-col overflow-hidden hidden md:flex">
+          <div
+            class="p-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Question Palette
+          </div>
+          <!-- Stats -->
+          <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1.5" id="palette-stats"></div>
+          <!-- Palette scroll -->
+          <div class="flex-1 overflow-y-auto p-3">
+            <div id="palette-grid" class="grid grid-cols-5 gap-1.5"></div>
           </div>
         </div>
       </div>
 
-      <!-- Right: Question palette (desktop) -->
-      <div id="palette-panel"
-           class="w-64 xl:w-72 bg-white border-l border-gray-200 flex-col overflow-hidden hidden md:flex">
-        <div class="p-3 bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-          Question Palette
-        </div>
-        <!-- Stats -->
-        <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1.5" id="palette-stats"></div>
-        <!-- Palette scroll -->
-        <div class="flex-1 overflow-y-auto p-3">
-          <div id="palette-grid" class="grid grid-cols-5 gap-1.5"></div>
-        </div>
+      <!-- Mobile palette overlay -->
+      <div id="palette-overlay" class="md:hidden fixed inset-0 bg-black/40 z-30 hidden" onclick="togglePalette()">
       </div>
-    </div>
-
-    <!-- Mobile palette overlay -->
-    <div id="palette-overlay"
-         class="md:hidden fixed inset-0 bg-black/40 z-30 hidden"
-         onclick="togglePalette()">
-    </div>
-    <div id="palette-mobile"
-         class="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-40
+      <div id="palette-mobile" class="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl z-40
                 max-h-[70vh] overflow-hidden hidden flex-col">
-      <div class="flex items-center justify-between p-3 border-b border-gray-100">
-        <span class="text-sm font-semibold text-gray-700">Question Palette</span>
-        <button onclick="togglePalette()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
-      </div>
-      <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1.5" id="palette-stats-mobile"></div>
-      <div class="flex-1 overflow-y-auto p-3">
-        <div id="palette-grid-mobile" class="grid grid-cols-6 gap-1.5"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Report question modal -->
-  <div id="report-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
-      <div class="flex items-center justify-between mb-1">
-        <h2 class="text-lg font-bold text-gray-800">🚩 Report Question</h2>
-        <button onclick="closeReportModal()" class="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none">&times;</button>
-      </div>
-      <p class="text-xs text-gray-400 mb-4">Flag a discrepancy in this question. An admin will review your report.</p>
-      <div id="report-answer-input" class="mb-4"></div>
-      <div class="mb-5">
-        <label class="block text-xs font-semibold text-gray-500 mb-1">Additional comments <span class="font-normal">(optional)</span></label>
-        <textarea id="report-comment" rows="3" maxlength="500"
-                  class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:border-red-400 outline-none"
-                  placeholder="Explain the discrepancy…"></textarea>
-      </div>
-      <div class="flex gap-3 justify-end">
-        <button onclick="closeReportModal()"
-                class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
-          Cancel
-        </button>
-        <button onclick="submitReport()"
-                class="px-5 py-2 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition">
-          Submit Report
-        </button>
+        <div class="flex items-center justify-between p-3 border-b border-gray-100">
+          <span class="text-sm font-semibold text-gray-700">Question Palette</span>
+          <button onclick="togglePalette()" class="text-gray-400 hover:text-gray-600 text-lg">✕</button>
+        </div>
+        <div class="p-3 border-b border-gray-100 text-xs grid grid-cols-2 gap-1.5" id="palette-stats-mobile"></div>
+        <div class="flex-1 overflow-y-auto p-3">
+          <div id="palette-grid-mobile" class="grid grid-cols-6 gap-1.5"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <%- include('../partials/toast') %>
-  <script src="/js/api.js"></script>
-  <script src="/js/toast.js"></script>
-  <script src="/js/auth-guard.js"></script>
-  <script src="/js/pages/student/test-attempt.js"></script>
-</body>
-</html>
+    <!-- Report question modal -->
+    <div id="report-modal" class="hidden fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+      <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full">
+        <div class="flex items-center justify-between mb-1">
+          <h2 class="text-lg font-bold text-gray-800">🚩 Report Question</h2>
+          <button onclick="closeReportModal()"
+            class="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none">&times;</button>
+        </div>
+        <p class="text-xs text-gray-400 mb-4">Flag a discrepancy in this question. An admin will review your report.</p>
+        <div id="report-answer-input" class="mb-4"></div>
+        <div class="mb-5">
+          <label class="block text-xs font-semibold text-gray-500 mb-1">Additional comments <span
+              class="font-normal">(optional)</span></label>
+          <textarea id="report-comment" rows="3" maxlength="500"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm resize-none focus:border-red-400 outline-none"
+            placeholder="Explain the discrepancy…"></textarea>
+        </div>
+        <div class="flex gap-3 justify-end">
+          <button onclick="closeReportModal()"
+            class="px-4 py-2 border border-gray-300 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition">
+            Cancel
+          </button>
+          <button onclick="submitReport()"
+            class="px-5 py-2 bg-red-500 text-white rounded-lg text-sm font-bold hover:bg-red-600 transition">
+            Submit Report
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <%- include('../partials/toast') %>
+      <script src="/js/api.js"></script>
+      <script src="/js/toast.js"></script>
+      <script src="/js/auth-guard.js"></script>
+      <script src="/js/pages/student/test-attempt.js"></script>
+  </body>
+
+  </html>

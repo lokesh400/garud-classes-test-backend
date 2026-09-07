@@ -14,7 +14,13 @@
 
 function getUser() {
   try {
-    const u = sessionStorage.getItem('user');
+    let u = sessionStorage.getItem('user');
+    // If sessionStorage is empty (e.g. browser restarted) but server session is valid,
+    // window.USER will be populated by the backend. Restore it to sessionStorage.
+    if (!u && window.USER) {
+      sessionStorage.setItem('user', JSON.stringify(window.USER));
+      u = JSON.stringify(window.USER);
+    }
     return u ? JSON.parse(u) : null;
   } catch { return null; }
 }
@@ -39,6 +45,8 @@ function requireAuth(role) {
         ? '/teacher/question-bank'
         : user.role === 'coordinator'
           ? '/admin/upload'
+        : user.role === 'sme'
+          ? '/sme/dashboard'
         : '/student/dashboard';
     return null;
   }
@@ -69,6 +77,8 @@ function requireAuthAny(roles) {
         ? '/teacher/question-bank'
         : user.role === 'coordinator'
           ? '/admin/upload'
+        : user.role === 'sme'
+          ? '/sme/dashboard'
         : '/student/dashboard';
     return null;
   }

@@ -82,6 +82,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     'answered-marked': 'bg-[#8e44ad] text-white ring-2 ring-[#27ae60] ring-offset-1',
   };
 
+  // ── Anti-Cheat State ──────────────────────────────────────────────
+  let isTestActive = false;
+
+  function handleVisibilityChange() {
+    if (isTestActive && document.visibilityState === 'hidden') {
+      toast.error('Tab switch detected! Auto-submitting test.');
+      submitTest(true);
+    }
+  }
+
+  function handleFullscreenChange() {
+    if (isTestActive && !document.fullscreenElement) {
+      toast.error('Exited full screen! Auto-submitting test.');
+      submitTest(true);
+    }
+  }
+
   // ── Start test ────────────────────────────────────────────────────
   async function startTest() {
     try {
@@ -236,9 +253,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function launchTest() {
     document.getElementById('test-ui').classList.remove('hidden');
+    isTestActive = true;
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen().catch(() => {});
     }
+
+    // Anti-cheat logic
+    history.pushState(null, null, location.href);
+    window.onpopstate = () => history.go(1);
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
   }
 
   // ── UI initialisation ─────────────────────────────────────────────
@@ -612,6 +637,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   async function submitTest(auto) {
+    isTestActive = false;
+    document.removeEventListener("visibilitychange", handleVisibilityChange);
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
     if (timerInterval) clearInterval(timerInterval);
     // Flush time for the currently-open question, capture its answer
     flushCurrentTime();

@@ -510,14 +510,14 @@ router.post('/register/member', auth, adminOnly, async (req, res) => {
     const { name, contactMail, subjects, role } = req.body || {};
     
     let targetRole = 'teacher';
-    if (['coordinator', 'admin'].includes(role)) {
+    if (['coordinator', 'admin', 'sme'].includes(role)) {
       targetRole = role;
     }
 
     if (!name || !contactMail) {
       return res.status(400).json({ message: 'Name and contactMail are required.' });
     }
-    if (['teacher', 'coordinator'].includes(targetRole) && (!Array.isArray(subjects) || subjects.length === 0)) {
+    if (['teacher', 'coordinator', 'sme'].includes(targetRole) && (!Array.isArray(subjects) || subjects.length === 0)) {
       return res.status(400).json({ message: `At least one subject is required for ${targetRole}.` });
     }
 
@@ -545,7 +545,7 @@ router.post('/register/member', auth, adminOnly, async (req, res) => {
       }
     }
 
-    if (targetRole === 'teacher' && !primarySubjectDoc) {
+    if ((targetRole === 'teacher' || targetRole === 'sme') && !primarySubjectDoc) {
       return res.status(400).json({
         message: 'Auto-email is supported only for Physics, Chemistry, Biology, Mathematics.',
       });
@@ -567,6 +567,8 @@ router.post('/register/member', auth, adminOnly, async (req, res) => {
     if (targetRole === 'coordinator') {
       incrementKey = 'Coordinator';
       primarySubjectSlug = 'coordinator';
+    } else if (targetRole === 'sme') {
+      primarySubjectSlug = 'sme' + primarySubjectKey.toLowerCase();
     }
 
     const updateObj = { [incrementKey]: 1, TeamMembers: 1 };
@@ -618,7 +620,7 @@ router.post('/register/member', auth, adminOnly, async (req, res) => {
 router.get('/team', auth, adminOnly, async (req, res, next) => {
   try {
     const users = await User.find(
-      { role: { $in: ['teacher', 'coordinator', 'admin'] } },
+      { role: { $in: ['teacher', 'coordinator', 'admin', 'sme'] } },
       { name: 1, email: 1, contactMail: 1, role: 1, mobile: 1, subjects: 1, isActive: 1, createdAt: 1 }
     )
       .populate('subjects', '_id name')

@@ -1,0 +1,158 @@
+<%- include('../partials/head', { title: 'Doubt Saarthi Chat' }) %>
+<script src="/socket.io/socket.io.js"></script>
+
+<body class="bg-gray-50 h-screen flex flex-col overflow-hidden">
+  <nav class="bg-indigo-700 text-white p-3 shadow-md flex justify-between items-center z-10 flex-shrink-0">
+    <div class="flex items-center gap-3">
+      <a href="/student/saarthi" class="text-indigo-200 hover:text-white transition"><i class="fas fa-arrow-left"></i></a>
+      <div class="font-bold text-lg"><%= batch.title %></div>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <a href="/student/saarthi/<%= batch._id %>/meet" id="join-meet-btn" target="_blank" class="px-4 py-1.5 bg-green-500 hover:bg-green-600 rounded-lg text-sm font-bold flex items-center gap-2 transition <%= batch.isMeetActive ? '' : 'hidden' %>">
+        <i class="fas fa-video"></i> Join Video Call
+      </a>
+    </div>
+  </nav>
+
+  <!-- WhatsApp-like UI -->
+  <main class="flex-grow flex flex-col overflow-hidden bg-[url('https://i.pinimg.com/originals/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg')] bg-cover bg-center">
+    
+    <!-- Messages Area -->
+    <div id="messages-container" class="flex-grow overflow-y-auto p-4 flex flex-col space-y-3">
+      <!-- Messages injected here via JS -->
+    </div>
+
+    <!-- Input Area -->
+    <div class="bg-gray-100 p-3 flex items-center gap-2 border-t border-gray-300">
+      <input type="file" id="image-upload" accept="image/*" class="hidden" />
+      <button onclick="document.getElementById('image-upload').click()" class="text-gray-500 hover:text-indigo-600 p-2 rounded-full transition">
+        <i class="fas fa-paperclip text-xl"></i>
+      </button>
+      
+      <input type="text" id="message-input" placeholder="Type your doubt..." class="flex-grow rounded-full border-gray-300 px-4 py-2 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 bg-white" onkeypress="if(event.key === 'Enter') sendMessage()" />
+      
+      <button onclick="sendMessage()" id="send-btn" class="bg-indigo-600 text-white w-10 h-10 rounded-full flex items-center justify-center hover:bg-indigo-700 transition flex-shrink-0">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </main>
+
+  <script src="/js/auth-guard.js"></script>
+  <script>
+    const user = requireAuthAny(['student']);
+    const batchId = '<%= batch._id %>';
+    
+    const socket = io('/saarthi-chat');
+    const messagesContainer = document.getElementById('messages-container');
+    const messageInput = document.getElementById('message-input');
+    const imageUpload = document.getElementById('image-upload');
+    const sendBtn = document.getElementById('send-btn');
+    const joinMeetBtn = document.getElementById('join-meet-btn');
+
+    socket.emit('joinRoom', { batchId, studentId: user._id || user.id });
+
+    async function loadMessages() {
+      try {
+        const res = await fetch(`/api/saarthi/${batchId}/messages`);
+        const messages = await res.json();
+        messages.forEach(msg => appendMessage(msg));
+        scrollToBottom();
+      } catch (err) {
+        console.error('Failed to load messages', err);
+      }
+    }
+
+    socket.on('newMessage', (msg) => {
+      appendMessage(msg);
+      scrollToBottom();
+    });
+
+    socket.on('meetStatusChanged', (data) => {
+      if (data.isMeetActive) {
+        joinMeetBtn.classList.remove('hidden');
+        // Add a pulse effect when it becomes active
+        joinMeetBtn.classList.add('animate-pulse');
+        setTimeout(() => joinMeetBtn.classList.remove('animate-pulse'), 5000);
+      } else {
+        joinMeetBtn.classList.add('hidden');
+      }
+    });
+
+    function appendMessage(msg) {
+      const isMine = msg.senderId === user._id || msg.senderId === user.id;
+      const isAdmin = msg.senderRole === 'admin' || msg.senderRole === 'sme';
+      
+      const div = document.createElement('div');
+      div.className = `flex ${isMine ? 'justify-end' : 'justify-start'}`;
+      
+      const bubbleClass = isMine 
+        ? 'bg-green-100 rounded-l-lg rounded-br-lg' 
+        : 'bg-white rounded-r-lg rounded-bl-lg';
+      
+      let contentHtml = '';
+      if (msg.messageType === 'image') {
+        contentHtml = `<img src="${msg.content}" class="max-w-[250px] rounded-md cursor-pointer" onclick="window.open('${msg.content}', '_blank')" />`;
+      } else {
+        contentHtml = `<p class="text-gray-800 break-words">${escapeHTML(msg.content)}</p>`;
+      }
+
+      div.innerHTML = `
+        <div class="max-w-[75%] px-3 py-2 shadow-sm relative ${bubbleClass}">
+          ${!isMine ? `<div class="text-[11px] font-bold ${isAdmin ? 'text-indigo-600' : 'text-blue-500'} mb-1">${escapeHTML(msg.senderName)} ${isAdmin ? '<i class="fas fa-check-circle text-[10px]"></i>' : ''}</div>` : ''}
+          ${contentHtml}
+          <div class="text-[10px] text-gray-500 text-right mt-1">${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+        </div>
+      `;
+      messagesContainer.appendChild(div);
+    }
+
+    function scrollToBottom() {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const text = messageInput.value.trim();
+      const file = imageUpload.files[0];
+      
+      if (!text && !file) return;
+      
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+
+      const formData = new FormData();
+      if (text) formData.append('content', text);
+      if (file) formData.append('image', file);
+
+      try {
+        await fetch(`/api/saarthi/${batchId}/messages`, {
+          method: 'POST',
+          body: formData
+        });
+        
+        messageInput.value = '';
+        imageUpload.value = '';
+      } catch (err) {
+        alert('Failed to send message');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+      }
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          "'": '&#39;',
+          '"': '&quot;'
+        }[tag])
+      );
+    }
+
+    loadMessages();
+  </script>
+</body>
+</html>

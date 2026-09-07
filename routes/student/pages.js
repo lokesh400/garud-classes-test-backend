@@ -43,7 +43,34 @@ router.get('/student/battleground-prizes', (req, res) =>
 );
 router.get('/student/profile', (req, res) => res.render('student/dashboard', { title: 'Profile' }));
 
+router.get('/student/saarthi', auth, async (req, res) => {
+  try {
+    const dbUser = await require('../../models/User').findById(req.user._id).populate('purchasedSaarthi');
+    res.render('student/saarthi-list', { title: 'Doubt Saarthi', batches: dbUser.purchasedSaarthi || [], user: req.user });
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
+});
 
+router.get('/student/saarthi/:batchId', auth, async (req, res) => {
+  try {
+    const batch = await require('../../models/SaarthiBatch').findById(req.params.batchId);
+    if (!batch) return res.status(404).send('Batch not found');
+    res.render('student/saarthi-chat', { title: `Doubt Saarthi - ${batch.title}`, batch, user: req.user });
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
+});
+
+router.get('/student/saarthi/:batchId/meet', auth, async (req, res) => {
+  try {
+    const batch = await require('../../models/SaarthiBatch').findById(req.params.batchId);
+    if (!batch || !batch.isMeetActive) return res.status(404).send('No active meet right now.');
+    res.render('student/saarthi-meet', { title: 'Live Meet', batch, user: req.user });
+  } catch (err) {
+    res.status(500).send('Server Error');
+  }
+});
 
 router.get('/classroom/:classId', auth, async (req, res, next) => {
   try {

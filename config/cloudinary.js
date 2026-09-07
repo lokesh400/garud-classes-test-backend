@@ -126,4 +126,35 @@ const deleteFromCloud = (publicId, cloudPrefix) => {
   });
 };
 
-module.exports = { getCloudinaryForSubject, uploadToSubjectCloud, deleteFromSubjectCloud, uploadToRandomCloud, deleteFromCloud };
+/**
+ * Upload a buffer to the Saarthi specific Cloudinary account.
+ */
+const uploadToSaarthiCloud = (fileBuffer, folder) => {
+  // Load explicitly from atlas-credentials.env if they are there, or process.env
+  const cloud_name = process.env.SAARTHI_DOUBT_NAME || process.env.SAARTHI_CLOUD_NAME;
+  const api_key = process.env.SAARTHI_CLOUD_API_KEY;
+  const api_secret = process.env.SAARTHI_CLOUD_API_SECRET;
+
+  if (!cloud_name || !api_key || !api_secret) {
+    throw new Error('Saarthi Cloudinary credentials not fully configured in atlas-credentials.env or .env');
+  }
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.v2.uploader.upload_stream(
+      {
+        folder: folder || 'garud-classes-saarthi',
+        resource_type: 'image',
+        cloud_name,
+        api_key,
+        api_secret,
+      },
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
+
+module.exports = { getCloudinaryForSubject, uploadToSubjectCloud, deleteFromSubjectCloud, uploadToRandomCloud, deleteFromCloud, uploadToSaarthiCloud };

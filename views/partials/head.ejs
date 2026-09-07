@@ -12,6 +12,9 @@
     const _keywords   = 'GARUD Classes, garudclasses, Garud Classes, test portal, mock test, online test series, JEE mock test, NEET mock test, competitive exam, chapter wise test, question bank, garud classes test';
     const _logo       = _siteUrl + '/images/logo.png';
   %>
+  <script>
+    window.USER = <%- JSON.stringify(user || null) %>;
+  </script>
 
   <title><%= _pageTitle %></title>
 
