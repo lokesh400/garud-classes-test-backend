@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', async () => {
               </td>
               <td class="px-4 py-3 font-medium text-gray-800">${r.user?.name || '—'}</td>
               <td class="px-4 py-3 text-gray-500">${r.user?.email || '—'}</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">${r.batch?.name || '<span class=\'text-gray-300\'>—</span>'}</td>
+              <td class="px-4 py-3 text-gray-500 text-xs">${r.batch?.name || "<span class='text-gray-300'>—</span>"}</td>
               <td class="px-4 py-3 text-right font-bold text-garud-accent">${r.totalScore}</td>
               <td class="px-4 py-3 text-right text-gray-500">${r.maxScore}</td>
               <td class="px-4 py-3 text-right">
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <tr class="hover:bg-slate-50 cursor-default">
               <td class="px-4 py-3 font-medium text-gray-800">${r.user?.name || '—'}</td>
               <td class="px-4 py-3 text-gray-500">${r.user?.email || '—'}</td>
-              <td class="px-4 py-3 text-gray-500 text-xs">${r.batch?.name || '<span class=\\'text-gray-300\\'>—</span>'}</td>
+              <td class="px-4 py-3 text-gray-500 text-xs">${r.batch?.name || "<span class='text-gray-300'>—</span>"}</td>
               <td class="px-4 py-3 text-center">${statusHtml}</td>
               <td class="px-4 py-3 text-right text-gray-500 text-xs">${started}</td>
               <td class="px-4 py-3 text-right text-gray-500 text-xs">${submitted}</td>
