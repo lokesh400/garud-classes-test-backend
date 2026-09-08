@@ -38,10 +38,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   function accColor(p) { return p >= 80 ? '#10b981' : p >= 60 ? '#f59e0b' : '#e94560'; }
 
-  // ── Load leaderboard ────────────────────────────────────────────
+  const tabResults = document.getElementById('tab-results');
+  const tabActivity = document.getElementById('tab-activity');
+  const tableWrap = document.getElementById('table-wrap');
+  const activityWrap = document.getElementById('activity-wrap');
+
+  tabResults.addEventListener('click', () => {
+    tabResults.className = 'px-4 py-2 font-bold text-garud-accent border-b-2 border-garud-accent transition';
+    tabActivity.className = 'px-4 py-2 font-bold text-gray-400 hover:text-gray-600 border-b-2 border-transparent transition';
+    tableWrap.classList.remove('hidden');
+    activityWrap.classList.add('hidden');
+  });
+
+  tabActivity.addEventListener('click', () => {
+    tabActivity.className = 'px-4 py-2 font-bold text-garud-accent border-b-2 border-garud-accent transition';
+    tabResults.className = 'px-4 py-2 font-bold text-gray-400 hover:text-gray-600 border-b-2 border-transparent transition';
+    tableWrap.classList.add('hidden');
+    activityWrap.classList.remove('hidden');
+  });
+
+  // ── Load leaderboard & activity ───────────────────────────────────
   try {
-    const [results, testData] = await Promise.all([
+    const [results, activity, testData] = await Promise.all([
       API.get(`/tests/${testId}/results`),
+      API.get(`/tests/${testId}/activity`),
       API.get(`/tests/admin/${testId}`),
     ]);
 
@@ -84,6 +104,27 @@ document.addEventListener('DOMContentLoaded', async () => {
             </tr>`;
         }).join('')
       : '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">No results yet.</td></tr>';
+
+    document.getElementById('activity-body').innerHTML = activity.length
+      ? activity.map(r => {
+          const isSub = r.isSubmitted;
+          const statusHtml = isSub 
+            ? `<span class="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-semibold">Submitted</span>`
+            : `<span class="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-semibold">In Progress</span>`;
+          const started = r.startedAt ? new Date(r.startedAt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : '—';
+          const submitted = r.submittedAt ? new Date(r.submittedAt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }) : '—';
+
+          return `
+            <tr class="hover:bg-slate-50 cursor-default">
+              <td class="px-4 py-3 font-medium text-gray-800">${r.user?.name || '—'}</td>
+              <td class="px-4 py-3 text-gray-500">${r.user?.email || '—'}</td>
+              <td class="px-4 py-3 text-gray-500 text-xs">${r.batch?.name || '<span class=\\'text-gray-300\\'>—</span>'}</td>
+              <td class="px-4 py-3 text-center">${statusHtml}</td>
+              <td class="px-4 py-3 text-right text-gray-500 text-xs">${started}</td>
+              <td class="px-4 py-3 text-right text-gray-500 text-xs">${submitted}</td>
+            </tr>`;
+        }).join('')
+      : '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-400">No activity yet.</td></tr>';
 
   } catch { toast.error('Failed to load results'); }
   finally {

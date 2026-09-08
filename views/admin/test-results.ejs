@@ -29,8 +29,15 @@
     </div>
 
     <div class="p-6 md:p-8">
+      <!-- Tabs -->
+      <div class="flex items-center gap-4 border-b border-gray-200 mb-6">
+        <button id="tab-results" class="px-4 py-2 font-bold text-garud-accent border-b-2 border-garud-accent transition">Leaderboard</button>
+        <button id="tab-activity" class="px-4 py-2 font-bold text-gray-400 hover:text-gray-600 border-b-2 border-transparent transition">Live Activity</button>
+      </div>
+
     <div id="loading" class="flex items-center justify-center py-16"><div class="spinner"></div></div>
 
+    <!-- Leaderboard View -->
     <div id="table-wrap" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-auto fade-up-1">
       <table class="w-full text-sm">
         <thead class="bg-gradient-to-r from-garud-accent to-garud-mid text-white">
@@ -49,6 +56,24 @@
         <tbody id="results-body" class="divide-y divide-gray-100"></tbody>
       </table>
     </div>
+
+    <!-- Live Activity View -->
+    <div id="activity-wrap" class="hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-auto fade-up-1">
+      <table class="w-full text-sm">
+        <thead class="bg-gradient-to-r from-slate-700 to-slate-600 text-white">
+          <tr>
+            <th class="text-left px-4 py-3 font-semibold">Student</th>
+            <th class="text-left px-4 py-3 font-semibold">Email</th>
+            <th class="text-left px-4 py-3 font-semibold">Batch</th>
+            <th class="text-center px-4 py-3 font-semibold">Status</th>
+            <th class="text-right px-4 py-3 font-semibold">Started At</th>
+            <th class="text-right px-4 py-3 font-semibold">Submitted At</th>
+          </tr>
+        </thead>
+        <tbody id="activity-body" class="divide-y divide-gray-100"></tbody>
+      </table>
+    </div>
+
     </div><!-- /inner -->
   </div>
 
@@ -85,7 +110,7 @@
   <script src="/js/toast.js"></script>
   <script src="/js/auth-guard.js"></script>
   <script src="/js/sidebar.js"></script>
-  <script src="/js/pages/admin/test-results.js?v=2"></script>
+  <script src="/js/pages/admin/test-results.js?v=3"></script>
 
   <style>
     .q-img-admin { display:block; width:95%; height:auto; }

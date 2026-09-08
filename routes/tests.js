@@ -856,6 +856,19 @@ router.delete(
   }
 );
 
+// Get all test attempts (live tracking)
+router.get('/:id/activity', auth, adminOrCoordinator, async (req, res) => {
+  try {
+    const attempts = await TestAttempt.find({ test: req.params.id })
+      .populate('user', 'name email')
+      .populate('batch', 'name')
+      .sort({ startedAt: -1 });
+    res.json(attempts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Get test results/attempts (admin)
 router.get('/:id/results', auth, adminOrCoordinator, async (req, res) => {
   try {
