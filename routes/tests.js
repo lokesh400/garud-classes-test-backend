@@ -906,6 +906,20 @@ router.get('/:id/results/:attemptId', auth, adminOrCoordinator, async (req, res)
   }
 });
 
+// Allow re-attempt by deleting the test attempt (admin)
+router.delete('/:id/results/:attemptId', auth, adminOrCoordinator, async (req, res) => {
+  try {
+    const deletedAttempt = await TestAttempt.findOneAndDelete({
+      _id: req.params.attemptId,
+      test: req.params.id,
+    });
+    if (!deletedAttempt) return res.status(404).json({ message: 'Attempt not found' });
+    res.json({ message: 'Attempt deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // ==================== STUDENT ROUTES ====================
 
 // Get published tests (student)

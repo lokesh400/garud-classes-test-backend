@@ -98,6 +98,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('drawer-student-name').textContent  = name || 'Student';
     document.getElementById('drawer-student-email').textContent = email || '';
     document.getElementById('drawer-student-email').dataset.attemptId = attemptId;
+    document.getElementById('btn-allow-reattempt').classList.remove('hidden');
     document.getElementById('drawer-body').innerHTML =
       '<div class="flex items-center justify-center h-40"><div class="spinner"></div></div>';
     document.getElementById('drawer-overlay').classList.remove('hidden');
@@ -118,6 +119,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('drawer-overlay').classList.add('hidden');
     document.body.style.overflow = '';
     if (drawerChart) { drawerChart.destroy(); drawerChart = null; }
+  };
+
+  window.allowReattempt = async function() {
+    const attemptId = document.getElementById('drawer-student-email').dataset.attemptId;
+    if (!confirm('Are you sure you want to allow this student to re-attempt the test? This will delete their current attempt and score!')) return;
+    try {
+      await API.delete(`/tests/${testId}/results/${attemptId}`);
+      toast.success('Attempt reset! The student can now re-attempt the test.');
+      closeDrawer();
+      setTimeout(() => window.location.reload(), 1000);
+    } catch {
+      toast.error('Failed to reset attempt.');
+    }
   };
 
   // ── Render drawer content ───────────────────────────────────────

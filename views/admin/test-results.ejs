@@ -66,7 +66,10 @@
         <p id="drawer-student-email" class="text-white/60 text-xs"></p>
         <p id="drawer-batch-badge" class="hidden mt-1 inline-block text-xs font-semibold bg-white/20 text-white px-2 py-0.5 rounded-full"></p>
       </div>
-      <button onclick="closeDrawer()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+      <div class="flex items-center gap-4">
+        <button id="btn-allow-reattempt" onclick="allowReattempt()" class="hidden px-3 py-1.5 text-xs font-semibold bg-red-500/80 hover:bg-red-500 text-white rounded transition shadow-sm border border-red-400/50">Allow Re-attempt</button>
+        <button onclick="closeDrawer()" class="text-white/70 hover:text-white text-2xl leading-none">&times;</button>
+      </div>
     </div>
 
     <!-- Drawer body (scrollable) -->
