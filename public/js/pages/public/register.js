@@ -22,56 +22,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Step 1 → 2
   document.getElementById('next-1').addEventListener('click', () => {
-    const name  = document.getElementById('name').value.trim();
-    const cls   = document.getElementById('studentClass').value;
-    const exam  = document.getElementById('targetExam').value;
-    if (!name || !cls || !exam) return toast.error('Please fill in all fields');
-    showStep(2);
-  });
-
-  // Step 2 back
-  document.getElementById('prev-2').addEventListener('click', () => showStep(1));
-
-  // Step 2 → 3
-  document.getElementById('next-2').addEventListener('click', () => {
-    const mobile   = document.getElementById('mobile').value.trim();
-    const email    = document.getElementById('email').value.trim();
-    const password = document.getElementById('password').value;
-    if (!mobile || !email || !password) return toast.error('Please fill in all fields');
-
-    // Populate review
     const name = document.getElementById('name').value.trim();
-    const cls  = document.getElementById('studentClass').value;
+    const cls = document.getElementById('studentClass').value;
     const exam = document.getElementById('targetExam').value;
-    
-    document.getElementById('review-name').textContent = name;
-    document.getElementById('review-class').textContent = cls;
-    document.getElementById('review-target').textContent = exam;
-    document.getElementById('review-mobile').textContent = mobile;
-    document.getElementById('review-email').textContent = email;
-    
-    showStep(3);
-  });
-
-  // Step 3 back
-  document.getElementById('prev-3').addEventListener('click', () => showStep(2));
-
-  // Final submit
-  document.getElementById('register-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = document.getElementById('submit-btn');
-    submitBtn.disabled = true;
-    submitBtn.textContent = 'Registering…';
-
+    if (!name || !cls || !exam) return toast.error('Please fill in all fields');
     try {
       const data = await API.post('/auth/register', {
-        name:         document.getElementById('name').value.trim(),
-        email:        document.getElementById('email').value.trim(),
-        password:     document.getElementById('password').value,
-        role:         'student',
+        name: document.getElementById('name').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+        role: 'student',
         studentClass: document.getElementById('studentClass').value,
-        targetExam:   document.getElementById('targetExam').value,
-        mobile:       document.getElementById('mobile').value.trim(),
+        targetExam: document.getElementById('targetExam').value,
+        mobile: document.getElementById('mobile').value.trim(),
       });
       sessionStorage.setItem('user', JSON.stringify(data.user));
       toast.success('Registration successful!');
