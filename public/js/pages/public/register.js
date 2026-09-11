@@ -43,13 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const name = document.getElementById('name').value.trim();
     const cls  = document.getElementById('studentClass').value;
     const exam = document.getElementById('targetExam').value;
-    document.getElementById('review-box').innerHTML = `
-      <p><strong>Name:</strong> ${name}</p>
-      <p><strong>Class:</strong> ${cls}</p>
-      <p><strong>Target Exam:</strong> ${exam}</p>
-      <p><strong>Mobile:</strong> ${mobile}</p>
-      <p><strong>Email:</strong> ${email}</p>
-    `;
+    
+    document.getElementById('review-name').textContent = name;
+    document.getElementById('review-class').textContent = cls;
+    document.getElementById('review-target').textContent = exam;
+    document.getElementById('review-mobile').textContent = mobile;
+    document.getElementById('review-email').textContent = email;
+    
     showStep(3);
   });
 
