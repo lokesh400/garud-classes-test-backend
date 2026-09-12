@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const submitBtn = document.getElementById('submit-btn');
   const forgotModal = document.getElementById('forgot-modal');
   const forgotOpenBtn = document.getElementById('forgot-open-btn');
+  const forgotOpenBtnStep1 = document.getElementById('forgot-open-btn-step1');
   const forgotCloseBtn = document.getElementById('forgot-close-btn');
   const fpStep1 = document.getElementById('fp-step1');
   const fpStep2 = document.getElementById('fp-step2');
@@ -99,6 +100,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   forgotOpenBtn?.addEventListener('click', () => {
+    resetForgotUi();
+    forgotModal.classList.remove('hidden');
+  });
+
+  forgotOpenBtnStep1?.addEventListener('click', () => {
     resetForgotUi();
     forgotModal.classList.remove('hidden');
   });

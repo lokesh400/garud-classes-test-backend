@@ -100,8 +100,34 @@ async function sendPasswordResetLinkEmail({ toEmail, resetUrl, expiresInMinutes 
   });
 }
 
+async function sendRegistrationOtpEmail({ toEmail, otp, expiresInMinutes = 10 }) {
+  const safeOtp = String(otp || '').trim();
+  const safeExpiry = Number(expiresInMinutes) > 0 ? Number(expiresInMinutes) : 10;
+
+  const subject = 'Your Garud Classes Registration OTP';
+  const htmlContent = `
+    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:560px;margin:0 auto;padding:16px;">
+      <h2 style="margin:0 0 12px;">Welcome to Garud Classes</h2>
+      <p style="margin:0 0 12px;">Use the OTP below to complete your registration.</p>
+      <div style="font-size:28px;font-weight:700;letter-spacing:4px;padding:12px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;display:inline-block;">${safeOtp}</div>
+      <p style="margin:12px 0 0;">This OTP expires in <strong>${safeExpiry} minutes</strong>.</p>
+      <p style="margin:12px 0 0;color:#475569;">If you did not request this, you can ignore this email.</p>
+    </div>
+  `;
+
+  const textContent = `Registration OTP: ${safeOtp}\nThis OTP expires in ${safeExpiry} minutes.\nIf you did not request this, ignore this email.`;
+
+  return sendTransactionalMail({
+    toEmail,
+    subject,
+    htmlContent,
+    textContent,
+  });
+}
+
 module.exports = {
   sendTransactionalMail,
   sendPasswordResetOtpEmail,
   sendPasswordResetLinkEmail,
+  sendRegistrationOtpEmail,
 };

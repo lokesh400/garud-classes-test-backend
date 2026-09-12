@@ -4,7 +4,8 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const User     = require('../models/User');
 const PasswordResetOtp = require('../models/PasswordResetOtp');
-const { sendPasswordResetOtpEmail, sendPasswordResetLinkEmail } = require('../config/mailer');
+const RegistrationOtp = require('../models/RegistrationOtp');
+const { sendPasswordResetOtpEmail, sendPasswordResetLinkEmail, sendRegistrationOtpEmail } = require('../config/mailer');
 const { auth, adminOnly } = require('../middleware/auth');
 const Subject = require('../models/Subject');
 const TotalMember = require('../models/TotalMembers');
@@ -315,15 +316,59 @@ async function handlePasswordReset(req, res, next) {
 const authLimiter = (req, res, next) => next();
 
 // ── Register ──────────────────────────────────────────────────────
+router.post('/register/send-otp', authLimiter, async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required.' });
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: normalizedEmail });
+    if (existingUser) {
+      return res.status(400).json({ message: 'An account with this email already exists.' });
+    }
+
+    const otp = String(crypto.randomInt(100000, 1000000));
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+    await RegistrationOtp.findOneAndUpdate(
+      { email: normalizedEmail },
+      { email: normalizedEmail, otpHash, expiresAt },
+      { upsert: true, setDefaultsOnInsert: true }
+    );
+
+    try {
+      await sendRegistrationOtpEmail({
+        toEmail: normalizedEmail,
+        otp,
+        expiresInMinutes: 10,
+      });
+    } catch (mailError) {
+      console.error(`[REGISTRATION_OTP_EMAIL_ERROR] email=${normalizedEmail} reason=${mailError.message}`);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[REGISTRATION_OTP_DEV_FALLBACK] email=${normalizedEmail} otp=${otp}`);
+      }
+    }
+
+    return res.json({ message: 'OTP sent successfully to your email.', expiresInSeconds: 600 });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/register', authLimiter, async (req, res, next) => {
   try {
     const {
       name, email, password, role,
-      studentClass, targetExam, mobile, address,
+      studentClass, targetExam, mobile, address, otp
     } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email and password are required.' });
+    if (!name || !email || !password || !otp) {
+      return res.status(400).json({ message: 'Name, email, password and OTP are required.' });
     }
     if (password.length < 8) {
       return res.status(400).json({ message: 'Password must be at least 8 characters.' });
@@ -339,7 +384,22 @@ router.post('/register', authLimiter, async (req, res, next) => {
       mobile,
       address,
     });
-    if (!user.username) user.username = user.email;
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!user.username) user.username = normalizedEmail;
+
+    // Verify OTP
+    const otpDoc = await RegistrationOtp.findOne({ email: normalizedEmail }).lean();
+    if (!otpDoc || !otpDoc.expiresAt || new Date(otpDoc.expiresAt).getTime() < Date.now()) {
+      return res.status(400).json({ message: 'OTP is missing or expired.' });
+    }
+    
+    const otpHash = crypto.createHash('sha256').update(String(otp).trim()).digest('hex');
+    if (otpHash !== otpDoc.otpHash) {
+      return res.status(400).json({ message: 'Invalid OTP.' });
+    }
+
+    // OTP valid, delete it
+    if (otpDoc._id) await RegistrationOtp.deleteOne({ _id: otpDoc._id });
 
     // User.register hashes password with PBKDF2-SHA512 and saves the user
     await User.register(user, password);
