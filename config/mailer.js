@@ -54,12 +54,25 @@ async function sendPasswordResetOtpEmail({ toEmail, otp, expiresInMinutes = 10 }
 
   const subject = 'Your Garud Classes password reset OTP';
   const htmlContent = `
-    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:560px;margin:0 auto;padding:16px;">
-      <h2 style="margin:0 0 12px;">Password Reset OTP</h2>
-      <p style="margin:0 0 12px;">Use the OTP below to reset your password.</p>
-      <div style="font-size:28px;font-weight:700;letter-spacing:4px;padding:12px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;display:inline-block;">${safeOtp}</div>
-      <p style="margin:12px 0 0;">This OTP expires in <strong>${safeExpiry} minutes</strong>.</p>
-      <p style="margin:12px 0 0;color:#475569;">If you did not request this, you can ignore this email.</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 1px;">
+            <img src="https://testportal.garudclasses.com/images/logo.png" alt="" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 12px; margin-bottom: 4px;" />
+            <span style="vertical-align: middle;">GARUD CLASSES</span>
+          </h1>
+        </div>
+        <div style="padding: 40px 30px;">
+          <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">Password Reset Request</h2>
+          <p style="margin: 0 0 24px; font-size: 16px; color: #4b5563; line-height: 1.6;">We received a request to reset your Garud Classes account password. Use the verification code below to proceed.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background: #eff6ff; border: 2px dashed #3b82f6; border-radius: 12px; padding: 16px 32px; font-size: 32px; font-weight: 800; color: #1d4ed8; letter-spacing: 6px;">${safeOtp}</div>
+          </div>
+          <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280; text-align: center;">This code will expire in <strong>${safeExpiry} minutes</strong>.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center;">If you did not request a password reset, please safely ignore this email.</p>
+        </div>
+      </div>
     </div>
   `;
 
@@ -79,14 +92,25 @@ async function sendPasswordResetLinkEmail({ toEmail, resetUrl, expiresInMinutes 
 
   const subject = 'Reset your Garud Classes password';
   const htmlContent = `
-    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:560px;margin:0 auto;padding:16px;">
-      <h2 style="margin:0 0 12px;">Password Reset</h2>
-      <p style="margin:0 0 12px;">Click the button below to reset your password.</p>
-      <p style="margin:16px 0;">
-        <a href="${safeUrl}" style="background:#2563eb;color:#fff;text-decoration:none;padding:10px 16px;border-radius:8px;display:inline-block;">Reset Password</a>
-      </p>
-      <p style="margin:12px 0 0;">This link expires in <strong>${safeExpiry} minutes</strong>.</p>
-      <p style="margin:12px 0 0;color:#475569;">If you did not request this, you can ignore this email.</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); padding: 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 1px;">
+            <img src="https://testportal.garudclasses.com/images/logo.png" alt="" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 12px; margin-bottom: 4px;" />
+            <span style="vertical-align: middle;">GARUD CLASSES</span>
+          </h1>
+        </div>
+        <div style="padding: 40px 30px;">
+          <h2 style="margin: 0 0 16px; font-size: 22px; color: #111827;">Reset Your Password</h2>
+          <p style="margin: 0 0 24px; font-size: 16px; color: #4b5563; line-height: 1.6;">You're just one step away from regaining access to your account. Click the button below to set a new password.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${safeUrl}" style="display: inline-block; background: linear-gradient(to right, #2563eb, #3b82f6); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(59, 130, 246, 0.25);">Reset Password</a>
+          </div>
+          <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280; text-align: center;">This link will expire in <strong>${safeExpiry} minutes</strong>.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center;">If you did not request this, you can safely ignore this email.</p>
+        </div>
+      </div>
     </div>
   `;
 
@@ -106,12 +130,25 @@ async function sendRegistrationOtpEmail({ toEmail, otp, expiresInMinutes = 10 })
 
   const subject = 'Your Garud Classes Registration OTP';
   const htmlContent = `
-    <div style="font-family:Arial,sans-serif;line-height:1.5;color:#0f172a;max-width:560px;margin:0 auto;padding:16px;">
-      <h2 style="margin:0 0 12px;">Welcome to Garud Classes</h2>
-      <p style="margin:0 0 12px;">Use the OTP below to complete your registration.</p>
-      <div style="font-size:28px;font-weight:700;letter-spacing:4px;padding:12px 16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;display:inline-block;">${safeOtp}</div>
-      <p style="margin:12px 0 0;">This OTP expires in <strong>${safeExpiry} minutes</strong>.</p>
-      <p style="margin:12px 0 0;color:#475569;">If you did not request this, you can ignore this email.</p>
+    <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; padding: 40px 20px; color: #1f2937;">
+      <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.05);">
+        <div style="background: linear-gradient(135deg, #e94560 0%, #16213e 100%); padding: 30px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 800; letter-spacing: 1px;">
+            <img src="https://testportal.garudclasses.com/images/logo.png" alt="" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 12px; margin-bottom: 4px;" />
+            <span style="vertical-align: middle;">GARUD CLASSES</span>
+          </h1>
+        </div>
+        <div style="padding: 40px 30px;">
+          <h2 style="margin: 0 0 16px; font-size: 24px; color: #111827; text-align: center;">Welcome to the Family! 🎉</h2>
+          <p style="margin: 0 0 24px; font-size: 16px; color: #4b5563; line-height: 1.6; text-align: center;">We are thrilled to have you. Please verify your email address to complete your registration.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="display: inline-block; background: #fff1f2; border: 2px dashed #e11d48; border-radius: 12px; padding: 16px 32px; font-size: 32px; font-weight: 800; color: #be123c; letter-spacing: 6px;">${safeOtp}</div>
+          </div>
+          <p style="margin: 0 0 12px; font-size: 14px; color: #6b7280; text-align: center;">This verification code expires in <strong>${safeExpiry} minutes</strong>.</p>
+          <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+          <p style="margin: 0; font-size: 13px; color: #9ca3af; text-align: center;">If you didn't attempt to sign up, please disregard this email.</p>
+        </div>
+      </div>
     </div>
   `;
 
