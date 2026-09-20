@@ -145,6 +145,8 @@ async function handlePasswordResetOtpRequest(req, res, next) {
         console.log(
           `[FORGOT_PASSWORD_OTP_DEV_FALLBACK] email=${user.email} otp=${otp} expiresAt=${expiresAt.toISOString()}`
         );
+      } else {
+        return res.status(500).json({ message: 'Failed to send OTP email. Please check server configuration.' });
       }
     }
 
@@ -351,6 +353,8 @@ router.post('/register/send-otp', authLimiter, async (req, res, next) => {
       console.error(`[REGISTRATION_OTP_EMAIL_ERROR] email=${normalizedEmail} reason=${mailError.message}`);
       if (process.env.NODE_ENV !== 'production') {
         console.log(`[REGISTRATION_OTP_DEV_FALLBACK] email=${normalizedEmail} otp=${otp}`);
+      } else {
+        return res.status(500).json({ message: 'Failed to send OTP email. Please check server configuration.' });
       }
     }
 
